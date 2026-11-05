@@ -55,22 +55,36 @@ function renderShell() {
   $("#nav").innerHTML = has ? items.map(([k, t]) => `<a href="#/${k}" class="${route === k ? "on" : ""}">${t}</a>`).join("") : "";
   const h = STATUS && STATUS.header;
   $("#season-info").innerHTML = h
-    ? `Season <b>${h.season}</b> (${h.season_label}) &middot; year ${h.cycle_year}/4 (${esc(h.cycle_text)}) &middot; ` +
-      (h.done ? "<b>season complete</b>" : `next: <b>${h.date ? h.date.text : "week " + h.week}</b>`)
+    ? (h.flow
+      ? `<b>Off-season</b> after season ${h.flow.season} &middot; season <b>${h.season}</b> (${h.season_label}) starts <b>${h.date ? h.date.text : "week " + h.week}</b>`
+      : `Season <b>${h.season}</b> (${h.season_label}) &middot; year ${h.cycle_year}/4 (${esc(h.cycle_text)}) &middot; ` +
+        (h.done ? "<b>season complete</b>" : `next: <b>${h.date ? h.date.text : "week " + h.week}</b>`))
     : "";
   renderSimBar();
 }
 let SBOPEN = false;
+// the season loop: Season -> Summer tournaments -> Awards -> Transfers -> next season (the engine's header.phase says where we are)
+const FLOW_STEPS = [["season", "Season"], ["summer", "Summer"], ["awards", "Awards"], ["transfers", "Transfers"]];
+function flowBar(h) {
+  const at = { season: 0, summer: 1, done: 2, awards: 2, transfers: 3 }[h.phase] ?? 0;
+  const cell = (i, [k, t]) => `<div class="${i < at ? "done" : i === at ? "on" : ""}"${i === at ? ' aria-current="step"' : ""}>${i < at ? "&#10003; " : ""}${t}</div>`;
+  return `<div class="stages flow" id="flowbar" aria-label="Season loop">${FLOW_STEPS.map((x, i) => cell(i, x)).join("")}</div>`;
+}
 function renderSimBar() {
   const bar_ = $("#simbar");
   if (!STATUS || !STATUS.has_world) { bar_.innerHTML = ""; return; }
-  const done = STATUS.header.done;
+  const h = STATUS.header, ph = h.phase || (h.done ? "done" : "season"), fs = h.flow ? h.flow.season : h.season - 1;
   bar_.classList.toggle("open", SBOPEN);
+  const play = ph === "season" || ph === "summer";
+  const main = play
+    ? `<button class="main" id="sb-week">Next week</button><button class="main" id="sb-4">4 weeks</button><button class="pri main" id="sb-end">${ph === "summer" ? "Finish summer" : "Rest of season"}</button>`
+    : ph === "done" ? `<button class="pri main" id="sb-roll">Wrap up season ${h.season}</button>`
+    : ph === "awards" ? `<button class="main" id="sb-cer">Awards ceremony</button><button class="pri main" id="sb-tr">Continue to transfers</button>`
+    : `<button class="main" id="sb-mk">Transfers</button><button class="pri main" id="sb-next">Start season ${h.season}</button>`;
   bar_.innerHTML = `
-    <span class="lbl">WORLD</span>
-    ${done ? `<button class="pri main" id="sb-roll">Start next season</button>` : `<button class="main" id="sb-week">Next week</button>
-    <button class="main" id="sb-4">4 weeks</button>
-    <button class="main" id="sb-end">Rest of season</button>`}
+    ${flowBar(h)}
+    <span class="lbl wl">WORLD</span>
+    ${main}
     <button id="sb-tog" class="sb-tog" aria-expanded="${SBOPEN}">${SBOPEN ? "Less" : "More"}</button>
     <span class="sb-more"><span class="sep"></span>
     <span class="lbl">MANY SEASONS</span>
@@ -79,11 +93,16 @@ function renderSimBar() {
     <button id="sb-stops">Stop checklist</button>
     <span class="sep"></span>
     <button id="sb-save">Save / Load</button> <button id="sb-set">Settings</button></span>`;
+  bar_.dataset.fs = fs;
   const on = (id, f) => { const e = $(id); if (e) e.onclick = f; };
   on("#sb-week", () => simWorld({ weeks: 1 }));
   on("#sb-4", () => simWorld({ weeks: 4 }));
   on("#sb-end", () => simWorld({ to_end: true }));
   on("#sb-roll", rollover);
+  on("#sb-cer", () => (location.hash = "#/ceremony/" + fs));
+  on("#sb-tr", () => flowStep("transfers"));
+  on("#sb-mk", () => (location.hash = "#/ledger/" + fs));
+  on("#sb-next", () => flowStep("done"));
   on("#sb-tog", () => { SBOPEN = !SBOPEN; renderSimBar(); });
   $("#sb-years").onclick = simYears;
   $("#sb-stops").onclick = stopsDialog;
@@ -136,8 +155,17 @@ function outcomeText(w, t, plain) {
 }
 async function rollover() {
   for (const k in HOLD) delete HOLD[k];
-  const r = await busy("Rolling into the next season...", () => api("/api/rollover", {}));
-  await afterSim(); if (r) showReview(r.review);
+  const r = await busy("Wrapping up the season...", () => api("/api/rollover", {}));
+  await refreshStatus();
+  if (r && r.review) location.hash = "#/ceremony/" + r.review.season; else await route();
+}
+// move the off-season along: awards -> transfers (opens the transfer record) -> next season (back to the world page)
+async function flowStep(step) {
+  const fs = STATUS.header.flow ? STATUS.header.flow.season : STATUS.header.season - 1;
+  await api("/api/flow", { step });
+  await refreshStatus();
+  const to = step === "transfers" ? "#/ledger/" + fs : "#/world";
+  if (location.hash === to) await route(); else location.hash = to;
 }
 async function simYears() {
   for (const k in HOLD) delete HOLD[k];

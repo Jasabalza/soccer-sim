@@ -211,7 +211,7 @@ svg { touch-action: manipulation; }
   #simbar button, #simbar input { min-height: 34px; font-size: 14px; padding: 4px 10px; }
   #simbar input { width: 56px; }
   #simbar .sep { display: none; }
-  #simbar > .lbl:first-child { display: none; }
+  #simbar > .lbl.wl { display: none; }
   #simbar .main { flex: 1 1 0; padding: 4px 6px; white-space: nowrap; }
   #simbar .sb-tog { display: inline-block; flex: none; }
   #simbar .sb-more { display: none; }
@@ -520,3 +520,6 @@ button.wide { width: 100%; min-height: 44px; margin-top: 10px; }
   .rvrow .rvh2 .m { margin: 2px 0; } .rvrow .rvh2 .m span { flex-basis: 40px; }
   .rvrow .rvh2 .up, .rvrow .rvh2 > .meta { grid-column: 1 / -1; }
 }
+/* v15.1 season loop stepper in the sim bar */
+#simbar .stages.flow { flex: 1 0 100%; margin: 0 0 2px; }
+#simbar .stages.flow div { padding: 6px 2px; font-size: 12px; }
