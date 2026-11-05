@@ -35,8 +35,8 @@ const URL='http://localhost:8791/test_artifact.html';
  await p.evaluate(()=>location.hash='#/matchup/-/Real%20Madrid/FC%20Barcelona'); await p.waitForSelector('#rv-rename'); await p.click('#rv-rename'); await p.fill('#rv-name','The Big One'); await p.click('#rv-save'); await p.waitForTimeout(800);
  console.log('renamed banner:', await p.$$eval('.notebox b',a=>a.map(x=>x.textContent)));
  // a season, then save/load keeps rivalry state
- await p.click('#sb-years'); await idle(); await p.evaluate(()=>closeModal());
- await p.click('#sb-save'); await p.waitForSelector('#save-name'); await p.fill('#save-name','rv'); await p.click('#save-go'); await p.waitForTimeout(1500);
+ if(!(await p.isVisible('#sb-years'))) await p.click('#sb-tog'); await p.click('#sb-years'); await idle(); await p.evaluate(()=>closeModal());
+ if(!(await p.isVisible('#sb-save'))) await p.click('#sb-tog'); await p.click('#sb-save'); await p.waitForSelector('#save-name'); await p.fill('#save-name','rv'); await p.click('#save-go'); await p.waitForTimeout(1500);
  await p.reload(); await p.waitForTimeout(1200); await p.click('[data-load="rv"]'); await p.waitForSelector('#nav a',{timeout:30000}); await p.waitForTimeout(500);
  await p.evaluate(()=>location.hash='#/matchup/-/Real%20Madrid/FC%20Barcelona'); await p.waitForSelector('.odds'); console.log('after load banner:', await p.$$eval('.notebox b',a=>a.map(x=>x.textContent)), '| h2h numbers:', await p.$$eval('.h2h-n b',a=>a.map(x=>x.textContent)));
  console.log('errors:',errs); await b.close();

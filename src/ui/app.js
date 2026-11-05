@@ -320,7 +320,7 @@ function wireSaves(inGame) {
 
 // ---------------------------------------------------------------- favorites
 // A favorite is a key: "L:<league>" or "<kind>:<confed>" (cup, ct, nl, qual). The list is kept inside the world, so it travels with every save.
-const APP_VERSION = "v15.0", APP_TAG = "The Business Update";
+const APP_VERSION = "v15.1", APP_TAG = "The Season Loop";
 let FAVS = null, PICK_ASKED = false;                    // FAVS: null until the player has chosen, then an array of keys
 const CT_NAMES = { UEFA: "European Championship", CONMEBOL: "Copa America", CONCACAF: "Gold Cup", CAF: "Africa Cup of Nations", AFC: "Asian Cup", OFC: "OFC Nations Cup" };
 const NL_NAMES = { UEFA: "UEFA Nations League", CONMEBOL: "CONMEBOL Nations League", CONCACAF: "CONCACAF Nations League", CAF: "CAF Nations League", AFC: "AFC Nations League", OFC: "OFC Nations League" };
@@ -662,48 +662,70 @@ function stadiumTab(c, rivs) {
     <div class="card" style="margin-top:14px"><h3>Capacity by season</h3>${caps.length > 1 ? lineChart(caps.map((r) => [r.season, r.cap]), 360, 140, "#3ddc84", false) : '<div class="meta">Shows after a few seasons.</div>'}</div>
     <div class="card" style="margin-top:14px"><h3>New stadium</h3><div class="meta">A club that outgrows its ground by a lot builds a bigger one over several seasons. When it opens, the fan base gets a one-season boost.</div></div></div></div>`;
 }
+// ---------------------------------------------------------------- club page (v15.1): Overview, Squad, Finance, Academy, Stadium, Honours
+const CV = { tab: "ov", pos: "ALL", sort: "pos", u23: false };
+const ordN = (n) => `${n}${["th", "st", "nd", "rd"][n % 100 >= 11 && n % 100 <= 13 ? 0 : n % 10] || "th"}`;
+const POS_ORDER = ["GK", "DEF", "MID", "FWD"], POS_NAME = { GK: "Goalkeepers", DEF: "Defenders", MID: "Midfielders", FWD: "Forwards" };
+const SQ_SORTS = [["pos", "Position"], ["ovr", "Overall"], ["pot", "Potential"], ["age", "Age"], ["wage", "Wage"], ["contract", "Contract"], ["value", "Value"]];
 async function viewClub(name) {
   const c = await api("/api/club?name=" + enc(name));
-  const render = () => {
-    const rows = sortRows(c.squad, SORT.key, SORT.dir);
-    const th = (k, t, l) => `<th class="sortable ${l ? "l" : ""}" data-s="${k}">${t}${SORT.key === k ? (SORT.dir < 0 ? " v" : " ^") : ""}</th>`;
-    $("#squad").innerHTML = `<table><thead><tr>${th("name", "Player", 1)}${th("pos", "Pos", 1)}${th("age", "Age")}${th("ovr", "OVR")}${th("pot", "Pot")}${th("nat", "Nation", 1)}${th("contract", "Contract")}${th("wage", "Wage/yr")}${th("value", "Value")}${th("gls", "G")}${th("ast", "A")}${th("cs", "CS")}</tr></thead><tbody>
-      ${rows.map((p) => `<tr><td class="l">${playerLink(p)}</td><td class="l pos-${esc(p.pos)}">${esc(p.pos)}</td><td>${p.age}</td><td>${ovr(p.ovr)}</td><td>${p.pot}</td><td class="l">${natLink(p.nat)}</td><td>${p.contract}</td><td>${money(p.wage)}</td><td>${money(p.value)}</td><td>${p.gls ?? "-"}</td><td>${p.ast ?? "-"}</td><td>${p.cs ? p.cs : ""}</td></tr>`).join("")}</tbody></table>`;
-    document.querySelectorAll("#squad [data-s]").forEach((h) => h.onclick = () => { SORT = { key: h.dataset.s, dir: SORT.key === h.dataset.s ? -SORT.dir : (h.dataset.s === "name" || h.dataset.s === "pos" || h.dataset.s === "nat" ? 1 : -1) }; render(); });
+  const co = c.coach, key = c.squad.slice().sort((a, b) => b.ovr - a.ovr).slice(0, 5);
+  const finishes = c.finishes.slice().sort((a, b) => a.season - b.season), cap = Math.max(20, ...finishes.map((f) => f.pos));
+  const last5 = c.finishes.slice(0, 5).map((f) => ordN(f.pos)).join(", ");
+  const tabs = [["ov", "Overview"], ["sq", "Squad"], ["fin", "Finance"], ["acad", "Academy"], ["stad", "Stadium"], ["hon", "Honours"]];
+  const pr = (p, sub) => `<div class="pr"><span class="p ${esc(p.pos)}">${esc(p.pos)}</span><div class="nm"><b>${playerLink(p)}</b><span>${sub}</span></div><span class="ovr">${p.ovr}</span></div>`;
+  const overview = `
+    <div class="card"><h3>Key players <small>best five</small></h3>${key.map((p) => pr(p, "age " + p.age)).join("")}
+      <a class="more" data-goto="sq"><span>Full squad (${c.squad_size})</span><span>&rsaquo;</span></a></div>
+    <div class="card"><h3>League finishes <small>taller is better</small></h3>
+      ${finishes.length ? `<div class="fin">${finishes.slice(-12).map((f, i, a) => `<i class="${i === a.length - 1 ? "hi" : ""}" style="height:${Math.max(8, Math.round(100 * (1 - (f.pos - 1) / cap)))}%" title="S${f.season}: ${ordN(f.pos)}"></i>`).join("")}</div>
+        <div class="fl2"><span>S${finishes[Math.max(0, finishes.length - 12)].season}</span><span>S${finishes[finishes.length - 1].season}: ${ordN(finishes[finishes.length - 1].pos)}</span></div>
+        <div class="dim small" style="margin-top:6px">Titles ${c.titles.length} · best ${ordN(Math.min(...finishes.map((f) => f.pos)))}${last5 ? " · last five: " + last5 : ""}</div>` : `<div class="dim small">No completed season yet.</div>`}</div>
+    <div class="card"><h3>Coach ${co.hot ? '<span class="tag red">hot seat</span>' : ""}</h3>
+      <div class="row"><span>${esc(co.name)}</span><span class="dim">prestige ${co.prestige} · ${co.stint} season${co.stint === 1 ? "" : "s"}</span></div>
+      <div class="dim small">${esc(co.personality)} / ${esc(co.skill)} · career ${co.titles} titles, ${co.cups} cups, ${co.win}% wins</div></div>
+    <div class="card"><h3>Recent transfers <small>last three</small></h3>${c.transfers.length ? c.transfers.slice(0, 3).map((t) => `<div class="row"><span class="l"><span class="tag ${t.dir === "IN" ? "green" : "red"}">${t.dir}</span><span>${esc(t.player)} <span class="dim small">${t.dir === "IN" ? "from" : "to"} ${esc(t.other)}</span></span></span><b>${money(t.fee)}</b></div>`).join("") : `<div class="dim small">None yet.</div>`}
+      <a class="more" href="#/ledger"><span>All transfers</span><span>&rsaquo;</span></a></div>
+    <div class="card"><h3>Honours <small>the Honours tab has the trophy room</small></h3>
+      <div class="hon"><div><b class="gold">${c.titles.length}</b><span>league titles</span></div><div><b>${c.cups.length}</b><span>continental</span></div><div><b>${c.cwc.length}</b><span>Club World Cups</span></div></div>
+      <a class="more" data-goto="hon"><span>Trophy room</span><span>&rsaquo;</span></a></div>`;
+  const squad = () => {
+    const rows = c.squad.filter((p) => (CV.pos === "ALL" || p.pos === CV.pos) && (!CV.u23 || p.age < 23));
+    const cnt = (k) => c.squad.filter((p) => k === "ALL" || p.pos === k).length;
+    const row = (p) => `<div class="pr"><span class="p ${esc(p.pos)}">${esc(p.pos)}</span><div class="nm"><b>${playerLink(p)}</b><span>${p.age} · ${esc(p.nat)} · ${money(p.wage)} wage</span></div><span class="ovr ${p.ovr < p.pot - 8 ? "m" : ""}">${p.ovr}</span><span class="pt">${p.pot}</span><span class="ct">${p.contract}y</span></div>`;
+    let body;
+    if (CV.sort === "pos") body = POS_ORDER.map((g) => { const r = rows.filter((p) => p.pos === g).sort((a, b) => b.ovr - a.ovr); return r.length ? `<div class="sep">${POS_NAME[g]}</div><div class="card" style="margin-top:4px;padding-top:2px;padding-bottom:2px">${r.map(row).join("")}</div>` : ""; }).join("");
+    else { const d = CV.sort === "age" || CV.sort === "contract" ? 1 : -1, r = sortRows(rows, CV.sort, d); body = `<div class="card" style="margin-top:8px;padding-top:2px;padding-bottom:2px">${r.map(row).join("")}</div>`; }
+    return `<nav class="chips" aria-label="Position filter">${["ALL", ...POS_ORDER].map((k) => `<button data-pos="${k}" class="${CV.pos === k ? "on" : ""}">${k === "ALL" ? "All" : k} ${cnt(k)}</button>`).join("")}</nav>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><select class="sel" id="sq-sort" aria-label="Sort">${SQ_SORTS.map((s) => `<option value="${s[0]}" ${CV.sort === s[0] ? "selected" : ""}>Sort: ${s[1]}</option>`).join("")}</select>
+      <select class="sel" id="sq-u" aria-label="Age filter"><option value="0" ${CV.u23 ? "" : "selected"}>All ages</option><option value="1" ${CV.u23 ? "selected" : ""}>Under 23 only</option></select></div>
+      <div class="cols"><span>Player</span><span>OVR</span><span>POT</span><span>Contr.</span></div>${body || `<div class="dim small" style="padding:14px 0">Nobody matches.</div>`}`;
   };
-  const co = c.coach;
-  $("#view").innerHTML = `<div class="crumbs"><a href="#/world">World</a> / <a href="#/continent/${c.confed}">${esc(c.confed)}</a> / ${leagueLink(c.league)} / ${esc(c.name)}</div>
-    <h1 class="hcrest">${crest(c.name, 52)}<span>${esc(c.name)}</span></h1>
-    ${c.cwc.length ? `<div style="margin:4px 0 6px"><span class="tag gold">World champions${c.cwc.length > 1 ? " x" + c.cwc.length : ""}</span> <span class="meta">Club World Cup ${c.cwc.map((x) => "S" + x).join(", ")}</span></div>` : ""}
-    <div class="sub">${leagueLink(c.league)} &middot; ${c.titles.length} league title(s) &middot; ${c.cups.length} continental cup(s) &middot; ${c.cwc.length} Club World Cup(s) &middot; last finish ${c.last_finish || "-"}</div>
-    <div class="cols3" style="grid-template-columns:repeat(5,1fr);margin-bottom:14px">
-      <div class="stat"><div class="k">Team OVR (best 11)</div><div class="v">${c.ovr}</div></div>
-      <div class="stat"><div class="k">With coach</div><div class="v">${c.eff}</div></div>
-      <div class="stat"><div class="k">Yearly income</div><div class="v">${money(c.budget)}</div></div>
-      <div class="stat"><div class="k">Transfer funds</div><div class="v">${money(c.funds)}</div></div>
-      <div class="stat"><div class="k">Squad</div><div class="v">${c.squad_size}</div></div></div>
-    <div class="tabs" id="ct-tabs"><button class="on" data-ct="ov">Overview</button><button data-ct="fin">Finance</button><button data-ct="acad">Academy</button><button data-ct="stad">Stadium</button></div>
-    <div id="ct-ov"><div class="cols"><div><h2 style="margin-top:0">Squad</h2><div class="scroll" id="squad"></div><div style="margin-top:14px">${trophyRoom(c.trophies, "Trophy room")}</div></div>
-    <div><div class="card"><h3>Coach <small>${co.hot ? '<span class="tag red">hot seat</span>' : ""}</small></h3>
-      <div class="kv"><span>Name</span><span>${esc(co.name)} (${esc(co.nat)}), ${co.age}</span><span>Prestige</span><span>${co.prestige}</span><span>Style</span><span>${esc(co.personality)} / ${esc(co.skill)}</span><span>Here</span><span>${co.stint} season(s)</span><span>Career</span><span>${co.titles} titles, ${co.cups} cups, ${co.win}% wins</span></div></div>
-    <div class="card" style="margin-top:14px"><h3>Money</h3><div class="kv"><span>Income</span><span>${money(c.income)}</span><span>Cup prizes (last)</span><span>${money(c.prize_prev)}</span><span>Sold last summer</span><span>${money(c.sold)}</span><span>Bought last summer</span><span>${money(c.bought)}</span><span>Stature</span><span>${c.stature}</span></div></div>
-    <div class="card" style="margin-top:14px"><h3>Recent transfers</h3>${c.transfers.length ? c.transfers.map((t) => `<div class="row"><span><span class="tag ${t.dir === "IN" ? "green" : "red"}">${t.dir}</span> ${esc(t.player)} <span class="meta">(${t.ovr}, ${t.age})</span><div class="meta">${t.dir === "IN" ? "from" : "to"} ${clubLink(t.other)} &middot; S${t.season}</div></span><b>${money(t.fee)}</b></div>`).join("") : '<div class="meta">None yet.</div>'}</div>
-    <div class="card" style="margin-top:14px"><h3>League finishes</h3>${c.finishes.length ? c.finishes.slice(0, 10).map((f) => `<div class="row"><span>Season ${f.season}</span><span>${f.pos}${["st", "nd", "rd"][f.pos - 1] || "th"} &middot; ${f.pts} pts</span></div>`).join("") : '<div class="meta">No completed season yet.</div>'}</div></div></div><div id="ct-chart"></div></div>
-    <div id="ct-fin" hidden></div><div id="ct-acad" hidden></div><div id="ct-stad" hidden></div>`;
-  render();
-  { // v15 tabs: the finance, academy and stadium views are built when first opened
-    const built = {}, show = async (t) => {
-      document.querySelectorAll("#ct-tabs [data-ct]").forEach((b) => b.classList.toggle("on", b.dataset.ct === t));
-      ["ov", "fin", "acad", "stad"].forEach((k) => { $("#ct-" + k).hidden = k !== t; });
-      if (built[t] || t === "ov") return; built[t] = 1;
-      if (t === "fin") { const draw = (sel) => { $("#ct-fin").innerHTML = financeTab(c, sel); const sl = $("#fin-s"); if (sl) sl.onchange = (e) => draw(+e.target.value); }; draw(null); }
-      if (t === "acad") $("#ct-acad").innerHTML = academyTab(c);
-      if (t === "stad") { const rv = await api("/api/rivalries?club=" + enc(c.name)).catch(() => ({ rows: [] })); $("#ct-stad").innerHTML = stadiumTab(c, rv.rows); }
-    };
-    document.querySelectorAll("#ct-tabs [data-ct]").forEach((b) => b.onclick = () => show(b.dataset.ct));
-  }
-  const fin = c.finishes.slice().reverse().map((f) => [f.season, f.pos]);
-  if (fin.length > 1) $("#ct-chart").insertAdjacentHTML("beforeend", `<div class="card" style="margin-top:14px"><h3>League finish by season <small>lower is better</small></h3>${lineChart(fin, 620, 170, "#4aa8ff", true)}</div>`);
+  $("#view").innerHTML = `<div class="v2"><div class="crumbs dim small" style="min-height:30px;display:flex;align-items:center;flex-wrap:wrap"><a href="#/world">World</a>&nbsp;›&nbsp;<a href="#/continent/${c.confed}">${esc(c.confed)}</a>&nbsp;›&nbsp;${leagueLink(c.league)}</div>
+    <div style="display:flex;align-items:center;gap:12px">${crest(c.name, 52)}<div><h1>${esc(c.name)}</h1><div class="sub">${leagueLink(c.league)} · last finish ${c.last_finish ? ordN(c.last_finish) : "-"}${c.cwc.length ? ` · ${c.cwc.length} Club World Cup${c.cwc.length > 1 ? "s" : ""}` : ""}</div></div></div>
+    <div class="stat4"><div><b>${c.ovr}</b><span>TEAM OVR</span></div><div><b>${money(c.budget)}</b><span>INCOME</span></div><div><b>${money(c.funds)}</b><span>FUNDS</span></div><div><b>${c.squad_size}</b><span>SQUAD</span></div></div>
+    <nav class="tabs2" id="ct-tabs" aria-label="Club sections">${tabs.map(([k, t]) => `<button data-ct="${k}" class="${k === CV.tab ? "on" : ""}">${t}</button>`).join("")}</nav></div>
+    <div class="v2" id="ct-ov">${overview}</div><div class="v2" id="ct-sq" hidden></div><div id="ct-fin" hidden></div><div id="ct-acad" hidden></div><div id="ct-stad" hidden></div><div class="v2" id="ct-hon" hidden>${trophyRoom(c.trophies, "Trophy room")}</div>`;
+  const built = {};
+  const drawSquad = () => {
+    $("#ct-sq").innerHTML = squad();
+    document.querySelectorAll("#ct-sq [data-pos]").forEach((b) => (b.onclick = () => { CV.pos = b.dataset.pos; drawSquad(); }));
+    $("#sq-sort").onchange = (e) => { CV.sort = e.target.value; drawSquad(); };
+    $("#sq-u").onchange = (e) => { CV.u23 = e.target.value === "1"; drawSquad(); };
+  };
+  const show = async (t) => {
+    CV.tab = t;
+    document.querySelectorAll("#ct-tabs [data-ct]").forEach((b) => b.classList.toggle("on", b.dataset.ct === t));
+    tabs.forEach(([k]) => { $("#ct-" + k).hidden = k !== t; });
+    if (t === "sq") drawSquad();
+    if (built[t]) return; built[t] = 1;
+    if (t === "fin") { const draw = (sel) => { $("#ct-fin").innerHTML = financeTab(c, sel); const sl = $("#fin-s"); if (sl) sl.onchange = (e) => draw(+e.target.value); }; draw(null); }
+    if (t === "acad") $("#ct-acad").innerHTML = academyTab(c);
+    if (t === "stad") { const rv = await api("/api/rivalries?club=" + enc(c.name)).catch(() => ({ rows: [] })); $("#ct-stad").innerHTML = stadiumTab(c, rv.rows); }
+  };
+  document.querySelectorAll("#ct-tabs [data-ct]").forEach((b) => (b.onclick = () => show(b.dataset.ct)));
+  document.querySelectorAll("[data-goto]").forEach((b) => (b.onclick = () => { show(b.dataset.goto); window.scrollTo(0, 0); }));
+  CV.tab = "ov";
 }
 
 // ---- trophy rooms ------------------------------------------------------------------------------------

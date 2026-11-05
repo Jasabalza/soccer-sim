@@ -28,7 +28,9 @@ const seed = process.argv[2] || "3";
   const h = r.header; const season = h.flow && h.flow.season;
   if (h.phase !== "awards" || !season) fail.push("after rollover expected awards, got " + JSON.stringify(h));
   // a save taken during the off-season keeps the step
-  const sv = await call("/api/export", {}).catch(() => null);
+  // a save taken in the off-season keeps the step (serialise and read the world back, as saving and loading do)
+  const A = $mods.app_v11 || $mods.app, w0 = A.ST.world, w1 = $deser($ser(w0));
+  if (!w1.flow || w1.flow.get_("step") !== "awards") fail.push("flow step lost in a save round trip");
   const aw = await raw("/api/awards?season=" + season);
   if (aw.code !== 200) fail.push("awards for the rolled season not available");
   let bad = await raw("/api/flow", { step: "awards" });
