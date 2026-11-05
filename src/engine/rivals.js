@@ -3,7 +3,7 @@
 $mods["rivals"] = (function () {
   const KN = {};                                  // known rivalries: pair key -> {a,b,name,level}
   let loaded = false;
-  const NAT_BUILD = 12, NAT_DEMOTE = 5, NAT_KINDS = new Set(["qual", "ic", "wc", "ct", "nl"]);      // national rivalries heat up on a smaller scale: nations meet far less often
+  const BUILD = 14, MAX_BORN = 4, MAX_BORN_NAT = 2, NAT_BUILD = 12, NAT_DEMOTE = 5, NAT_KINDS = new Set(["qual", "ic", "wc", "ct", "nl"]);      // national rivalries heat up on a smaller scale: nations meet far less often
   const key = (a, b) => (a < b ? a + "|" + b : b + "|" + a);
   const gv = (x, k) => (x instanceof $Dict ? x.get_(k) : x[k]);
   function load() {
@@ -125,6 +125,7 @@ $mods["rivals"] = (function () {
         }
       } else {
         const mult = c.kind === "cwc" ? 1.2 : 1;
+        if (c.kind === "cwc") for (const m of c.glog || []) { if (!clubs.has(m[1]) || !clubs.has(m[2])) continue; addMatch(rv, m[1], m[2], m[3], m[4], season, (c.title || cid) + " group"); add(m[1], m[2], 0.4 * mult); }
         for (const t of c.tlog) {
           const A = gv(t, "a"), B = gv(t, "b"), left = gv(t, "left"), legs = gv(t, "legs"), win = gv(t, "winner"), how = gv(t, "how") || "";
           if (!clubs.has(A) || !clubs.has(B)) continue;
@@ -170,19 +171,29 @@ $mods["rivals"] = (function () {
     }
     // neighbours in the same league feel each other every year
     for (const k of Object.keys(nearPairs(w))) { if (rv.pairs[k] || delta[k]) { add(...k.split("|"), 0.8); rec(rv, ...k.split("|")).near = true; } }
-    // decay, add the season, then promote or cool
+    // decay, add the season (capped per pair), then promote or cool. New rivalries are born only a few per season.
     for (const k of Object.keys(delta)) { const q = rec(rv, ...k.split("|")); if (KN[k] && KN[k].nat) q.nat = true; }
+    const born = { c: [], n: [] };
     for (const k of Object.keys(rv.pairs)) {
       const r = rv.pairs[k];
-      const N = !!(r.nat || (KN[k] && KN[k].nat)), up = N ? NAT_BUILD : 20, down = N ? NAT_DEMOTE : 10, hot = N ? 20 : 30;
-      r.heat = Math.round((r.heat * (N ? 0.9 : 0.85) + (delta[k] || 0)) * 100) / 100;
-      if (!r.built && r.heat >= up && !KN[k]) {
-        r.built = true; r.since = season;
-        if (!r.name) r.name = genName(rv, r, season);
-        w.news("rivalry", "A new " + (N ? "international " : "") + "rivalry is born: " + r.a + " v " + r.b + " (" + r.name + ")");
-      } else if (r.built && r.heat < down) { r.built = false; }
+      const N = !!(r.nat || (KN[k] && KN[k].nat)), up = N ? NAT_BUILD : BUILD, down = N ? NAT_DEMOTE : 10, hot = N ? 20 : 30;
+      r.hp = r.heat;
+      r.heat = Math.min(100, Math.round((r.heat * (N ? 0.9 : 0.85) + Math.min(N ? 8 : 14, delta[k] || 0)) * 100) / 100);
+      r.rise = Math.round((r.heat - r.hp) * 10) / 10;
+      r.leg = Math.min(60, (r.leg || 0) * 0.98 + 0.06 * Math.max(0, r.heat - 25));       // long memory: a feud that stays hot leaves history behind
+      if (!r.built && r.heat >= up && !KN[k]) (N ? born.n : born.c).push(k);
+      else if (r.built && r.heat < down) { r.built = false; }
       else if (!r.built && KN[k] && r.heat >= hot && !r.flared) { r.flared = season; w.news("rivalry", "The " + KN[k].name + " is red hot: " + r.a + " v " + r.b); }
     }
+    for (const [list, cap, N] of [[born.c, MAX_BORN, false], [born.n, MAX_BORN_NAT, true]]) {
+      list.sort((x, y) => rv.pairs[y].heat - rv.pairs[x].heat || (x < y ? -1 : 1));
+      for (const k of list.slice(0, cap)) {
+        const r = rv.pairs[k]; r.built = true; r.since = season;
+        if (!r.name) r.name = genName(rv, r, season);
+        w.news("rivalry", "A new " + (N ? "international " : "") + "rivalry is born: " + r.a + " v " + r.b + " (" + r.name + ")");
+      }
+    }
+    rv.dfor = null; derby(w);                       // league derby indexes for next season's TV and gate
   }
   function addMatch(rv, a, b, ga0, gb0, season, tag) {
     const r = rec(rv, a, b), flip = r.a !== a, ga = flip ? gb0 : ga0, gb = flip ? ga0 : gb0;
@@ -195,6 +206,35 @@ $mods["rivals"] = (function () {
     if (r.last.length > 6) r.last.shift();
   }
 
+  // ---- the two scores: History is where a rivalry started (seeded for the famous ones, plus memory a hot feud leaves behind), Heat is what this world has added ----
+  const SEED = { 3: 100, 2: 70, 1: 40 };
+  const historyOf = (kn, r) => Math.min(100, Math.round((kn ? SEED[kn.level] || 40 : 0) + (r && r.leg ? r.leg * (kn ? 0.3 : 1) : 0)));
+  const heatPct = (r) => (r ? Math.round(100 * (1 - Math.exp(-r.heat / 40))) : 0);        // soft scale: close to 100 only for a feud that never stops, never past it
+  // ---- derby index: how much rivalry a league holds. It lifts TV and gate above the world's middle league and cools those below it ----
+  function derby(w) {
+    load(); const rv = st(w); if (rv.dfor === w.season && rv.derby) return rv;
+    const per = {}, cd = {};
+    const keys = new Set(Object.keys(KN)); for (const k of Object.keys(rv.pairs)) keys.add(k);
+    for (const k of keys) {
+      const [a, b] = k.split("|"); if (!w.clubs.has(a) || !w.clubs.has(b)) continue;
+      const la = gv(w.clubs.get_(a), "league"); if (la !== gv(w.clubs.get_(b), "league")) continue;
+      const v = intensity(w, a, b); if (!v) continue;
+      (per[la] = per[la] || []).push(v);
+      if (v >= 0.7) { cd[a] = (cd[a] || 0) + 1; cd[b] = (cd[b] || 0) + 1; }
+    }
+    rv.derby = {}; let sum = 0, n = 0;
+    for (const ln of w.leagues.keysArr()) {
+      const top = (per[ln] || []).sort((x, y) => y - x).slice(0, 8), idx = Math.round(100 * Math.min(1, top.reduce((p, q) => p + q, 0) / 8));
+      rv.derby[ln] = idx; sum += idx; n++;
+    }
+    rv.dmean = n ? sum / n : 50; rv.cd = cd; rv.dfor = w.season;
+    return rv;
+  }
+  // multipliers for a club's TV share and gate: its league's derby index against the world's middle, and its own live derbies
+  function derby_fx(w, ln, club) {
+    const rv = derby(w), idx = rv.derby[ln] != null ? rv.derby[ln] : rv.dmean, d = (idx - rv.dmean) / 50;
+    return { tv: 1 + 0.07 * d, gate: (1 + 0.10 * d) * (1 + 0.03 * Math.min(3, rv.cd[club] || 0)), index: idx };
+  }
   // ---- views ----
   function label(w, a, b) {
     load();
@@ -202,7 +242,8 @@ $mods["rivals"] = (function () {
     if (!i) return null;
     const name = (r && r.custom) || (kn && kn.name) || (r && r.name) || "Rivalry";
     const kind = kn ? (kn.level === 3 ? (kn.nat ? "Historic rivalry" : "Historic derby") : kn.level === 2 ? "Major rivalry" : "Rivalry") : "Rising rivalry";
-    return { name, kind, known: !!kn, level: kn ? kn.level : 0, intensity: Math.round(i * 100) / 100, heat: r ? Math.round(r.heat * 10) / 10 : 0, since: r ? r.since : null, named: !!(r && r.custom) };
+    return { name, kind, known: !!kn, level: kn ? kn.level : 0, intensity: Math.round(i * 100) / 100, heat: r ? Math.round(r.heat * 10) / 10 : 0, since: r ? r.since : null, named: !!(r && r.custom),
+      history: historyOf(kn, r), heat_pct: heatPct(r), rise: r && r.rise ? r.rise : 0 };
   }
   function h2h(w, a, b) {
     const k = key(a, b), r = w.rv && w.rv.pairs[k];
@@ -305,12 +346,12 @@ $mods["rivals"] = (function () {
   // the Rivalries screen: one ranked list, narrowed by type (clubs / nations), scope, status and a search, ordered by the chosen sort
   function page(w, q) {
     load();
-    const type = q.type === "nations" ? "nations" : "clubs", sort = ["meetings", "big"].includes(q.sort) ? q.sort : "heat";
+    const type = q.type === "nations" ? "nations" : "clubs", sort = ["meetings", "big", "history", "rising"].includes(q.sort) ? q.sort : "heat";
     const status = ["real", "rising"].includes(q.status) ? q.status : "all", scope = q.scope || "world", text = String(q.q || "").toLowerCase().trim();
     const limit = Math.max(5, Math.min(400, +q.limit || 25)), offset = Math.max(0, +q.offset || 0);
     const rv = w.rv ? w.rv.pairs : {}, N = type === "nations", pool = N ? w.nations : w.clubs;
     const keys = new Set(Object.keys(KN).filter((k) => !!KN[k].nat === N));
-    for (const k of Object.keys(rv)) if (!!rv[k].nat === N && (rv[k].built || rv[k].heat >= (N ? 6 : 12))) keys.add(k);
+    for (const k of Object.keys(rv)) if (!!rv[k].nat === N && (rv[k].built || rv[k].heat >= (N ? 6 : 8) || (sort === "rising" && rv[k].rise > 0))) keys.add(k);
     const confOf = (n) => (N ? gv(w.nations.get_(n), "confed") : gv(w.leagues.get_(gv(w.clubs.get_(n), "league")), "confed"));
     const lgOf = (n) => (N ? null : gv(w.clubs.get_(n), "league"));
     const rows = [];
@@ -328,9 +369,10 @@ $mods["rivals"] = (function () {
       const hh = h2h(w, a, b), big = Math.max(hh.big[0] ? hh.big[0][1] - hh.big[0][2] : 0, hh.big[1] ? hh.big[1][1] - hh.big[1][2] : 0);
       rows.push({ a, b, ...lab, meet: hh.meet, wins: hh.wins, draws: hh.draws, goals: hh.goals, big, bigline: hh.big[0] && (!hh.big[1] || hh.big[0][1] - hh.big[0][2] >= hh.big[1][1] - hh.big[1][2]) ? [a, hh.big[0]] : hh.big[1] ? [b, hh.big[1]] : null, last: hh.last[0] || null });
     }
-    rows.sort((x, y) => (sort === "meetings" ? y.meet - x.meet : sort === "big" ? y.big - x.big : 0) || y.intensity - x.intensity || y.heat - x.heat || (x.a < y.a ? -1 : x.a > y.a ? 1 : 0));
+    rows.sort((x, y) => (sort === "meetings" ? y.meet - x.meet : sort === "big" ? y.big - x.big : sort === "history" ? y.history - x.history : sort === "rising" ? y.rise - x.rise : sort === "heat" ? y.heat_pct - x.heat_pct : 0) || y.intensity - x.intensity || y.heat - x.heat || (x.a < y.a ? -1 : x.a > y.a ? 1 : 0));
     const leagues = [...new Set(w.clubs.itemsArr().map(([n, c]) => gv(c, "league")))].sort();
-    return { type, sort, status, scope, total: rows.length, offset, limit, rows: rows.slice(offset, offset + limit), confeds: ["UEFA", "CONMEBOL", "CONCACAF", "AFC", "CAF", "OFC"], leagues };
+    const dr = derby(w), dl = Object.keys(dr.derby).map((ln) => ({ league: ln, index: dr.derby[ln], tv: Math.round(7 * (dr.derby[ln] - dr.dmean) / 50 * 10) / 10, gate: Math.round(10 * (dr.derby[ln] - dr.dmean) / 50 * 10) / 10 })).sort((x, y) => y.index - x.index);
+    return { derby: dl, type, sort, status, scope, total: rows.length, offset, limit, rows: rows.slice(offset, offset + limit), confeds: ["UEFA", "CONMEBOL", "CONCACAF", "AFC", "CAF", "OFC"], leagues };
   }
   function api(w, path, q) {
     if (path === "/api/rivals_page") return page(w, q);
@@ -344,5 +386,5 @@ $mods["rivals"] = (function () {
     if (path === "/api/rivalry_name") return rename(w, q.a, q.b, q.name);
     return null;
   }
-  return { odds, poissonPmf, effect, intensity, update_season, label, h2h, matchup, list, rename, transfer_heat, api, key, known: () => { load(); return KN; } };
+  return { odds, poissonPmf, effect, intensity, derby, derby_fx, update_season, label, h2h, matchup, list, rename, transfer_heat, api, key, known: () => { load(); return KN; } };
 })();

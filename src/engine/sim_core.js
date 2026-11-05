@@ -666,10 +666,11 @@ class World {
         }
         const f = ($T($idx(c, "last_finish")) ? $idx(c, "last_finish") : Math.floor(size / 2));
         const wgt = 1 + (0.6 * ((size + 1) - 2 * f)) / (size - 1);
-        const tv = avg * (0.5 + 0.5 * wgt);
+        const fx = $mods.rivals.derby_fx(self, ln, n);
+        const tv = avg * (0.5 + 0.5 * wgt) * fx.tv;
         const gate0 = cfg.gate_k * $idx(c, "stature") * Math.pow($idx(L, "prestige") / 90, 0.8);
         const fill = Math.min($idx(c, "cap"), $idx(c, "fans")) / Math.max(1e-9, $idx(c, "fans"));
-        const gate = gate0 * (1 - cfg.sponsor_share) * fill / Math.max(0.3, $idx(c, "fill0")), sponsor = gate0 * cfg.sponsor_share;
+        const gate = gate0 * (1 - cfg.sponsor_share) * fill / Math.max(0.3, $idx(c, "fill0")) * fx.gate, sponsor = gate0 * cfg.sponsor_share;
         const owner = (($eq(cfg.owner_fund_league, ln)) ? cfg.owner_fund_amount : 0.0);
         $setidx(c, "parts", $dict($kw({"tv": tv, "gate": gate, "sponsor": sponsor, "owner": owner})));
         // the Club World Cup pays every fourth season: the budget counts a quarter of what the last four paid, not the lump
