@@ -458,7 +458,7 @@ async function viewStart() {
       <details class="opts"><summary>Storage, logos and importing</summary><div id="store-note"></div>${saveTools()}${logoPanel()}</details></div>`;
   $("#view").innerHTML = `<div class="start">
     <div class="start-head"><h1>Soccer Sim <span class="ver">${APP_VERSION}</span></h1>
-      <div class="start-tag">${starSvg(14)} ${APP_TAG}<span>Follow what matters, sim the rest</span></div>
+      <div class="start-tag">${starSvg(14)} ${APP_TAG}<span>Every league, cup and tournament now has its own page</span></div>
       <div class="sub">Commissioner mode: no lineups, no relegation, one worldwide player market.</div></div>
     ${hasSaves ? loadCard + newCard : newCard + loadCard}</div>`;
   $("#rules-on").onchange = (e) => ($("#rules").hidden = !e.target.checked);

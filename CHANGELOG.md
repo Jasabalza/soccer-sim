@@ -7,6 +7,8 @@
 - **Stats tab.** All time or Per season. All time: top scorer, goals, assists, clean sheets, Golden Boots, coaches (top 40, show more), single-season records, Golden Boot winners. Per season: any past season or the current one, with scorers, assists, clean sheets, MVP and coaches. API: `/api/compalltime`.
 - **Continent pages for every confederation** (UEFA, CONMEBOL, CONCACAF, CAF, AFC, OFC): Overview, Competitions and Leagues tabs. Each competition is a card with its holders, most titles and current edition or next year. API: `/api/comphub`.
 - **Competition pages** for every continental cup, European-style championship (Euro, Copa America, Gold Cup, AFCON, Asian Cup, OFC Nations Cup), Nations League, the World Cup and the Club World Cup, each with This season, History and Stats tabs. History has holders, titles by club or nation, finalists who never won, titles by league or confederation, every final (winner's score first), hosts and records. API: `/api/comphist`. The World page lists the two global tournaments.
+- **Economy pass.** Running costs now take 25% of TV, gate and sponsor income (was 10%), so clubs keep less cash: across the world about 27% of clubs read Strong, 55% Steady and 17% Tight (was 72% Strong). New games only; saves already in progress keep their own settings.
+- The UEFA page is titled UEFA (with Europe underneath). New loading-screen subtext.
 - Known limit: all-time totals add up each edition's stored top lists (top 20 league, top 10 cup), so they are exact for the leaders.
 
 ## v15.1: The Season Loop
