@@ -43,7 +43,7 @@ class Settings {
     return ($T($t1 = $M.join(", ", diffs)) ? $t1 : "defaults");
   }
   __init__(...$args) {
-    const $v = $bind($args, ["label", "seasons", "target_pool", "cup_size", "cup_prize_scale", "anchor_gain", "league_rise", "dev_pot_growth", "pot_shift", "pot_low", "pot_mode", "poach_base", "spread_gain", "poach_buyers", "poach_max", "poach_contract_max", "poach_min_gain", "coach_match_bonus", "tactician_boost", "club_prestige_budget", "transfer_share", "prestige_decay", "title_pts", "apex_pts", "hot_tolerance", "fire_after", "loyal_resign", "money_resign", "contract_min", "contract_max", "retire_start", "retire_ramp", "outflow_base", "outflow_age_start", "outflow_age_slope", "outflow_max", "release_top_n", "tv_base", "tv_cycle", "gate_k", "rail", "owner_fund_league", "owner_fund_amount", "money_x", "stature_gain", "home_prob", "first_contract", "nat_rate", "nat_expo_gain", "nat_star_gain", "nat_wc_gain", "amateur_base", "nat_supply_pow", "nat_quality_div", "nat_dev_cap", "nat_form_decay", "nat_coach_years", "fee_scale", "funds_share", "sale_to_budget", "xleague_buyers", "xleague_p", "wc_size", "start_year", "wage_cap", "run_cost", "sponsor_share", "debt_rate", "cash_keep", "acad_cost", "acad_gain", "acad_decay", "acad_share", "invest_rate", "stad_cost", "stad_upkeep", "comfort"], [() => "v11 default", () => 40, () => 350, () => 0, () => 1.0, () => 1.0, () => 0.15, () => true, () => 0, () => 54, () => 60, () => 0.8, () => 0.3, () => 3, () => 2, () => 2, () => 3, () => 2.0, () => 3.0, () => 0.03, () => 1.0, () => 0.05, () => 40.0, () => 80.0, () => 5, () => 2, () => 0.92, () => 0.65, () => 2, () => 5, () => 33, () => 0.15, () => 0.1, () => 24, () => 0.03, () => 0.9, () => 25, () => 1.12, () => 3, () => 0.6, () => 0.6, () => "", () => 0.0, () => 3.5, () => 1.0, () => 0.7, () => 3, () => 0.1, () => 0.8, () => 0.4, () => 12.0, () => 40.0, () => 2.5, () => 7.0, () => 20.0, () => 0.85, () => 4, () => 1.0, () => 0.3, () => 0.5, () => 30, () => 0.4, () => 0, () => 2026, () => 0.75, () => 0.10, () => 0.25, () => 0.06, () => 0.7, () => 0.3, () => 0.2, () => 0.3, () => 0.35, () => 0.3, () => 4.0, () => 0.08, () => 2.0]);
+    const $v = $bind($args, ["label", "seasons", "target_pool", "cup_size", "cup_prize_scale", "anchor_gain", "league_rise", "dev_pot_growth", "pot_shift", "pot_low", "pot_mode", "poach_base", "spread_gain", "poach_buyers", "poach_max", "poach_contract_max", "poach_min_gain", "coach_match_bonus", "tactician_boost", "club_prestige_budget", "transfer_share", "prestige_decay", "title_pts", "apex_pts", "hot_tolerance", "fire_after", "loyal_resign", "money_resign", "contract_min", "contract_max", "retire_start", "retire_ramp", "outflow_base", "outflow_age_start", "outflow_age_slope", "outflow_max", "release_top_n", "tv_base", "tv_cycle", "gate_k", "rail", "owner_fund_league", "owner_fund_amount", "money_x", "stature_gain", "home_prob", "first_contract", "nat_rate", "nat_expo_gain", "nat_star_gain", "nat_wc_gain", "amateur_base", "nat_supply_pow", "nat_quality_div", "nat_dev_cap", "nat_form_decay", "nat_coach_years", "fee_scale", "funds_share", "sale_to_budget", "xleague_buyers", "xleague_p", "wc_size", "start_year", "wage_cap", "run_cost", "sponsor_share", "debt_rate", "cash_keep", "acad_cost", "acad_gain", "acad_decay", "acad_share", "invest_rate", "stad_cost", "stad_upkeep", "comfort", "bid_lots", "bid_max"], [() => "v11 default", () => 40, () => 350, () => 0, () => 1.0, () => 1.0, () => 0.15, () => true, () => 0, () => 54, () => 60, () => 0.8, () => 0.3, () => 3, () => 2, () => 2, () => 3, () => 2.0, () => 3.0, () => 0.03, () => 1.0, () => 0.05, () => 40.0, () => 80.0, () => 5, () => 2, () => 0.92, () => 0.65, () => 2, () => 5, () => 33, () => 0.15, () => 0.1, () => 24, () => 0.03, () => 0.9, () => 25, () => 1.12, () => 3, () => 0.6, () => 0.6, () => "", () => 0.0, () => 3.5, () => 1.0, () => 0.7, () => 3, () => 0.1, () => 0.8, () => 0.4, () => 12.0, () => 40.0, () => 2.5, () => 7.0, () => 20.0, () => 0.85, () => 4, () => 1.0, () => 0.3, () => 0.5, () => 30, () => 0.4, () => 0, () => 2026, () => 0.75, () => 0.10, () => 0.25, () => 0.06, () => 0.7, () => 0.3, () => 0.2, () => 0.3, () => 0.35, () => 0.3, () => 4.0, () => 0.08, () => 2.0, () => 240, () => 4]);
     this.label = $v[0];
     this.seasons = $v[1];
     this.target_pool = $v[2];
@@ -121,6 +121,8 @@ class Settings {
     this.stad_cost = $v[74];
     this.stad_upkeep = $v[75];
     this.comfort = $v[76];
+    this.bid_lots = $v[77];
+    this.bid_max = $v[78];
   }
 }
 $CLS['Settings'] = Settings;
@@ -697,6 +699,9 @@ class World {
     $setidx(b, "spent", $iadd($idx(b, "spent"), fee));
     $setidx(s_, "funds", $iadd($idx(s_, "funds"), fee));
     $setidx(s_, "sales", $iadd($idx(s_, "sales"), fee));
+  }
+  _bid_news(p, buyer, seller, fee) {
+    if (this._count("transfer") < 4) this.news("transfer", $str(buyer) + " sign " + $str(p.name) + " (OVR " + $str(p.ovr) + ", age " + $str(p.age) + ") from " + $str(seller) + " for " + $str(eur($mul(fee, this.cfg.money_x))));
   }
   _log_transfer(p, seller, buyer, fee, kind) {
     const self = this;
@@ -1659,6 +1664,7 @@ class World {
     }
     self.poach();
     self.xleague_market();
+    $mods.bids.run(self, rec);
     self._make_youth(rec, gap);
     self.recompute_clubs();
     for (const $f89 of $iter($M.values(self.squads()))) {
@@ -1741,7 +1747,7 @@ class World {
       }
       if (gradClub) {
         const gc = $idx(self.clubs, gradClub), gp = $new(Player, [self._name(), rng.randint(16, 18), rng.choice(PLAN), ovr, $min(99, pot), gradClub, $idx(gc, "league"), nm, wage_for(ovr, 17), cfg.first_contract, $kw({"pref": null, "prot": cfg.first_contract})]);
-        $M.append(self.players, gp); $M.append($idx(gc, "grads"), gp); $setidx(gc, "acad_out", $idx(gc, "acad_out") + 1);
+        gp.trn = gradClub; $M.append(self.players, gp); $M.append($idx(gc, "grads"), gp); $setidx(gc, "acad_out", $idx(gc, "acad_out") + 1);
         if ($len($idx(gc, "grads")) > 12) $setidx(gc, "grads", $slice($idx(gc, "grads"), -12, null, null));
         continue;
       }
@@ -1793,6 +1799,7 @@ class World {
         } else {
           p.contract = rng.randint(1, 4);
         }
+        if ($T(first) && !p.trn) p.trn = cname;
         p.pref = null;
         $setidx(payroll, cname, $iadd($idx(payroll, cname), ask));
         need = need - 1;
