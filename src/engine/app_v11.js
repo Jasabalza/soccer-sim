@@ -511,7 +511,21 @@ function payroll_of(w, name) { let t = 0; for (const p of w.players) if (p.club 
 function club_finance(w, c, name) {
   const pay = payroll_of(w, name), bud = $idx(c, "budget"), cap = w.cfg.wage_cap * bud;
   return $dict($kw({"payroll": mx(pay), "wage_ratio": $round(pay / Math.max(1e-9, bud), 3), "wage_cap": w.cfg.wage_cap, "wage_room": mx(Math.max(0, cap - pay)),
-    "debt": mx($M.get(c, "debt", 0.0)), "comfort": mx(2.0 * $idx(c, "income")), "ledger": ledger_rows(c)}));
+    "debt": mx($M.get(c, "debt", 0.0)), "comfort": mx(w.cfg.comfort * $idx(c, "income")), "ledger": ledger_rows(c),
+    "academy": academy_info(w, c), "stadium": stadium_info(w, c)}));
+}
+function academy_info(w, c) {
+  const acad = $M.get(c, "acad", 3.0), pri = $M.get(c, "acad_pri", 1.0), target = Math.min(10, 2.5 + 0.045 * $idx(c, "stature") * pri * 1.6), nat = new Map();
+  const grads = []; for (const p of $M.get(c, "grads", [])) { grads.push($dict($kw({"name": p.name, "age": p.age, "pos": p.pos, "ovr": p.ovr, "pot": p.pot, "nat": p.nat, "club": p.club || ""})));
+    nat.set(p.nat, (nat.get(p.nat) || 0) + 1); }
+  const total = grads.length, origins = [...nat.entries()].sort((a, b) => b[1] - a[1]).map(([k, v]) => $dict($kw({"nat": k, "n": v, "share": $round(v / Math.max(1, total), 3)})));
+  return $dict($kw({"level": $round(acad, 1), "target": $round(target, 1), "cost": mx(w.cfg.acad_cost * Math.pow(acad, 1.5)), "graduates": grads.slice(-8).reverse(), "origins": origins, "out_this_year": $M.get(c, "acad_out", 0)}));
+}
+function stadium_info(w, c) {
+  const cap = $M.get(c, "cap", 0), fans = $M.get(c, "fans", 0), proj = $M.get(c, "proj", null);
+  return $dict($kw({"capacity": $round(cap * 1000, 0), "demand": $round(fans * 1000, 0), "fill": $round(Math.min(cap, fans) / Math.max(1e-9, fans), 3), "turned_away": $round(Math.max(0, fans - cap) * 1000, 0),
+    "project": $T(proj) ? $dict($kw({"add": $round($idx(proj, "add") * 1000, 0), "years": $idx(proj, "years"), "left": $idx(proj, "left"), "cost": mx($idx(proj, "cost")), "big": $idx(proj, "big")})) : null,
+    "honeymoon": $M.get(c, "honey", 0) > 0, "fans": $round(fans * 1000, 0)}));
 }
 function v_worldmoney() {
   const w = need_world(), by = new Map(), lg = new Map();
