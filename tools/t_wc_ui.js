@@ -15,13 +15,12 @@ const URL='http://localhost:8791/test_artifact.html';
  console.log('WC id',wc);
  await p.evaluate(id=>location.hash='#/comp/'+id,wc); await p.waitForSelector('.round-card',{timeout:30000}); await p.waitForTimeout(800);
  console.log('tabs:', await p.$$eval('.tabs [data-t]',a=>a.map(x=>x.textContent+(x.classList.contains('on')?'*':''))));
- console.log('groups boxes:', await p.$$eval('.gbox',a=>a.length), 'open:', await p.$$eval('.gbox[open]',a=>a.length));
+ console.log('group boxes:', await p.$$eval('#gboxes .gwrap',a=>a.length), 'shown:', await p.$$eval('#gboxes .gwrap:not([hidden])',a=>a.length));
  console.log('overflow-x:', await p.evaluate(()=>[document.documentElement.scrollWidth, innerWidth]));
  await p.screenshot({path:OUT+'/wc_groups.png'});
- // play all group matchday 1 games one by one via the round list
- await p.$$eval('.rlist',a=>a.forEach(d=>d.open=true)); await p.waitForTimeout(300);
- let n=0; while(await p.$('.round-card [data-gm]')&&n<30){ const h=await p.innerText('.round-card h3'); await p.click('.round-card [data-gm]'); await idle(); n++; if((await p.innerText('.round-card h3').catch(()=>h)).split('\n')[0]!==h.split('\n')[0]) break; await p.waitForTimeout(100); const sm=await p.$('.rlist:not([open]) summary'); if(sm) await sm.click(); }
- console.log('played',n,'| card now:',(await p.innerText('.round-card h3')).replace(/\n/g,' '));
+ // play one whole group from the Groups tab (the card is only a summary now)
+ await p.click('#gboxes .gwrap:not([hidden]) [data-gall]'); await idle();
+ console.log('card now:',(await p.innerText('.round-card h3')).replace(/\n/g,' '));
  await p.screenshot({path:OUT+'/wc_after_md1.png'});
  console.log('errors:',errs.slice(0,5));
  await b.close();

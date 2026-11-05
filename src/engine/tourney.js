@@ -68,6 +68,10 @@ $mods["tourney"] = (function () {
         rivalry: rv ? { name: rv.name, kind: rv.kind, intensity: rv.intensity } : null };
     });
     out.total = out.games.length; out.played = out.games.filter((x) => x.done).length;
+    if (c.group_games_all) {                                            // group stage: every game of every matchday, so one group can be played on its own
+      const all = c.group_games_all();
+      if (all) out.groups_all = all.map((m) => { const gi = c.groups.findIndex((q) => q.includes(m.a)); return { key: m.key, a: m.a, b: m.b, md: m.md, gr: gi, done: m.done, text: m.done ? m.sa + "-" + m.sb : null }; });
+    }
     return out;
   }
   // play one chosen game of the current round
@@ -77,7 +81,7 @@ $mods["tourney"] = (function () {
     if (!rd.ok) fail(rd.why || "That round cannot be played yet.", 409);
     try {
       const g = c.games().find((x) => x.key === key);                    // the round moves on once its last game is played, so read the game first
-      const res = c.play_game(key);
+      const res = c.play_group_game ? c.play_group_game(key) : c.play_game(key);
       return { key, a: g ? g.a : null, b: g ? g.b : null, text: g ? text(c, g, res) : null, winner: res && res.w ? res.w : null };
     } catch (e) { if (e instanceof ValueError) fail(e.message, 400); throw e; }
   }
@@ -102,7 +106,13 @@ $mods["tourney"] = (function () {
     for (const n of [home, away]) if (!(nation ? w.nations : w.clubs).has(n)) fail("unknown " + (nation ? "nation" : "club"), 404);
     const rd = ready(w, c);
     let game = null, info = null;
-    if (rd.ok) { c.ensure_prepared(); const gs = games(w, cid); game = gs.games.find((x) => (x.a === home && x.b === away) || (x.a === away && x.b === home)); info = gs.event; }
+    if (rd.ok) {
+      c.ensure_prepared(); const gs = games(w, cid); game = gs.games.find((x) => (x.a === home && x.b === away) || (x.a === away && x.b === home)); info = gs.event;
+      if (!game && gs.groups_all) {                                       // a later group matchday that can be played ahead
+        const m = gs.groups_all.find((x) => (x.a === home && x.b === away) || (x.a === away && x.b === home));
+        if (m) { game = { key: m.key, a: m.a, b: m.b, leg: 0, home: venue(c, m), done: m.done, text: m.text, winner: null, stakes: 1.0 }; info = { label: "Group matchday " + (m.md + 1), date: null }; }
+      }
+    }
     if (game && game.a !== home) { const t = home; home = away; away = t; }      // always show the game's own home/first team on the left
     const eff = (n) => (c.eff && c.eff.has && c.eff.has(n) ? gv(c.eff, n) : nation ? gv(w.nat_eff, n) : w.clubs.get_(n).get_("eff"));
     const side = (n) => {

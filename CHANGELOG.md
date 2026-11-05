@@ -1,5 +1,15 @@
 # Changelog
 
+## v15.1: The Season Loop
+- **A guided season loop.** Season, Summer tournaments, Awards, Transfers, Graduates, then the next season. A stepper in the sim bar shows where you are, and the main button follows it: "Wrap up season N" opens the awards, "Continue to transfers" opens the transfer record, "Start season N+1" goes back to the world. Simming many seasons is unchanged.
+- **Wrap-up starts with a choice:** Watch the ceremony (winners revealed one at a time) or Skip to results. The results page no longer has a watch button.
+- **Top graduates.** A new step after Transfers lists the best academy graduates and all young talent (19 and under) by potential, with a league filter. API: `/api/prospects`.
+- **Awards rework.** The results page shows everything at a glance (Ballon d'Or, Golden Boot, Young Player, Coach, Team of the Year, cup awards) with chips to jump around. Separate pages for the Ballon d'Or top ten and group votes, and the Team of the Year pitch with cup awards by group. The ceremony is now optional and shows one award per screen.
+- **Nations.** A shorter list with confederation chips, search, sort and "show 25 more". Nation pages have Squad (best eleven first), Federation and Honours tabs.
+- **Club page.** Overview, Squad (position chips, sort, under 23), Finance, Academy, Stadium and Honours tabs.
+- **Group stages (World Cup, Club World Cup, continental championships).** The round card is now a short summary (n/total played). The Groups tab shows one group at a time with its table and all six games: Sim a single game, or "Sim whole group" (all three matchdays). Group chips are ticked when finished; "All" shows tables only. The knockout starts only once every group is finished, and results are the same whatever order you play in. API: `groups_all` on `/api/games`, and `/api/sim {comp, game}` works for any unplayed group game.
+- Engine: `header.phase` and `header.flow` plus `POST /api/flow` for the off-season steps. Old saves load as before.
+
 ## v15.0: The Business Update
 - **Real club finances.** Every club has a yearly income (TV, gate, sponsors, prizes, owner) and pays wages, running costs, academy and stadium costs and interest. Wages are capped against income. The old "Budget" is now "Yearly income". Each club keeps a ledger and a health read-out; the World money page shows the whole economy (sources, uses, growth, cash piles).
 - **Surplus auto-invests.** Clubs with spare cash grow their academy and stadium (multi-year projects, honeymoon crowds) before the rest goes to the transfer budget.

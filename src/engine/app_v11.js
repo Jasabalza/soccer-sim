@@ -73,7 +73,15 @@ function header(w) {
   ev = $idx($lit_dict([[1, "build-up"], [2, "Club World Cup + World Cup qualifying"], [3, "World Cup qualifying"], [4, "qualifying finals + World Cup"]]), cy);
   wk = w.current_week();
   sy = $getattr(w.cfg, "start_year", 2026);
-  return $dict($kw({"season": w.season, "season_label": cal.season_label(sy, w.season), "cycle_year": cy, "cycle_text": ev, "week": wk, "date": ($T(wk) ? cal.pack(w.date_of(w.season, wk)) : null), "done": w.season_done(), "seed": w.seed}));
+  return $dict($kw({"season": w.season, "season_label": cal.season_label(sy, w.season), "cycle_year": cy, "cycle_text": ev, "week": wk, "date": ($T(wk) ? cal.pack(w.date_of(w.season, wk)) : null), "done": w.season_done(), "seed": w.seed, "phase": phase_of(w), "flow": $T(w.flow) ? w.flow : null}));
+}
+// where the season loop stands: season (leagues and cups), summer (only the summer tournaments are left), done (everything played,
+// waiting for the wrap-up), then awards and transfers once the season has been rolled over from the Wrap-up button
+function phase_of(w) {
+  if ($T(w.flow)) return w.flow.get_("step");
+  if ($T(w.season_done())) return "done";
+  const act = w.active();
+  return (act.length && act.every((c) => ["cwc", "wc", "ic"].includes(c.kind))) ? "summer" : "season";
 }
 function ev_date(w, c, ev) {
   return cal.pack(w.date_of($idx(ev, "season"), $idx(ev, "week"), c.kind));
@@ -736,6 +744,7 @@ function _done_set(w) {
 function a_sim(body) {
   let before, c, cid, fin, out, rank, w;
   w = need_world();
+  w.flow = null;
   before = _done_set(w);
   out = _a_sim(body);
   rank = $lit_dict([["wc", 0], ["cwc", 1], ["ct", 2], ["cup", 3], ["qual", 3.5], ["nl", 4], ["league", 5]]);
@@ -780,6 +789,7 @@ function v_edits() {
 function a_year(body) {
   let _, n, ran, rec, w, why;
   w = need_world();
+  w.flow = null;
   n = $max(1, $min($int($M.get(body, "n", 1)), 200));
   ran = 0;
   for (const $f22 of $iter($range(n))) {
@@ -802,7 +812,30 @@ function a_rollover(body) {
   }
   rec = w.rollover();
   ST.last_review = review(rec, ST.stops.evaluate(w, rec));
-  return $dict($kw({"ok": true, "review": ST.last_review}));
+  w.flow = $dict($kw({"season": $idx(rec, "season"), "step": "awards"}));      // the off-season: awards ceremony, then transfers, then the new season
+  return $dict($kw({"ok": true, "review": ST.last_review, "header": header(w)}));
+}
+// move through the off-season: awards -> transfers -> done (the new season starts). Anything else is refused.
+function a_flow(body) {
+  const w = need_world(), step = $M.get(body, "step", "done"), cur = $T(w.flow) ? w.flow.get_("step") : null;
+  if (!cur) return $dict($kw({"ok": true, "header": header(w)}));
+  if (step === "transfers" && cur === "awards") w.flow.set("step", "transfers");
+  else if (step === "graduates" && (cur === "transfers" || cur === "awards")) w.flow.set("step", "graduates");
+  else if (step === "done") w.flow = null;
+  else if (step !== cur) throw $new(ApiError, ["That step does not follow the current one.", 409]);
+  return $dict($kw({"ok": true, "header": header(w)}));
+}
+// young talent: scope "grads" = academy graduates (clubs keep their latest twelve), "all" = every player aged 19 or under; best potential first
+function v_prospects(q) {
+  const w = need_world(); w.ensure_uids();
+  const scope = $M.get(q, "scope", "grads"), league = $M.get(q, "league", null);
+  let pool = [];
+  if (scope === "all") { for (const p of w.players) if (p.age <= 19) pool.push([p, p.club ? $M.get(w.clubs, p.club) : null]); }
+  else { for (const [cn, c] of $M.items(w.clubs)) for (const p of $M.get(c, "grads", [])) if (p.age <= 20) pool.push([p, c]); }
+  if (league) pool = pool.filter(([p, c]) => c && c.league === league);
+  pool.sort((a, b) => (b[0].pot - a[0].pot) || (b[0].ovr - a[0].ovr));
+  const leagues = []; for (const [cn, c] of $M.items(w.clubs)) if (!leagues.includes(c.league)) leagues.push(c.league);
+  return $dict($kw({"scope": scope, "league": league, "total": pool.length, "leagues": leagues, "season": w.season, "rows": pool.slice(0, 40).map(([p, c]) => $dict($kw({"uid": p.uid, "name": p.name, "age": p.age, "pos": p.pos, "nat": p.nat, "ovr": p.ovr, "pot": p.pot, "club": p.club || null, "league": c ? c.league : null, "grad": !!(c && $M.get(c, "grads", []).includes(p))}))) }));
 }
 function a_stops(body) {
   let keys, s;
@@ -853,8 +886,8 @@ function v_qualstats(cid) {
 }
 GET = $lit_dict([["/api/status", ((q) => v_status())],
 ["/api/favs", ((q) => v_favs())],
-["/api/qualstats", ((q) => v_qualstats($idx(q, "id")))], ["/api/world", ((q) => v_world())], ["/api/worldmoney", ((q) => v_worldmoney())], ["/api/continent", ((q) => v_continent($idx(q, "code")))], ["/api/map", ((q) => v_map())], ["/api/league", ((q) => v_league($idx(q, "name")))], ["/api/league_season", ((q) => v_league_season($idx(q, "name"), $int($idx(q, "season"))))], ["/api/club", ((q) => v_club($idx(q, "name")))], ["/api/player", ((q) => v_player($idx(q, "uid")))], ["/api/players", ((q) => v_players(q))], ["/api/compstats", ((q) => v_compsum($idx(q, "id"), ($T($M.get(q, "season")) ? $int($idx(q, "season")) : null)))], ["/api/settings", ((q) => $dict($kw({"god": ST.god, "money_x": ($T(ST.world) ? ST.world.cfg.money_x : 3.5), "clubs": ($T(ST.world) ? $sorted(ST.world.clubs) : [])})))], ["/api/comp", ((q) => v_comp($idx(q, "id")))], ["/api/nations", ((q) => v_nations($M.get(q, "confed")))], ["/api/nation", ((q) => v_nation($idx(q, "name")))], ["/api/news", ((q) => v_news())], ["/api/money", ((q) => v_money())], ["/api/ledger", ((q) => v_ledger(($T($M.get(q, "season")) && $idx(q, "season") !== "all" ? $int($idx(q, "season")) : null), ($T($M.get(q, "league")) ? $idx(q, "league") : null), $M.get(q, "season") === "all"))], ["/api/records", ((q) => v_records())], ["/api/review", ((q) => $dict($kw({"review": ST.last_review})))], ["/api/awards", ((q) => v_awards(($T($M.get(q, "season")) ? $int($idx(q, "season")) : null)))], ["/api/trophies", ((q) => $dict($kw({"options": T.options(need_world()), "selected": ($T($M.get(q, "key")) ? T.winners(need_world(), $idx(q, "key")) : null)})))], ["/api/edits", ((q) => v_edits())], ["/api/charts", ((q) => v_charts())], ["/api/halloffame", ((q) => T.halloffame(need_world()))]]);
+["/api/prospects", ((q) => v_prospects(q))], ["/api/qualstats", ((q) => v_qualstats($idx(q, "id")))], ["/api/world", ((q) => v_world())], ["/api/worldmoney", ((q) => v_worldmoney())], ["/api/continent", ((q) => v_continent($idx(q, "code")))], ["/api/map", ((q) => v_map())], ["/api/league", ((q) => v_league($idx(q, "name")))], ["/api/league_season", ((q) => v_league_season($idx(q, "name"), $int($idx(q, "season"))))], ["/api/club", ((q) => v_club($idx(q, "name")))], ["/api/player", ((q) => v_player($idx(q, "uid")))], ["/api/players", ((q) => v_players(q))], ["/api/compstats", ((q) => v_compsum($idx(q, "id"), ($T($M.get(q, "season")) ? $int($idx(q, "season")) : null)))], ["/api/settings", ((q) => $dict($kw({"god": ST.god, "money_x": ($T(ST.world) ? ST.world.cfg.money_x : 3.5), "clubs": ($T(ST.world) ? $sorted(ST.world.clubs) : [])})))], ["/api/comp", ((q) => v_comp($idx(q, "id")))], ["/api/nations", ((q) => v_nations($M.get(q, "confed")))], ["/api/nation", ((q) => v_nation($idx(q, "name")))], ["/api/news", ((q) => v_news())], ["/api/money", ((q) => v_money())], ["/api/ledger", ((q) => v_ledger(($T($M.get(q, "season")) && $idx(q, "season") !== "all" ? $int($idx(q, "season")) : null), ($T($M.get(q, "league")) ? $idx(q, "league") : null), $M.get(q, "season") === "all"))], ["/api/records", ((q) => v_records())], ["/api/review", ((q) => $dict($kw({"review": ST.last_review})))], ["/api/awards", ((q) => v_awards(($T($M.get(q, "season")) ? $int($idx(q, "season")) : null)))], ["/api/trophies", ((q) => $dict($kw({"options": T.options(need_world()), "selected": ($T($M.get(q, "key")) ? T.winners(need_world(), $idx(q, "key")) : null)})))], ["/api/edits", ((q) => v_edits())], ["/api/charts", ((q) => v_charts())], ["/api/halloffame", ((q) => T.halloffame(need_world()))]]);
 POST = $lit_dict([["/api/favs", a_favs],
-["/api/settings_set", a_settings], ["/api/export", a_export], ["/api/edit", a_edit], ["/api/new", a_new], ["/api/sim", a_sim], ["/api/years", a_year], ["/api/rollover", a_rollover], ["/api/stops", a_stops], ["/api/save", a_save], ["/api/load", a_load], ["/api/delete", a_delete], ["/api/beat", a_beat], ["/api/quit", a_quit]]);
+["/api/settings_set", a_settings], ["/api/export", a_export], ["/api/edit", a_edit], ["/api/new", a_new], ["/api/sim", a_sim], ["/api/years", a_year], ["/api/rollover", a_rollover], ["/api/flow", a_flow], ["/api/stops", a_stops], ["/api/save", a_save], ["/api/load", a_load], ["/api/delete", a_delete], ["/api/beat", a_beat], ["/api/quit", a_quit]]);
 return {ApiError: ApiError, BaseHTTPRequestHandler: BaseHTTPRequestHandler, C: C, CONF_ORDER: CONF_ORDER, G: G, GEO: GEO, GET: GET, Handler: Handler, POST: POST, PRESETS: PRESETS, S: S, ST: ST, STOP_ITEMS: STOP_ITEMS, State: State, Stops: Stops, T: T, ThreadingHTTPServer: ThreadingHTTPServer, _LS: _LS, _a_sim: _a_sim, _done_set: _done_set, a_beat: a_beat, a_delete: a_delete, a_edit: a_edit, a_export: a_export, a_load: a_load, a_new: a_new, a_quit: a_quit, a_rollover: a_rollover, a_save: a_save, a_settings: a_settings, a_sim: a_sim, a_stops: a_stops, a_year: a_year, argparse: argparse, awards_brief: awards_brief, bracket_upcoming: bracket_upcoming, cal: cal, coach_row: coach_row, comp_emblem: comp_emblem, comp_progress: comp_progress, compstats: compstats, cur_stats: cur_stats, ev_date: ev_date, find_browser: find_browser, header: header, json: json, list_saves: list_saves, live_stats: live_stats, main: main, mimetypes: mimetypes, mx: mx, need_world: need_world, os: os, parse_qs: parse_qs, player_row: player_row, r1: r1, re: re, review: review, round_name_: round_name_, rule_defaults: rule_defaults, safe_slot: safe_slot, shim: shim, shutil: shutil, stops_view: stops_view, subprocess: subprocess, sys: sys, threading: threading, time: time, traceback: traceback, urlparse: urlparse, v_awards: v_awards, v_charts: v_charts, v_club: v_club, v_comp: v_comp, v_compsum: v_compsum, v_continent: v_continent, v_edits: v_edits, v_league: v_league, v_league_season: v_league_season, v_ledger: v_ledger, v_map: v_map, v_money: v_money, v_nation: v_nation, v_nations: v_nations, v_news: v_news, v_player: v_player, v_players: v_players, v_records: v_records, v_status: v_status, v_world: v_world, watchdog: watchdog};
 })();

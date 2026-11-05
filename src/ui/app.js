@@ -55,22 +55,37 @@ function renderShell() {
   $("#nav").innerHTML = has ? items.map(([k, t]) => `<a href="#/${k}" class="${route === k ? "on" : ""}">${t}</a>`).join("") : "";
   const h = STATUS && STATUS.header;
   $("#season-info").innerHTML = h
-    ? `Season <b>${h.season}</b> (${h.season_label}) &middot; year ${h.cycle_year}/4 (${esc(h.cycle_text)}) &middot; ` +
-      (h.done ? "<b>season complete</b>" : `next: <b>${h.date ? h.date.text : "week " + h.week}</b>`)
+    ? (h.flow
+      ? `<b>Off-season</b> after season ${h.flow.season} &middot; season <b>${h.season}</b> (${h.season_label}) starts <b>${h.date ? h.date.text : "week " + h.week}</b>`
+      : `Season <b>${h.season}</b> (${h.season_label}) &middot; year ${h.cycle_year}/4 (${esc(h.cycle_text)}) &middot; ` +
+        (h.done ? "<b>season complete</b>" : `next: <b>${h.date ? h.date.text : "week " + h.week}</b>`))
     : "";
   renderSimBar();
 }
 let SBOPEN = false;
+// the season loop: Season -> Summer tournaments -> Awards -> Transfers -> next season (the engine's header.phase says where we are)
+const FLOW_STEPS = [["season", "Season"], ["summer", "Summer"], ["awards", "Awards"], ["transfers", "Transfers"], ["graduates", "Graduates"]];
+function flowBar(h) {
+  const at = { season: 0, summer: 1, done: 2, awards: 2, transfers: 3, graduates: 4 }[h.phase] ?? 0;
+  const cell = (i, [k, t]) => `<div class="${i < at ? "done" : i === at ? "on" : ""}"${i === at ? ' aria-current="step"' : ""}>${i < at ? "&#10003; " : ""}${t}</div>`;
+  return `<div class="stages flow" id="flowbar" aria-label="Season loop">${FLOW_STEPS.map((x, i) => cell(i, x)).join("")}</div>`;
+}
 function renderSimBar() {
   const bar_ = $("#simbar");
   if (!STATUS || !STATUS.has_world) { bar_.innerHTML = ""; return; }
-  const done = STATUS.header.done;
+  const h = STATUS.header, ph = h.phase || (h.done ? "done" : "season"), fs = h.flow ? h.flow.season : h.season - 1;
   bar_.classList.toggle("open", SBOPEN);
+  const play = ph === "season" || ph === "summer";
+  const main = play
+    ? `<button class="main" id="sb-week">Next week</button><button class="main" id="sb-4">4 weeks</button><button class="pri main" id="sb-end">${ph === "summer" ? "Finish summer" : "Rest of season"}</button>`
+    : ph === "done" ? `<button class="pri main" id="sb-roll">Wrap up season ${h.season}</button>`
+    : ph === "awards" ? `<button class="main" id="sb-cer">Awards</button><button class="pri main" id="sb-tr">Continue to transfers</button>`
+    : ph === "transfers" ? `<button class="main" id="sb-mk">Transfers</button><button class="pri main" id="sb-gr">Continue to graduates</button>`
+    : `<button class="main" id="sb-pg">Graduates</button><button class="pri main" id="sb-next">Start season ${h.season}</button>`;
   bar_.innerHTML = `
-    <span class="lbl">WORLD</span>
-    ${done ? `<button class="pri main" id="sb-roll">Start next season</button>` : `<button class="main" id="sb-week">Next week</button>
-    <button class="main" id="sb-4">4 weeks</button>
-    <button class="main" id="sb-end">Rest of season</button>`}
+    ${flowBar(h)}
+    <span class="lbl wl">WORLD</span>
+    ${main}
     <button id="sb-tog" class="sb-tog" aria-expanded="${SBOPEN}">${SBOPEN ? "Less" : "More"}</button>
     <span class="sb-more"><span class="sep"></span>
     <span class="lbl">MANY SEASONS</span>
@@ -79,11 +94,18 @@ function renderSimBar() {
     <button id="sb-stops">Stop checklist</button>
     <span class="sep"></span>
     <button id="sb-save">Save / Load</button> <button id="sb-set">Settings</button></span>`;
+  bar_.dataset.fs = fs;
   const on = (id, f) => { const e = $(id); if (e) e.onclick = f; };
   on("#sb-week", () => simWorld({ weeks: 1 }));
   on("#sb-4", () => simWorld({ weeks: 4 }));
   on("#sb-end", () => simWorld({ to_end: true }));
   on("#sb-roll", rollover);
+  on("#sb-cer", () => (location.hash = "#/ceremony/" + fs + "/start"));
+  on("#sb-tr", () => flowStep("transfers"));
+  on("#sb-mk", () => (location.hash = "#/ledger/" + fs));
+  on("#sb-gr", () => flowStep("graduates"));
+  on("#sb-pg", () => (location.hash = "#/prospects"));
+  on("#sb-next", () => flowStep("done"));
   on("#sb-tog", () => { SBOPEN = !SBOPEN; renderSimBar(); });
   $("#sb-years").onclick = simYears;
   $("#sb-stops").onclick = stopsDialog;
@@ -107,6 +129,7 @@ async function simIds(ids, opts, text) {
   const r = await busy(text || "Simulating...", () => api("/api/sim", { scope: "ids", ids, ...opts }));
   await afterSim(); await playFinished(r && r.finished);
 }
+const GSEL = {};      // the group chosen on a tournament's Groups tab
 const GM = {}, HOLD = {}, ROPEN = {};      // GM: the round on screen per competition; HOLD: a round that just finished, kept on screen until you move on
 async function simComp(comp, opts) {
   if (!(opts && opts.game)) delete HOLD[comp];
@@ -117,7 +140,7 @@ async function simComp(comp, opts) {
 async function simGames(id, keys) {
   const prev = GM[id], got = [], fin = [];
   await busy("Simulating...", async () => { for (const k of keys) { try { const q = await api("/api/sim", { comp: id, game: k }); if (q && q.game) got.push(q.game); if (q && q.finished) fin.push(...q.finished); } catch (e) { toast(e.message); break; } } });
-  if (prev && prev.ready && prev.event && got.length) {
+  if (prev && prev.ready && prev.event && got.length && !prev.groups_all) {
     const h = JSON.parse(JSON.stringify(prev));
     for (const q of got) { const x = h.games.find((g) => g.key === q.key); if (x) { x.done = true; x.text = q.text; x.winner = q.winner; } }
     h.played = h.games.filter((g) => g.done).length;
@@ -136,8 +159,17 @@ function outcomeText(w, t, plain) {
 }
 async function rollover() {
   for (const k in HOLD) delete HOLD[k];
-  const r = await busy("Rolling into the next season...", () => api("/api/rollover", {}));
-  await afterSim(); if (r) showReview(r.review);
+  const r = await busy("Wrapping up the season...", () => api("/api/rollover", {}));
+  await refreshStatus();
+  if (r && r.review) location.hash = "#/ceremony/" + r.review.season + "/start"; else await route();
+}
+// move the off-season along: awards -> transfers (opens the transfer record) -> next season (back to the world page)
+async function flowStep(step) {
+  const fs = STATUS.header.flow ? STATUS.header.flow.season : STATUS.header.season - 1;
+  await api("/api/flow", { step });
+  await refreshStatus();
+  const to = step === "transfers" ? "#/ledger/" + fs : step === "graduates" ? "#/prospects" : "#/world";
+  if (location.hash === to) await route(); else location.hash = to;
 }
 async function simYears() {
   for (const k in HOLD) delete HOLD[k];
@@ -292,7 +324,7 @@ function wireSaves(inGame) {
 
 // ---------------------------------------------------------------- favorites
 // A favorite is a key: "L:<league>" or "<kind>:<confed>" (cup, ct, nl, qual). The list is kept inside the world, so it travels with every save.
-const APP_VERSION = "v15.0", APP_TAG = "The Business Update";
+const APP_VERSION = "v15.1", APP_TAG = "The Season Loop";
 let FAVS = null, PICK_ASKED = false;                    // FAVS: null until the player has chosen, then an array of keys
 const CT_NAMES = { UEFA: "European Championship", CONMEBOL: "Copa America", CONCACAF: "Gold Cup", CAF: "Africa Cup of Nations", AFC: "Asian Cup", OFC: "OFC Nations Cup" };
 const NL_NAMES = { UEFA: "UEFA Nations League", CONMEBOL: "CONMEBOL Nations League", CONCACAF: "CONCACAF Nations League", CAF: "CAF Nations League", AFC: "AFC Nations League", OFC: "OFC Nations League" };
@@ -634,48 +666,70 @@ function stadiumTab(c, rivs) {
     <div class="card" style="margin-top:14px"><h3>Capacity by season</h3>${caps.length > 1 ? lineChart(caps.map((r) => [r.season, r.cap]), 360, 140, "#3ddc84", false) : '<div class="meta">Shows after a few seasons.</div>'}</div>
     <div class="card" style="margin-top:14px"><h3>New stadium</h3><div class="meta">A club that outgrows its ground by a lot builds a bigger one over several seasons. When it opens, the fan base gets a one-season boost.</div></div></div></div>`;
 }
+// ---------------------------------------------------------------- club page (v15.1): Overview, Squad, Finance, Academy, Stadium, Honours
+const CV = { tab: "ov", pos: "ALL", sort: "pos", u23: false };
+const ordN = (n) => `${n}${["th", "st", "nd", "rd"][n % 100 >= 11 && n % 100 <= 13 ? 0 : n % 10] || "th"}`;
+const POS_ORDER = ["GK", "DEF", "MID", "FWD"], POS_NAME = { GK: "Goalkeepers", DEF: "Defenders", MID: "Midfielders", FWD: "Forwards" };
+const SQ_SORTS = [["pos", "Position"], ["ovr", "Overall"], ["pot", "Potential"], ["age", "Age"], ["wage", "Wage"], ["contract", "Contract"], ["value", "Value"]];
 async function viewClub(name) {
   const c = await api("/api/club?name=" + enc(name));
-  const render = () => {
-    const rows = sortRows(c.squad, SORT.key, SORT.dir);
-    const th = (k, t, l) => `<th class="sortable ${l ? "l" : ""}" data-s="${k}">${t}${SORT.key === k ? (SORT.dir < 0 ? " v" : " ^") : ""}</th>`;
-    $("#squad").innerHTML = `<table><thead><tr>${th("name", "Player", 1)}${th("pos", "Pos", 1)}${th("age", "Age")}${th("ovr", "OVR")}${th("pot", "Pot")}${th("nat", "Nation", 1)}${th("contract", "Contract")}${th("wage", "Wage/yr")}${th("value", "Value")}${th("gls", "G")}${th("ast", "A")}${th("cs", "CS")}</tr></thead><tbody>
-      ${rows.map((p) => `<tr><td class="l">${playerLink(p)}</td><td class="l pos-${esc(p.pos)}">${esc(p.pos)}</td><td>${p.age}</td><td>${ovr(p.ovr)}</td><td>${p.pot}</td><td class="l">${natLink(p.nat)}</td><td>${p.contract}</td><td>${money(p.wage)}</td><td>${money(p.value)}</td><td>${p.gls ?? "-"}</td><td>${p.ast ?? "-"}</td><td>${p.cs ? p.cs : ""}</td></tr>`).join("")}</tbody></table>`;
-    document.querySelectorAll("#squad [data-s]").forEach((h) => h.onclick = () => { SORT = { key: h.dataset.s, dir: SORT.key === h.dataset.s ? -SORT.dir : (h.dataset.s === "name" || h.dataset.s === "pos" || h.dataset.s === "nat" ? 1 : -1) }; render(); });
+  const co = c.coach, key = c.squad.slice().sort((a, b) => b.ovr - a.ovr).slice(0, 5);
+  const finishes = c.finishes.slice().sort((a, b) => a.season - b.season), cap = Math.max(20, ...finishes.map((f) => f.pos));
+  const last5 = c.finishes.slice(0, 5).map((f) => ordN(f.pos)).join(", ");
+  const tabs = [["ov", "Overview"], ["sq", "Squad"], ["fin", "Finance"], ["acad", "Academy"], ["stad", "Stadium"], ["hon", "Honours"]];
+  const pr = (p, sub) => `<div class="pr"><span class="p ${esc(p.pos)}">${esc(p.pos)}</span><div class="nm"><b>${playerLink(p)}</b><span>${sub}</span></div><span class="ovr">${p.ovr}</span></div>`;
+  const overview = `
+    <div class="card"><h3>Key players <small>best five</small></h3>${key.map((p) => pr(p, "age " + p.age)).join("")}
+      <a class="more" data-goto="sq"><span>Full squad (${c.squad_size})</span><span>&rsaquo;</span></a></div>
+    <div class="card"><h3>League finishes <small>taller is better</small></h3>
+      ${finishes.length ? `<div class="fin">${finishes.slice(-12).map((f, i, a) => `<i class="${i === a.length - 1 ? "hi" : ""}" style="height:${Math.max(8, Math.round(100 * (1 - (f.pos - 1) / cap)))}%" title="S${f.season}: ${ordN(f.pos)}"></i>`).join("")}</div>
+        <div class="fl2"><span>S${finishes[Math.max(0, finishes.length - 12)].season}</span><span>S${finishes[finishes.length - 1].season}: ${ordN(finishes[finishes.length - 1].pos)}</span></div>
+        <div class="dim small" style="margin-top:6px">Titles ${c.titles.length} · best ${ordN(Math.min(...finishes.map((f) => f.pos)))}${last5 ? " · last five: " + last5 : ""}</div>` : `<div class="dim small">No completed season yet.</div>`}</div>
+    <div class="card"><h3>Coach ${co.hot ? '<span class="tag red">hot seat</span>' : ""}</h3>
+      <div class="row"><span>${esc(co.name)}</span><span class="dim">prestige ${co.prestige} · ${co.stint} season${co.stint === 1 ? "" : "s"}</span></div>
+      <div class="dim small">${esc(co.personality)} / ${esc(co.skill)} · career ${co.titles} titles, ${co.cups} cups, ${co.win}% wins</div></div>
+    <div class="card"><h3>Recent transfers <small>last three</small></h3>${c.transfers.length ? c.transfers.slice(0, 3).map((t) => `<div class="row"><span class="l"><span class="tag ${t.dir === "IN" ? "green" : "red"}">${t.dir}</span><span>${esc(t.player)} <span class="dim small">${t.dir === "IN" ? "from" : "to"} ${esc(t.other)}</span></span></span><b>${money(t.fee)}</b></div>`).join("") : `<div class="dim small">None yet.</div>`}
+      <a class="more" href="#/ledger"><span>All transfers</span><span>&rsaquo;</span></a></div>
+    <div class="card"><h3>Honours <small>the Honours tab has the trophy room</small></h3>
+      <div class="hon"><div><b class="gold">${c.titles.length}</b><span>league titles</span></div><div><b>${c.cups.length}</b><span>continental</span></div><div><b>${c.cwc.length}</b><span>Club World Cups</span></div></div>
+      <a class="more" data-goto="hon"><span>Trophy room</span><span>&rsaquo;</span></a></div>`;
+  const squad = () => {
+    const rows = c.squad.filter((p) => (CV.pos === "ALL" || p.pos === CV.pos) && (!CV.u23 || p.age < 23));
+    const cnt = (k) => c.squad.filter((p) => k === "ALL" || p.pos === k).length;
+    const row = (p) => `<div class="pr"><span class="p ${esc(p.pos)}">${esc(p.pos)}</span><div class="nm"><b>${playerLink(p)}</b><span>${p.age} · ${esc(p.nat)} · ${money(p.wage)} wage</span></div><span class="ovr ${p.ovr < p.pot - 8 ? "m" : ""}">${p.ovr}</span><span class="pt">${p.pot}</span><span class="ct">${p.contract}y</span></div>`;
+    let body;
+    if (CV.sort === "pos") body = POS_ORDER.map((g) => { const r = rows.filter((p) => p.pos === g).sort((a, b) => b.ovr - a.ovr); return r.length ? `<div class="sep">${POS_NAME[g]}</div><div class="card" style="margin-top:4px;padding-top:2px;padding-bottom:2px">${r.map(row).join("")}</div>` : ""; }).join("");
+    else { const d = CV.sort === "age" || CV.sort === "contract" ? 1 : -1, r = sortRows(rows, CV.sort, d); body = `<div class="card" style="margin-top:8px;padding-top:2px;padding-bottom:2px">${r.map(row).join("")}</div>`; }
+    return `<nav class="chips" aria-label="Position filter">${["ALL", ...POS_ORDER].map((k) => `<button data-pos="${k}" class="${CV.pos === k ? "on" : ""}">${k === "ALL" ? "All" : k} ${cnt(k)}</button>`).join("")}</nav>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><select class="sel" id="sq-sort" aria-label="Sort">${SQ_SORTS.map((s) => `<option value="${s[0]}" ${CV.sort === s[0] ? "selected" : ""}>Sort: ${s[1]}</option>`).join("")}</select>
+      <select class="sel" id="sq-u" aria-label="Age filter"><option value="0" ${CV.u23 ? "" : "selected"}>All ages</option><option value="1" ${CV.u23 ? "selected" : ""}>Under 23 only</option></select></div>
+      <div class="cols"><span>Player</span><span>OVR</span><span>POT</span><span>Contr.</span></div>${body || `<div class="dim small" style="padding:14px 0">Nobody matches.</div>`}`;
   };
-  const co = c.coach;
-  $("#view").innerHTML = `<div class="crumbs"><a href="#/world">World</a> / <a href="#/continent/${c.confed}">${esc(c.confed)}</a> / ${leagueLink(c.league)} / ${esc(c.name)}</div>
-    <h1 class="hcrest">${crest(c.name, 52)}<span>${esc(c.name)}</span></h1>
-    ${c.cwc.length ? `<div style="margin:4px 0 6px"><span class="tag gold">World champions${c.cwc.length > 1 ? " x" + c.cwc.length : ""}</span> <span class="meta">Club World Cup ${c.cwc.map((x) => "S" + x).join(", ")}</span></div>` : ""}
-    <div class="sub">${leagueLink(c.league)} &middot; ${c.titles.length} league title(s) &middot; ${c.cups.length} continental cup(s) &middot; ${c.cwc.length} Club World Cup(s) &middot; last finish ${c.last_finish || "-"}</div>
-    <div class="cols3" style="grid-template-columns:repeat(5,1fr);margin-bottom:14px">
-      <div class="stat"><div class="k">Team OVR (best 11)</div><div class="v">${c.ovr}</div></div>
-      <div class="stat"><div class="k">With coach</div><div class="v">${c.eff}</div></div>
-      <div class="stat"><div class="k">Yearly income</div><div class="v">${money(c.budget)}</div></div>
-      <div class="stat"><div class="k">Transfer funds</div><div class="v">${money(c.funds)}</div></div>
-      <div class="stat"><div class="k">Squad</div><div class="v">${c.squad_size}</div></div></div>
-    <div class="tabs" id="ct-tabs"><button class="on" data-ct="ov">Overview</button><button data-ct="fin">Finance</button><button data-ct="acad">Academy</button><button data-ct="stad">Stadium</button></div>
-    <div id="ct-ov"><div class="cols"><div><h2 style="margin-top:0">Squad</h2><div class="scroll" id="squad"></div><div style="margin-top:14px">${trophyRoom(c.trophies, "Trophy room")}</div></div>
-    <div><div class="card"><h3>Coach <small>${co.hot ? '<span class="tag red">hot seat</span>' : ""}</small></h3>
-      <div class="kv"><span>Name</span><span>${esc(co.name)} (${esc(co.nat)}), ${co.age}</span><span>Prestige</span><span>${co.prestige}</span><span>Style</span><span>${esc(co.personality)} / ${esc(co.skill)}</span><span>Here</span><span>${co.stint} season(s)</span><span>Career</span><span>${co.titles} titles, ${co.cups} cups, ${co.win}% wins</span></div></div>
-    <div class="card" style="margin-top:14px"><h3>Money</h3><div class="kv"><span>Income</span><span>${money(c.income)}</span><span>Cup prizes (last)</span><span>${money(c.prize_prev)}</span><span>Sold last summer</span><span>${money(c.sold)}</span><span>Bought last summer</span><span>${money(c.bought)}</span><span>Stature</span><span>${c.stature}</span></div></div>
-    <div class="card" style="margin-top:14px"><h3>Recent transfers</h3>${c.transfers.length ? c.transfers.map((t) => `<div class="row"><span><span class="tag ${t.dir === "IN" ? "green" : "red"}">${t.dir}</span> ${esc(t.player)} <span class="meta">(${t.ovr}, ${t.age})</span><div class="meta">${t.dir === "IN" ? "from" : "to"} ${clubLink(t.other)} &middot; S${t.season}</div></span><b>${money(t.fee)}</b></div>`).join("") : '<div class="meta">None yet.</div>'}</div>
-    <div class="card" style="margin-top:14px"><h3>League finishes</h3>${c.finishes.length ? c.finishes.slice(0, 10).map((f) => `<div class="row"><span>Season ${f.season}</span><span>${f.pos}${["st", "nd", "rd"][f.pos - 1] || "th"} &middot; ${f.pts} pts</span></div>`).join("") : '<div class="meta">No completed season yet.</div>'}</div></div></div><div id="ct-chart"></div></div>
-    <div id="ct-fin" hidden></div><div id="ct-acad" hidden></div><div id="ct-stad" hidden></div>`;
-  render();
-  { // v15 tabs: the finance, academy and stadium views are built when first opened
-    const built = {}, show = async (t) => {
-      document.querySelectorAll("#ct-tabs [data-ct]").forEach((b) => b.classList.toggle("on", b.dataset.ct === t));
-      ["ov", "fin", "acad", "stad"].forEach((k) => { $("#ct-" + k).hidden = k !== t; });
-      if (built[t] || t === "ov") return; built[t] = 1;
-      if (t === "fin") { const draw = (sel) => { $("#ct-fin").innerHTML = financeTab(c, sel); const sl = $("#fin-s"); if (sl) sl.onchange = (e) => draw(+e.target.value); }; draw(null); }
-      if (t === "acad") $("#ct-acad").innerHTML = academyTab(c);
-      if (t === "stad") { const rv = await api("/api/rivalries?club=" + enc(c.name)).catch(() => ({ rows: [] })); $("#ct-stad").innerHTML = stadiumTab(c, rv.rows); }
-    };
-    document.querySelectorAll("#ct-tabs [data-ct]").forEach((b) => b.onclick = () => show(b.dataset.ct));
-  }
-  const fin = c.finishes.slice().reverse().map((f) => [f.season, f.pos]);
-  if (fin.length > 1) $("#ct-chart").insertAdjacentHTML("beforeend", `<div class="card" style="margin-top:14px"><h3>League finish by season <small>lower is better</small></h3>${lineChart(fin, 620, 170, "#4aa8ff", true)}</div>`);
+  $("#view").innerHTML = `<div class="v2"><div class="crumbs dim small" style="min-height:30px;display:flex;align-items:center;flex-wrap:wrap"><a href="#/world">World</a>&nbsp;›&nbsp;<a href="#/continent/${c.confed}">${esc(c.confed)}</a>&nbsp;›&nbsp;${leagueLink(c.league)}</div>
+    <div style="display:flex;align-items:center;gap:12px">${crest(c.name, 52)}<div><h1>${esc(c.name)}</h1><div class="sub">${leagueLink(c.league)} · last finish ${c.last_finish ? ordN(c.last_finish) : "-"}${c.cwc.length ? ` · ${c.cwc.length} Club World Cup${c.cwc.length > 1 ? "s" : ""}` : ""}</div></div></div>
+    <div class="stat4"><div><b>${c.ovr}</b><span>TEAM OVR</span></div><div><b>${money(c.budget)}</b><span>INCOME</span></div><div><b>${money(c.funds)}</b><span>FUNDS</span></div><div><b>${c.squad_size}</b><span>SQUAD</span></div></div>
+    <nav class="tabs2" id="ct-tabs" aria-label="Club sections">${tabs.map(([k, t]) => `<button data-ct="${k}" class="${k === CV.tab ? "on" : ""}">${t}</button>`).join("")}</nav></div>
+    <div class="v2" id="ct-ov">${overview}</div><div class="v2" id="ct-sq" hidden></div><div id="ct-fin" hidden></div><div id="ct-acad" hidden></div><div id="ct-stad" hidden></div><div class="v2" id="ct-hon" hidden>${trophyRoom(c.trophies, "Trophy room")}</div>`;
+  const built = {};
+  const drawSquad = () => {
+    $("#ct-sq").innerHTML = squad();
+    document.querySelectorAll("#ct-sq [data-pos]").forEach((b) => (b.onclick = () => { CV.pos = b.dataset.pos; drawSquad(); }));
+    $("#sq-sort").onchange = (e) => { CV.sort = e.target.value; drawSquad(); };
+    $("#sq-u").onchange = (e) => { CV.u23 = e.target.value === "1"; drawSquad(); };
+  };
+  const show = async (t) => {
+    CV.tab = t;
+    document.querySelectorAll("#ct-tabs [data-ct]").forEach((b) => b.classList.toggle("on", b.dataset.ct === t));
+    tabs.forEach(([k]) => { $("#ct-" + k).hidden = k !== t; });
+    if (t === "sq") drawSquad();
+    if (built[t]) return; built[t] = 1;
+    if (t === "fin") { const draw = (sel) => { $("#ct-fin").innerHTML = financeTab(c, sel); const sl = $("#fin-s"); if (sl) sl.onchange = (e) => draw(+e.target.value); }; draw(null); }
+    if (t === "acad") $("#ct-acad").innerHTML = academyTab(c);
+    if (t === "stad") { const rv = await api("/api/rivalries?club=" + enc(c.name)).catch(() => ({ rows: [] })); $("#ct-stad").innerHTML = stadiumTab(c, rv.rows); }
+  };
+  document.querySelectorAll("#ct-tabs [data-ct]").forEach((b) => (b.onclick = () => show(b.dataset.ct)));
+  document.querySelectorAll("[data-goto]").forEach((b) => (b.onclick = () => { show(b.dataset.goto); window.scrollTo(0, 0); }));
+  CV.tab = "ov";
 }
 
 // ---- trophy rooms ------------------------------------------------------------------------------------
@@ -838,6 +892,13 @@ function wireRound(id) {
   document.querySelectorAll("#view [data-grp]").forEach((b) => b.onclick = () => { const g = GM[id]; if (!g) return; const keys = g.games.filter((x) => !x.done && x.grl === b.dataset.grp).map((x) => x.key); if (keys.length) simGames(id, keys); });
   const hg = $("#hold-go"); if (hg) hg.onclick = () => { delete HOLD[id]; route(); };
 }
+const gdoneOf = (all, i) => all.filter((m) => m.gr === i).every((m) => m.done);
+// the group stage on one line: the groups are played on the Groups tab
+function grpSummary(all) {
+  const n = all.filter((m) => m.done).length;
+  return `<div class="card round-card"><h3>Group stage <small>${n}/${all.length} played</small></h3><div class="rstrip">${bar(n, all.length)}</div>
+    <div class="meta" style="margin:6px 0">Play any group on the Groups tab, game by game or the whole group at once. The knockout starts once every group is finished.</div><button id="go-grp">Open the groups</button></div>`;
+}
 // one group: its table and, folded away, its results
 function groupBox(label, rows, results, open) {
   return `<details class="gbox" ${open ? "open" : ""}><summary><b>${esc(label)}</b> <span class="meta">${rows[0] ? "leader " + esc(rows[0]) : ""}</span></summary>${results}</details>`;
@@ -851,6 +912,7 @@ async function viewComp(id) {
   const gm = !locked && !finished0 && ["cup", "cwc", "qual", "ic", "wc", "ct", "nl"].includes(x.kind) ? await api("/api/games?comp=" + enc(id)).catch(() => null) : null;
   GM[id] = gm && gm.ready ? gm : null;
   const held = HOLD[id];
+  const gall = GM[id] && GM[id].groups_all && ["wc", "cwc", "ct"].includes(x.kind) ? GM[id].groups_all : null;     // group stage: every game of every matchday, so one group can be played on its own
   let body = "";
   if (x.kind === "qual") {
     body = `<div class="sub">Host ${esc(x.host)} &middot; ${x.slots} place(s) to win${x.qualified.length ? " &middot; qualified: " + x.qualified.map(natLink).join(", ") : ""}</div>
@@ -861,11 +923,18 @@ async function viewComp(id) {
     const lk = x.clubs ? clubLink : natLink, unit = x.clubs ? "Club" : "Nation";
     const gname = (g, i) => (g.label ? g.label : "Group " + String.fromCharCode(65 + (i % 26)) + (i >= 26 ? i : ""));
     // W / D / L come from the group's own results
-    const wdl = (g, n) => { let w = 0, d = 0, l = 0; for (const m of g.matches) { if (m.a !== n && m.b !== n) continue; const f = m.a === n ? m.sa - m.sb : m.sb - m.sa; if (f > 0) w++; else if (f < 0) l++; else d++; } return [w, d, l]; };
-    const gtable = (g) => `<table class="gt"><thead><tr><th class="l">${unit}</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GD</th><th>Pts</th></tr></thead><tbody>${g.teams.map((r, k) => { const [w, d, l] = wdl(g, r.nation); const gd = r.gf - r.ga; return `<tr class="${k < 2 && r.p ? "champ" : ""}"><td class="l">${lk(r.nation)}</td><td>${r.p}</td><td>${w}</td><td>${d}</td><td>${l}</td><td>${gd > 0 ? "+" + gd : gd}</td><td class="pts">${r.pts}</td></tr>`; }).join("")}</tbody></table>`;
+    const wdl = (g, n, gi) => { let w = 0, d = 0, l = 0; const src = gall ? gall.filter((m) => m.done && m.gr === gi).map((m) => { const [sa, sb] = m.text.split("-").map(Number); return { a: m.a, b: m.b, sa, sb }; }) : g.matches; for (const m of src) { if (m.a !== n && m.b !== n) continue; const f = m.a === n ? m.sa - m.sb : m.sb - m.sa; if (f > 0) w++; else if (f < 0) l++; else d++; } return [w, d, l]; };
+    const gtable = (g, gi) => `<table class="gt"><thead><tr><th class="l">${unit}</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GD</th><th>Pts</th></tr></thead><tbody>${g.teams.map((r, k) => { const [w, d, l] = wdl(g, r.nation, gi); const gd = r.gf - r.ga; return `<tr class="${k < 2 && r.p ? "champ" : ""}"><td class="l">${lk(r.nation)}</td><td>${r.p}</td><td>${w}</td><td>${d}</td><td>${l}</td><td>${gd > 0 ? "+" + gd : gd}</td><td class="pts">${r.pts}</td></tr>`; }).join("")}</tbody></table>`;
     const gres = (g) => (g.matches.length ? `<details class="gres"><summary class="meta">Results (${g.matches.length})</summary><div class="meta">${g.matches.map((m) => `<a href="#/matchup/${enc(id)}/${enc(m.a)}/${enc(m.b)}">${esc(m.a)} ${m.sa}-${m.sb} ${esc(m.b)}</a>`).join(" &middot; ")}</div></details>` : "");
     const many = x.groups.length > 4;
-    const chips = many ? `<div class="gchips" id="gchips"><button class="on" data-g="all">All</button>${x.groups.map((g, i) => `<button data-g="${i}">${esc(gname(g, i).replace("Group ", ""))}</button>`).join("")}</div>` : "";
+    const ggames = (g, i) => {
+      if (!gall) return "";
+      const gs = gall.filter((m) => m.gr === i), left = gs.filter((m) => !m.done).length;
+      const row = (m) => `<div class="fix2"><div class="fix"><span class="h">${lk(m.a)}</span><span class="s">${m.done ? esc(m.text) : "v"}</span><span>${lk(m.b)}</span></div><div class="fx-m"><a href="#/matchup/${enc(id)}/${enc(m.a)}/${enc(m.b)}">${m.done ? "Match info" : "Preview"}</a>${m.done ? "" : `<button class="mini" data-gm="${esc(m.key)}">Sim</button>`}</div></div>`;
+      return `<div class="ggames" ${many ? "hidden" : ""}><div class="grp-h"><b>Games</b> <span class="meta">${left ? left + " to play" : "group finished"}</span>${left ? `<button class="mini" data-gall="${i}">Sim whole group</button>` : ""}</div>${[0, 1, 2].map((md) => `<div class="meta" style="margin:8px 0 0">Matchday ${md + 1}</div>` + gs.filter((m) => m.md === md).map(row).join("")).join("")}</div>`;
+    };
+    const gdone = (i) => gall && gall.filter((m) => m.gr === i).every((m) => m.done);
+    const chips = many ? `<div class="gchips" id="gchips"><button class="on" data-g="all">All</button>${x.groups.map((g, i) => `<button data-g="${i}">${esc(gname(g, i).replace("Group ", ""))}${gdone(i) ? " \u2713" : ""}</button>`).join("")}</div>` : "";
     const fmt = x.format;
     const qcard = x.clubs && fmt ? `<div class="card" style="margin-top:14px"><h3>How clubs qualify</h3>
       <div class="row"><span>Continental champions</span><span class="pos">${Object.keys(fmt.slots).length} guaranteed</span></div>
@@ -879,7 +948,7 @@ async function viewComp(id) {
       <div class="tabs"><button class="on" data-t="ko">Knockout bracket</button><button data-t="grp">Groups</button><button data-t="stats">Stats</button></div>
       <div id="tab-stats" hidden></div>
       <div id="tab-ko">${x.bracket.rounds.length ? bracketHTML(liveBracket(x.bracket, gm), !x.clubs, { cid: id, ready: !!(gm && gm.ready) }) : '<div class="empty">The draw is made when the tournament is unlocked.</div>'}</div>
-      <div id="tab-grp" hidden>${x.groups.length ? `${chips}<div class="grid g-groups" id="gboxes">${x.groups.map((g, i) => `<div class="gwrap" data-gi="${i}">${groupBox(gname(g, i), g.teams.map((r) => r.nation), gtable(g) + gres(g), i === 0 || window.innerWidth > 700)}</div>`).join("")}</div><div class="meta" style="margin-top:6px">Top two of each group advance${x.kind === "wc" ? ", with the best third-placed sides filling the bracket" : ""}.</div>` : '<div class="empty">No draw yet.</div>'}</div>
+      <div id="tab-grp" hidden>${x.groups.length ? `${chips}<div class="grid g-groups" id="gboxes">${x.groups.map((g, i) => `<div class="gwrap" data-gi="${i}">${groupBox(gname(g, i), g.teams.map((r) => r.nation), gtable(g, i) + (gall ? "" : gres(g)), i === 0 || window.innerWidth > 700)}${ggames(g, i)}</div>`).join("")}</div><div class="meta" style="margin-top:6px">Top two of each group advance${x.kind === "wc" ? ", with the best third-placed sides filling the bracket" : ""}.</div>` : '<div class="empty">No draw yet.</div>'}</div>
       ${qcard}`;
   } else {
     body = `<div class="sub">${x.winner ? `Winner <b>${clubLink(x.winner)}</b>, runner-up ${clubLink(x.runner_up)}` : x.field.length ? `${x.field.length} clubs` : "The field is set when the qualifying cups finish."}</div>
@@ -895,7 +964,7 @@ async function viewComp(id) {
       <p style="margin:10px 0 0"><button id="k-up" class="pri">Sim up to here</button> <span class="meta">plays only what it needs, then stops so you can play it your way.</span></p>
       <p style="margin:8px 0 0"><button id="k-pre">Sim everything it needs, then this to the end</button></p></div>`
       : `<p id="k-row"><button id="k-n" ${finished ? "disabled" : ""}>Next ${x.kind === "qual" ? "window" : "round"}</button> <button id="k-e" class="pri" ${finished ? "disabled" : ""}>To the end</button> <span class="meta">${p.done}/${p.total} played${p.next ? " &middot; next: " + esc(p.next) + (p.next_date ? " &middot; " + p.next_date.text : "") : ""}</span></p>`}
-    ${held ? roundCard(held, id, null, { held: true, next: gm }) : roundCard(gm, id)}
+    ${gall ? grpSummary(gall) : held ? roundCard(held, id, null, { held: true, next: gm }) : roundCard(gm, id)}
     ${body}${x.past_finals && x.past_finals.length ? `<details class="gres" style="margin-top:14px"><summary><b>Previous finals</b> <span class="meta">${x.past_finals.length}</span></summary>${pastFinals(x.past_finals, x.kind === "wc").replace("<h2>Previous finals</h2>", "")}</details>` : ""}`;
   wireRound(id); wireBrackets($("#view"));
   document.querySelectorAll(".tabs [data-t]").forEach((b) => b.onclick = () => {
@@ -907,15 +976,20 @@ async function viewComp(id) {
   });
   { // keep the tab the user was on; nation tournaments open on Groups until knockouts start
     let want = COMPTAB[id];
-    if (!want && ["wc", "ct", "nl"].includes(x.kind) && x.groups && x.groups.length && !(x.bracket.ties || []).length) want = "grp";
+    if (!want && ["wc", "ct", "nl", "cwc"].includes(x.kind) && x.groups && x.groups.length && !(x.bracket.ties || []).length) want = "grp";
     const wb = want && document.querySelector(`.tabs [data-t="${want}"]`);
     if (wb) wb.click();
   }
   document.querySelectorAll("#gchips [data-g]").forEach((b) => b.onclick = () => {
+    GSEL[id] = b.dataset.g;
     document.querySelectorAll("#gchips [data-g]").forEach((o) => o.classList.toggle("on", o === b));
+    document.querySelectorAll("#gboxes .gwrap .ggames").forEach((e) => { e.hidden = b.dataset.g === "all"; });
     $("#gboxes").classList.toggle("one", b.dataset.g !== "all");
     document.querySelectorAll("#gboxes .gwrap").forEach((e) => { e.hidden = b.dataset.g !== "all" && e.dataset.gi !== b.dataset.g; const d = e.querySelector("details"); if (d && b.dataset.g !== "all") d.open = true; });
   });
+  if (gall && $("#gchips")) { let sel = GSEL[id]; if (sel == null) { const i = x.groups.findIndex((g, k) => !gdoneOf(gall, k)); sel = i >= 0 ? String(i) : "all"; } const cb = $(`#gchips [data-g="${sel}"]`); if (cb) cb.click(); }
+  document.querySelectorAll("#view [data-gall]").forEach((b) => (b.onclick = () => { const keys = gall.filter((m) => m.gr === +b.dataset.gall && !m.done).sort((a, b2) => a.md - b2.md).map((m) => m.key); if (keys.length) simGames(id, keys); }));
+  const gg = $("#go-grp"); if (gg) gg.onclick = () => { const t = document.querySelector('.tabs [data-t="grp"]'); if (t) t.click(); };
   if ($("#k-n")) $("#k-n").onclick = () => simComp(id, { matches: 1 });
   if ($("#k-e")) $("#k-e").onclick = () => simComp(id, { to_end: true });
   if ($("#k-up")) $("#k-up").onclick = () => simComp(id, { upto: true });
@@ -936,15 +1010,6 @@ function tiesTable(ties, nations) {
   return `<div class="scroll"><table><tbody>${ties.slice().reverse().map((t) => `<tr><td class="l meta">${esc(t.round)}</td><td class="l">${L(t.a)} v ${L(t.b)}</td><td>${esc(t.text)}</td><td class="l"><b>${L(t.winner)}</b></td></tr>`).join("")}</tbody></table></div>`;
 }
 
-async function viewNations(confed) {
-  const d = await api("/api/nations" + (confed ? "?confed=" + confed : ""));
-  $("#view").innerHTML = `<h1>National teams ${confed ? "- " + esc(confed) : ""}</h1><div class="sub">Every nation, strongest first. Tap one for its squad.</div>
-    <details class="help"><summary>What do the columns mean?</summary><div class="meta"><b>Rating</b>: team strength, the best 11 players of the nation plus the national coach. <b>Pros</b>: players at professional clubs. <b>Talent</b>: quality of the nation's whole player pool. <b>Ranking pts</b>: world-ranking points, used to seed tournaments. <b>WC</b>: World Cup titles (and appearances). <b>Coach</b>: the national coach and their prestige.</div></details>
-    <div class="tabs nat-tabs">${["", "UEFA", "CONMEBOL", "CONCACAF", "AFC", "CAF", "OFC"].map((c) => `<button class="${(confed || "") === c ? "on" : ""}" data-c="${c}">${c || "World"}</button>`).join("")}</div>
-    <div class="scroll"><table class="hof wf nwl"><thead><tr><th>#</th><th class="l">Nation</th><th class="l hide-m">Conf.</th><th title="Team strength: best 11 players + national coach">Rating</th><th class="hide-m" title="Players at professional clubs">Pros</th><th class="hide-m" title="Quality of the whole player pool">Talent</th><th title="World-ranking points">Rank pts</th><th class="wc" title="World Cup titles (appearances)">WC</th><th class="l hide-m">Coach</th></tr></thead><tbody>
-    ${d.rows.map((r) => `<tr><td>${r.rank}</td><td class="l">${natLink(r.name)}<div class="meta show-m">${r.confed} &middot; coach ${esc(r.coach)}</div></td><td class="l meta hide-m">${r.confed}</td><td class="pts">${r.rating}</td><td class="hide-m">${r.pros}</td><td class="hide-m">${r.talent}</td><td>${r.rank_pts}</td><td class="wc">${r.titles}<span class="meta hide-m"> (${r.apps})</span></td><td class="l hide-m">${esc(r.coach)} <span class="meta">(${r.coach_prestige})</span></td></tr>`).join("")}</tbody></table></div>`;
-  document.querySelectorAll("[data-c]").forEach((b) => b.onclick = () => (location.hash = "#/nations" + (b.dataset.c ? "/" + b.dataset.c : "")));
-}
 
 function federationCard(n) {
   const f = n.federation; if (!f) return "";
@@ -970,13 +1035,96 @@ function federationCard(n) {
     <div class="card" style="margin-top:14px"><h3>Young players abroad</h3>${f.abroad.length ? f.abroad.map((p) => `<div class="row"><span>${playerLink({ uid: p.uid, name: p.name, nat: n.name })} <span class="meta">${clubLink(p.club)}, ${p.age}</span></span><span>${p.ovr} / <b class="pts">${p.pot}</b></span></div>`).join("") : '<div class="meta">No players under 21 abroad.</div>'}
       <div class="meta" style="margin-top:6px">${f.n_abroad} under 21 abroad, ${f.n_home} at home. They keep their nationality and their success counts for ${esc(n.name)}.</div></div>`;
 }
+// ---------------------------------------------------------------- nations (v15.1): short list, nation page in tabs
+const NV = { sort: "rating", q: "", show: 25, tab: "squad", more: false };
+const NSORTS = [["rating", "Rating", (r) => r.rating], ["talent", "Talent", (r) => r.talent], ["pros", "Pros", (r) => r.pros], ["titles", "World Cup titles", (r) => r.titles], ["rank_pts", "Ranking points", (r) => r.rank_pts], ["name", "Name", null]];
+async function viewNations(confed) {
+  const d = await api("/api/nations" + (confed ? "?confed=" + confed : ""));
+  const draw = () => {
+    const srt = NSORTS.find((s) => s[0] === NV.sort) || NSORTS[0], q = NV.q.trim().toLowerCase();
+    let rows = d.rows.filter((r) => !q || r.name.toLowerCase().includes(q));
+    rows = srt[2] ? rows.slice().sort((a, b) => srt[2](b) - srt[2](a) || a.rank - b.rank) : rows.slice().sort((a, b) => a.name.localeCompare(b.name));
+    const shown = rows.slice(0, NV.show);
+    $("#nl-list").innerHTML = shown.length ? shown.map((r) => `<a class="nr" href="#/nation/${enc(r.name)}"><span class="no">${r.rank}</span>${flag(r.name, 34)}<span class="nm"><b>${esc(r.name)}</b><span>${r.confed} · coach ${esc(r.coach)}</span></span><span class="rt"><b>${srt[2] ? srt[2](r) : r.rating}</b><span>${srt[2] ? srt[1].toLowerCase() : "rating"}</span></span><span class="chev">›</span></a>`).join("") : `<div class="dim small" style="padding:14px">No nation matches.</div>`;
+    const left = rows.length - shown.length, mb = $("#nl-more");
+    mb.hidden = left <= 0; mb.textContent = `Show ${Math.min(25, left)} more`;
+  };
+  $("#view").innerHTML = `<div class="v2"><h1>National teams${confed ? " · " + esc(confed) : ""}</h1><div class="sub">${d.rows.length} nations. Tap one for its squad.</div>
+    <nav class="chips" aria-label="Confederation">${["", "UEFA", "CONMEBOL", "CONCACAF", "AFC", "CAF", "OFC"].map((c) => `<button class="${(confed || "") === c ? "on" : ""}" data-c="${c}">${c || "World"}</button>`).join("")}</nav>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <input class="search" id="nl-q" type="search" placeholder="Search a nation" value="${esc(NV.q)}" aria-label="Search a nation">
+      <select class="sel" id="nl-sort" aria-label="Sort">${NSORTS.map((s) => `<option value="${s[0]}" ${s[0] === NV.sort ? "selected" : ""}>Sort: ${s[1]}</option>`).join("")}</select>
+    </div>
+    <div class="list" id="nl-list"></div>
+    <button class="btn" id="nl-more" style="display:flex;margin-top:10px;width:100%">Show 25 more</button>
+    <div class="card"><h3>What the numbers mean</h3>
+      <details class="acc"><summary><span>Rating</span><span class="dim">best 11 + coach</span></summary><div class="b dim small">Team strength: the best 11 players of the nation plus the national coach.</div></details>
+      <details class="acc"><summary><span>Talent</span><span class="dim">whole player pool</span></summary><div class="b dim small">Quality of the nation's whole player pool, not only the first eleven.</div></details>
+      <details class="acc"><summary><span>Pros</span><span class="dim">at pro clubs</span></summary><div class="b dim small">Players at professional clubs.</div></details>
+      <details class="acc"><summary><span>Ranking points</span><span class="dim">used for seeding</span></summary><div class="b dim small">World-ranking points, used to seed tournaments.</div></details>
+    </div></div>`;
+  document.querySelectorAll("[data-c]").forEach((b) => (b.onclick = () => { NV.show = 25; location.hash = "#/nations" + (b.dataset.c ? "/" + b.dataset.c : ""); }));
+  $("#nl-q").oninput = (e) => { NV.q = e.target.value; NV.show = 25; draw(); };
+  $("#nl-sort").onchange = (e) => { NV.sort = e.target.value; NV.show = 25; draw(); };
+  $("#nl-more").onclick = () => { NV.show += 25; draw(); };
+  draw();
+}
+const NPOS = [["GK", 1], ["DEF", 4], ["MID", 3], ["FWD", 3]];
+function bestEleven(players) {
+  const used = new Set(), xi = [];
+  for (const [pos, k] of NPOS) for (const p of players.filter((x) => x.pos === pos).sort((a, b) => b.ovr - a.ovr).slice(0, k)) { xi.push(p); used.add(p.uid); }
+  return { xi, rest: players.filter((p) => !used.has(p.uid)).sort((a, b) => b.ovr - a.ovr) };
+}
+const prRow = (p) => `<div class="pr"><span class="p ${esc(p.pos)}">${esc(p.pos)}</span><div class="nm"><b>${playerLink(p)}</b><span>${p.club ? clubLink(p.club) : "free agent"}</span></div><span class="age">${p.age}</span><span class="ovr">${p.ovr}</span></div>`;
 async function viewNation(name) {
-  const n = await api("/api/nation?name=" + enc(name));
-  $("#view").innerHTML = `<div class="crumbs"><a href="#/nations">Nations</a> / ${esc(n.name)}</div><h1>${esc(n.name)}</h1>
-    <div class="sub">${esc(n.confed)} &middot; rating ${n.rating} &middot; talent ${n.talent} (base ${n.base}) &middot; ${n.pros} professionals &middot; World Cup: ${n.titles} title(s) in ${n.apps} appearance(s)</div>
-    <div class="cols"><div><h2 style="margin-top:0">Best players</h2><div class="scroll"><table><thead><tr><th class="l">Player</th><th class="l">Pos</th><th>Age</th><th>OVR</th><th class="l">Club</th></tr></thead><tbody>
-    ${n.players.map((p) => `<tr><td class="l">${playerLink(p)}</td><td class="l pos-${esc(p.pos)}">${esc(p.pos)}</td><td>${p.age}</td><td>${ovr(p.ovr)}</td><td class="l">${p.club ? clubLink(p.club) : '<span class="meta">free agent</span>'}</td></tr>`).join("")}</tbody></table></div></div>
-    <div>${federationCard(n)}${trophyRoom(n.trophies, "Trophy room")}<div class="card" style="margin-top:14px"><h3>National coach</h3><div class="kv"><span>Name</span><span>${esc(n.coach.name)}</span><span>Prestige</span><span>${n.coach.prestige}</span><span>Style</span><span>${esc(n.coach.personality)} / ${esc(n.coach.skill)}</span></div></div></div></div>`;
+  const [n, all] = await Promise.all([api("/api/nation?name=" + enc(name)), api("/api/nations")]);
+  const me = all.rows.find((r) => r.name === name), rk = me ? me.rank : null;
+  const sfx = (k) => { const t = k % 100; return t >= 11 && t <= 13 ? "th" : ["th", "st", "nd", "rd"][k % 10] || "th"; };
+  const tabs = [["squad", "Squad"], ["fed", "Federation"], ["hon", "Honours"]];
+  if (!n.federation) tabs.splice(1, 1);
+  if (!tabs.some((t) => t[0] === NV.tab)) NV.tab = "squad";
+  const body = () => {
+    if (NV.tab === "fed") return natFed(n);
+    if (NV.tab === "hon") return trophyRoom(n.trophies, "Trophy room");
+    const { xi, rest } = bestEleven(n.players), c = n.coach;
+    return `<div class="sep">Best eleven</div><div class="card" style="margin-top:6px;padding-top:2px;padding-bottom:2px">${xi.map(prRow).join("")}</div>
+      ${rest.length ? `<button class="btn" id="nt-more" style="display:flex;margin-top:10px;width:100%">${NV.more ? "Hide the others" : `Show the next ${rest.length} players`}</button>${NV.more ? `<div class="card" style="margin-top:10px;padding-top:2px;padding-bottom:2px">${rest.map(prRow).join("")}</div>` : ""}` : ""}
+      <div class="card"><h3>National coach</h3><div class="row"><span>${esc(c.name)}</span><span class="dim">prestige ${c.prestige} · ${esc(c.personality)} / ${esc(c.skill)}</span></div></div>`;
+  };
+  const draw = () => {
+    $("#view").innerHTML = `<div class="v2"><a class="crumb" href="#/nations">‹ Nations</a>
+      <div style="display:flex;align-items:center;gap:12px">${flag(n.name, 52)}<div><h1>${esc(n.name)}</h1><div class="sub">${esc(n.confed)}${rk ? " · ranked " + rk + sfx(rk) + " in the world" : ""}</div></div></div>
+      <div class="stat4"><div><b class="pos">${n.rating}</b><span>RATING</span></div><div><b>${n.talent}</b><span>TALENT</span></div><div><b>${n.pros}</b><span>PROS</span></div><div><b>${n.titles}</b><span>WC TITLES</span></div></div>
+      <nav class="tabs2" aria-label="Nation sections">${tabs.map(([k, t]) => `<button data-nt="${k}" class="${NV.tab === k ? "on" : ""}">${t}</button>`).join("")}</nav>
+      ${body()}</div>`;
+    document.querySelectorAll("[data-nt]").forEach((b) => (b.onclick = () => { NV.tab = b.dataset.nt; draw(); }));
+    const m = $("#nt-more"); if (m) m.onclick = () => { NV.more = !NV.more; draw(); };
+  };
+  draw();
+}
+function natFed(n) {
+  const f = n.federation, last = f.last, sp = f.split;
+  const tot = last ? last.prize + last.comp + last.soli : 0;
+  const acc = (title, right, inner) => `<details class="acc"><summary><span>${title}</span><span class="dim">${right}</span></summary><div class="b">${inner}</div></details>`;
+  const young = (p) => `<div class="pr"><div class="nm"><b>${playerLink({ uid: p.uid, name: p.name, nat: n.name })}</b><span>${p.club ? clubLink(p.club) : "free agent"} · ${p.age}</span></div><span>${p.ovr} / <b class="pos">${p.pot}</b></span></div>`;
+  const best = f.abroad.slice().sort((a, b) => b.pot - a.pot).slice(0, 3);
+  return `<div class="card"><h3>Federation stage <small>${esc(f.stages[f.stage])}</small></h3>
+      <div class="stages">${f.stages.map((t, i) => `<div class="${i < f.stage ? "done" : i === f.stage ? "on" : ""}">${t}</div>`).join("")}</div>
+      <div class="row" style="border-bottom:0;padding-bottom:4px"><span>Football culture</span><span><b>${f.culture}</b> <span class="dim">/ 100</span> ${f.delta ? `<span class="${f.delta > 0 ? "pos" : "neg"}">${f.delta > 0 ? "+" : ""}${f.delta}</span>` : ""}</span></div>
+      <div class="bar"><i style="width:${Math.min(100, f.culture)}%"></i></div>
+      <div class="dim small" style="margin-top:6px">${f.next_at ? `Next stage at ${f.next_at}.` : "Top stage."} ${f.lift > 0.5 ? `The score is ${f.lift} above where it started, which brings more high-potential youngsters.` : f.lift < -0.5 ? `The score is ${-f.lift} below where it started.` : ""}</div></div>
+    <div class="card" style="padding-top:2px;padding-bottom:2px">
+      ${acc(`Federation fund${last ? ` <span class="dim">· season ${last.season}</span>` : ""}`, last ? money(tot) : "opens after season 1", last ? `
+        <div class="row"><span>Share of prize money</span><span class="pos">+${money(last.prize)}</span></div>
+        <div class="row"><span>Training compensation</span><span class="pos">+${money(last.comp)}</span></div>
+        <div class="row"><span>Solidarity and development</span><span class="pos">+${money(last.soli)}</span></div>
+        ${[["Home academies", sp[0]], ["Partner academies abroad", sp[1]], ["Coaching", sp[2]]].map(([t, v]) => `<div class="ir"><span class="n">${t}</span><div class="bar"><i style="width:${Math.round(v * 100)}%"></i></div><span class="v">${Math.round(v * 100)}%</span></div>`).join("")}
+        <div class="dim small" style="margin-top:6px">Chosen automatically by the federation's stage.</div>` : `<div class="dim small">The fund opens after the first completed season.</div>`)}
+      ${acc("Why the score moved", `${f.events.length} event${f.events.length === 1 ? "" : "s"}`, f.events.length ? f.events.map((e) => `<div class="ev"><b class="${e.pts < 0 ? "neg" : ""}">${e.pts > 0 ? "+" : ""}${e.pts}</b><span>${esc(e.text)} <span class="dim">S${e.season}</span></span></div>`).join("") : `<div class="dim small">Nothing yet.</div>`)}
+      ${f.golden ? acc("Golden generation", `${f.golden.count} prospects`, `<div class="dim small">${f.golden.count} prospects with ${f.golden.bar}+ potential aged ${f.golden.ages[0]} to ${f.golden.ages[1]}. Expect the national team to peak in a few seasons.</div>${f.golden.players.map(young).join("")}`) : ""}
+      ${acc("Young players abroad", String(f.n_abroad), `<div class="dim small">${f.n_abroad} under 21 abroad, ${f.n_home} at home. They keep their nationality and their success counts for ${esc(n.name)}.</div>`)}
+    </div>
+    ${best.length ? `<div class="card"><h3>Best young players abroad <small>top three</small></h3>${best.map(young).join("")}</div>` : ""}`;
 }
 function pitchSVG(team) {
   const rows = { FWD: 130, MID: 300, DEF: 470, GK: 620 };
@@ -1002,41 +1150,161 @@ function awardRow(p, rank, max, extra, unit) {
     <div class="meta">${clubLink(p.club)} &middot; ${stat}${extra ? " &middot; " + extra : ""}</div></div>
     <div class="votes"><div class="vbar"><i style="width:${Math.round((100 * p.pts) / max)}%"></i></div><b>${p.pts}</b><span class="meta"> ${unit || "pts"}${p.first != null ? ` &middot; ${p.first} first places` : ""}</span></div></div>`;
 }
-async function viewCeremony(season) {
+// ---------------------------------------------------------------- young talent (v15.1): top academy graduates and prospects
+const PV = { scope: "grads", league: "" };
+async function viewProspects() {
+  const q = "scope=" + PV.scope + (PV.league ? "&league=" + enc(PV.league) : "");
+  const d = await api("/api/prospects?" + q);
+  const row = (p, i) => `<div class="pr"><span class="rk ${["g", "s", "b"][i] || ""}">${i + 1}</span><span class="p ${esc(p.pos)}">${esc(p.pos)}</span><div class="nm"><b>${playerLink(p)}</b><span>${p.age} \u00b7 ${p.club ? clubLink(p.club) : "no club yet"}${p.grad ? " \u00b7 academy" : ""}</span></div><span class="ovr m">${p.ovr}</span><span class="pt">${p.pot}</span></div>`;
+  const h = STATUS && STATUS.header, off = h && h.flow;
+  $("#view").innerHTML = `<div class="v2"><div class="hd"><div><h1>Top graduates</h1><div class="sub">${PV.scope === "grads" ? "Latest academy graduates" : "Every player aged 19 or under"}, best potential first</div></div></div>
+    <nav class="chips" aria-label="Which players">${[["grads", "Academy graduates"], ["all", "All young talent"]].map(([k, t]) => `<button data-ps="${k}" class="${PV.scope === k ? "on" : ""}">${t}</button>`).join("")}</nav>
+    <select class="sel" id="pv-l" aria-label="League" style="width:100%"><option value="">All leagues</option>${d.leagues.map((l) => `<option ${l === PV.league ? "selected" : ""}>${esc(l)}</option>`).join("")}</select>
+    <div class="cols"><span>Player</span><span>OVR</span><span>POT</span></div>
+    <div class="card" style="margin-top:6px;padding-top:2px;padding-bottom:2px">${d.rows.length ? d.rows.map(row).join("") : `<div class="dim small" style="padding:14px 0">Nobody here yet. Graduates appear after the first season.</div>`}</div>
+    <div class="dim small" style="margin-top:8px">${d.total} players match. POT is the most a player can reach.</div>${off ? `<div style="margin-top:12px"><button class="btn pri" id="pv-next" style="width:100%">${h.phase === "graduates" ? "Start season " + h.season : "Continue"}</button></div>` : ""}</div>`;
+  document.querySelectorAll("[data-ps]").forEach((b) => (b.onclick = () => { PV.scope = b.dataset.ps; viewProspects(); }));
+  $("#pv-l").onchange = (e) => { PV.league = e.target.value; viewProspects(); };
+  const nx = $("#pv-next"); if (nx) nx.onclick = () => flowStep(h.phase === "graduates" ? "done" : "graduates");
+}
+// ---------------------------------------------------------------- awards (v15.1)
+// Results first: #/ceremony/<season> (the whole season at a glance), /ballon (top ten and votes), /team (Team of the Year and cup awards),
+// /watch (the ceremony, one award per screen). Nothing is hidden on the results page.
+const surname = (n) => String(n || "").split(" ").slice(-1)[0];
+const COMP_GROUPS = [["club", "Club cups"], ["world", "World"], ["nations", "Nations"], ["domestic", "Domestic"]];
+const compGroup = (c) => (c.kind === "cup" ? "club" : c.kind === "cwc" || c.kind === "wc" ? "world" : c.nation ? "nations" : "domestic");
+const awStat = (p) => (p.pos === "GK" ? `${p.cs} clean sheets` : `${p.goals} G · ${p.assists} A`);
+const awSub = (p) => `${clubLink(p.club)} · ${esc(p.pos)} · ${p.age} · OVR ${p.ovr}`;
+const awTeam = (c, n) => (c.nation ? natLink(n) : clubLink(n));
+function awSelect(d) {
+  return `<select id="aw-season" class="sel" aria-label="Season">${d.seasons.slice().reverse().map((s) => `<option value="${s}" ${s === d.season ? "selected" : ""}>Season ${s}</option>`).join("")}</select>`;
+}
+function awCompBlock(c) {
+  const sc = c.scorers && c.scorers[0], mv = c.mvp && c.mvp[0], co = c.coach && c.coach[0];
+  return `<div class="comp"><div class="t"><span>${esc(c.name)}</span><span class="gold small">${c.winner ? awTeam(c, c.winner) : ""}</span></div>
+    <div class="grid2"><div>Top scorer<b>${sc ? playerLink(sc, surname(sc.name)) + " · " + sc.goals : "-"}</b></div><div>MVP<b>${mv ? playerLink(mv, surname(mv.name)) : "-"}</b></div>
+    <div>Coach<b>${co ? esc(co.name) : "-"}</b></div><div>Runner-up<b>${c.runner_up ? awTeam(c, c.runner_up) : "-"}</b></div></div></div>`;
+}
+async function viewCeremony(season, sub) {
   const d = await api("/api/awards" + (season ? "?season=" + season : ""));
   if (!d.awards) { $("#view").innerHTML = `<h1>Awards</h1><div class="empty">The first ceremony happens after season 1 finishes.</div>`; return; }
+  const a = d.awards, back = `<a class="crumb" href="#/ceremony/${d.season}">‹ Awards · Season ${d.season}</a>`;
+  const hdr = (title, subt) => `<div class="hd"><div><h1>${title}</h1><div class="sub">${subt}</div></div></div>`;
+  let html;
+  if (sub === "watch") return awWatch(d);
+  if (sub === "start") return awGate(d);
+  if (sub === "ballon") html = awBallon(d, back, hdr);
+  else if (sub === "team") html = awTeamPage(d, back, hdr);
+  else html = awResults(d);
+  $("#view").innerHTML = `<div class="v2">${html}</div>`;
+  const sel = $("#aw-season"); if (sel) sel.onchange = (e) => (location.hash = "#/ceremony/" + e.target.value + (sub ? "/" + sub : ""));
+  document.querySelectorAll("#view [data-go]").forEach((b) => (b.onclick = () => { document.getElementById(b.dataset.go).scrollIntoView({ behavior: "smooth", block: "start" }); document.querySelectorAll("#view .chips [data-go]").forEach((x) => x.classList.toggle("on", x === b)); }));
+  document.querySelectorAll("#view [data-cg]").forEach((b) => (b.onclick = () => { AWCG = b.dataset.cg; viewCeremony(season, sub); }));
+}
+let AWCG = "club";
+// the choice after wrap-up: watch the ceremony (winners revealed one at a time) or go straight to the results. Nothing is shown here.
+function awGate(d) {
+  const S = d.season;
+  $("#view").innerHTML = `<div class="v2"><div class="hd"><div><h1>Season ${S} awards</h1><div class="sub">${esc(d.season_label)}</div></div></div>
+    <div class="card" style="margin-top:16px;text-align:center;padding:22px 14px">
+      <div class="eyebrow gold">The season is over</div>
+      <div style="font-size:18px;font-weight:700;margin:8px 0 4px">Ballon d'Or, Golden Boot, Young Player, Coach and more</div>
+      <div class="dim small">Watch them revealed one at a time, or skip and see every winner on one page.</div>
+      <div style="display:grid;gap:10px;margin-top:18px"><a class="btn pri" href="#/ceremony/${S}/watch" style="min-height:52px;font-size:15px">Watch the ceremony</a><a class="btn" href="#/ceremony/${S}" style="min-height:52px;font-size:15px">Skip to results</a></div></div></div>`;
+}
+function awResults(d) {
+  const a = d.awards, b = a.ballon, w = b[0], bt = a.boot[0], yg = a.young[0], co = a.coach[0];
+  const mx = b[0].pts || 1, S = d.season;
+  const runner = (p, i) => `<div class="row"><span class="l"><span class="rk ${i === 1 ? "s" : "b"}">${i + 1}</span><span>${playerLink(p)} <span class="dim small">${esc(p.club)}</span></span></span><b>${Math.round((100 * p.pts) / mx)}%</b></div>`;
+  const line = (pos) => a.team.filter((p) => p.pos === pos);
+  const cupsShow = Object.values(a.comps || {}).filter((c) => c.kind !== "league").slice(0, 3);
+  const nComps = Object.keys(a.comps || {}).length;
+  return `
+    <div class="hd"><div><h1>Awards</h1><div class="sub">Season ${S} (${esc(d.season_label)}) · ${a.voters} voters</div></div>${awSelect(d)}</div>
+    <nav class="chips sticky" aria-label="Jump to an award"><button class="on" data-go="aw-ballon">Ballon d'Or</button><button data-go="aw-boot">Golden Boot</button><button data-go="aw-young">Young player</button><button data-go="aw-coach">Coach</button><button data-go="aw-team">Team of the Year</button><button data-go="aw-cups">Cups</button></nav>
+    <section id="aw-ballon" class="card hero" style="margin-top:4px">
+      <div class="eyebrow gold">Ballon d'Or</div>
+      <div class="big">${playerLink(w)}</div>
+      <div class="dim" style="font-size:13px">${awSub(w)}</div>
+      <div class="statrow">${w.pos === "GK" ? `<div><b>${w.cs}</b><span>clean sheets</span></div>` : `<div><b>${w.goals}</b><span>goals</span></div>`}${w.pos === "GK" ? `<div><b>${w.finish}</b><span>club finish</span></div>` : `<div><b>${w.assists}</b><span>assists</span></div>`}<div><b>${w.share}%</b><span>of max votes</span></div></div>
+      ${b.slice(1, 3).map(runner).join("")}
+      <a class="more" href="#/ceremony/${S}/ballon"><span>Top ten and how the panel voted</span><span>&rsaquo;</span></a>
+    </section>
+    <div class="tiles">
+      <section id="aw-boot" class="tile open"><div class="eyebrow">Golden Boot</div>
+        <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px"><div><b style="font-size:18px">${playerLink(bt)}</b><div class="dim small">${awSub(bt)}</div></div><div style="text-align:right"><b style="font-size:26px" class="gold">${bt.goals}</b><div class="dim small">goals</div></div></div>
+        ${a.boot.slice(1, 3).map((p, i) => `<div class="row" style="margin-top:${i ? 0 : 6}px"><span class="l"><span class="rk ${i ? "b" : "s"}">${i + 2}</span>${playerLink(p)}</span><span class="dim">${p.goals}</span></div>`).join("")}
+      </section>
+      <section id="aw-young" class="tile"><div class="eyebrow">Young Player</div><b>${playerLink(yg)}</b><span class="dim small">${esc(yg.pos)} · ${esc(yg.nat)} · ${yg.age}</span><span class="dim small" style="margin-top:auto">${esc(yg.club)} · OVR ${yg.ovr}</span></section>
+      <section id="aw-coach" class="tile"><div class="eyebrow">Coach of the Year</div><b>${esc(co.name)}</b><span class="dim small">${esc(co.nat)} · prestige ${Math.round(co.prestige)}</span><span class="dim small" style="margin-top:auto">${co.club ? esc(co.club) : esc(co.nation || "")}${co.finish === 1 ? " · champions" : ""}</span></section>
+    </div>
+    <section id="aw-team" class="card"><h3>Team of the Year <small>4-3-3</small></h3>
+      ${["FWD", "MID", "DEF", "GK"].map((pos) => `<div class="row"><span class="l"><span class="p ${pos}">${pos}</span><span>${line(pos).map((p) => playerLink(p, surname(p.name))).join(" · ")}</span></span></div>`).join("")}
+      <a class="more" href="#/ceremony/${S}/team"><span>See it on the pitch</span><span>&rsaquo;</span></a>
+    </section>
+    <section id="aw-cups" class="card"><h3>Cup awards <small>MVPs feed the Ballon d'Or</small></h3>
+      ${cupsShow.map((c) => `<details class="acc"><summary><span>${esc(c.name)}</span><span class="dim">${c.winner ? esc(c.winner) : ""}</span></summary><div class="b">${awCompBlock(c)}</div></details>`).join("")}
+      <a class="more" href="#/ceremony/${S}/team"><span>All ${nComps} competitions</span><span>&rsaquo;</span></a>
+    </section>`;
+}
+function awBallon(d, back, hdr) {
+  const a = d.awards, b = a.ballon, mx = b[0].pts || 1, w = b[0];
+  const grp = { journalist: "Journalists", coach: "National team coaches", fan: "Fans" };
+  const mvps = Object.values(a.comps || {}).filter((c) => c.mvp && c.mvp[0] && c.mvp[0].uid === w.uid).map((c) => c.name);
+  return `${back}${hdr("Ballon d'Or", "Each voter names a top five (6-4-3-2-1). Top ten shown.")}
+    <div class="card" style="padding-top:4px;padding-bottom:4px">${b.map((p, i) => `<div class="vr"><span class="rk ${["g", "s", "b"][i] || ""}">${i + 1}</span><div class="n"><b>${playerLink(p)}</b><span>${esc(p.club)} · ${esc(p.pos)} · ${awStat(p)}</span></div><div class="v"><b>${p.pts}</b><div class="bar ${i ? "" : "gd"}"><i style="width:${Math.round((100 * p.pts) / mx)}%"></i></div></div></div>`).join("")}</div>
+    <div class="card"><h3>How each group voted <small>top three</small></h3>
+      ${Object.entries(a.voter_split).map(([k, v], i) => `<details class="acc" ${i === 0 ? "open" : ""}><summary><span>${grp[k] || esc(k)}</span></summary><div class="b dim small">${v.map((x) => esc(x.name) + " " + x.pts).join(" · ")}</div></details>`).join("")}</div>
+    <div class="card"><h3>Why ${esc(surname(w.name))} won</h3>
+      <div class="row"><span>Club season</span><span class="pos">${w.finish === 1 ? "League title" : "Finished " + w.finish + ordSuffix(w.finish)}</span></div>
+      <div class="row"><span>${w.pos === "GK" ? "Clean sheets" : "Goals and assists"}</span><span>${w.pos === "GK" ? w.cs : w.goals + w.assists + " combined"}</span></div>
+      <div class="row"><span>Competition MVPs</span><span>${mvps.length ? mvps.length + " (" + esc(mvps.slice(0, 2).join(", ")) + ")" : "none"}</span></div></div>`;
+}
+const ordSuffix = (n) => { const t = n % 100; return t >= 11 && t <= 13 ? "th" : ["th", "st", "nd", "rd"][n % 10] || "th"; };
+function awTeamPage(d, back, hdr) {
   const a = d.awards;
-  const q = []; // reveal queue
-  const sec = (title, sub, inner, key) => `<div class="aw-sec"><h2 class="rv" hidden>${key ? emblem(EMB_BY_SECTION[key], 34) + " " : ""}${title}</h2>${sub ? `<div class="sub rv" hidden>${sub}</div>` : ""}${inner}</div>`;
-  const rows = (arr, mk) => arr.map((p, i) => ({ i, html: mk(p, i + 1) })).reverse().map((o) => `<div class="rv" hidden>${o.html}</div>`).join("");
-  const maxB = a.ballon[0].pts, maxC = a.coach[0].pts;
-  const html = `
-    <div class="crumbs"><a href="#/world">World</a> / Awards</div>
-    <h1>Awards ceremony <span class="tag gold">season ${d.season} (${d.season_label})</span></h1>
-    <div class="sub">${a.date.text} &middot; ${a.voters} voters: journalists, national team coaches and fans. Each names a top five (6-4-3-2-1).
-      <select id="aw-season" style="margin-left:10px">${d.seasons.slice().reverse().map((s) => `<option value="${s}" ${s === d.season ? "selected" : ""}>Season ${s}</option>`).join("")}</select></div>
-    <div id="aw-bar"><button id="aw-back">Back</button><button class="pri" id="aw-next">Next</button><button id="aw-skip">Skip to end</button><span class="meta" id="aw-count"></span></div>
-    <div id="aw-pad"></div>
-    ${sec("Golden Boot", "Most league goals in the world", rows(a.boot.slice(0, 3), (p, r) => awardRow({ ...p, pts: p.goals, first: null }, r, a.boot[0].goals, `${p.league}`, "goals")), "boot")}
-    ${sec("Young Player of the Year", "Under 22", rows(a.young, (p, r) => awardRow({ ...p, pts: +p.score.toFixed(1), first: null }, r, a.young[0].score, "", "panel score")), "young")}
-    ${sec("Coach of the Year", "Judged on results against expectations, plus trophies", rows(a.coach, (c, r) => `<div class="aw-row ${MEDAL[r - 1] || ""} ${r === 1 ? "first" : ""}"><div class="rk">${r}</div><div class="who"><b>${esc(c.name)}</b> <span class="meta">${esc(c.nat)} &middot; prestige ${c.prestige}</span><div class="meta">${c.club ? clubLink(c.club) + " &middot; finished " + c.finish + " (expected " + c.expected + ")" : "National team: " + natLink(c.nation)}</div></div><div class="votes"><div class="vbar"><i style="width:${Math.round((100 * c.pts) / maxC)}%"></i></div><b>${c.pts}</b><span class="meta"> pts &middot; ${c.first} first places</span></div></div>`), "coach")}
-    ${sec("Team of the Year", "Best XI by position, 4-3-3, from the panel's scores", `<div class="rv" hidden><div class="pitch-wrap">${pitchSVG(a.team)}</div></div>`, "team")}
-    ${sec("Ballon d'Or", "Top ten, counted up to the winner", rows(a.ballon, (p, r) => awardRow(p, r, maxB, `${p.share}% of the maximum`)), "ballon")}
-    <div class="rv" hidden><div class="card" style="margin-top:16px"><h3>How the panel voted <small>top three by voter group</small></h3>
-      ${Object.entries(a.voter_split).map(([k, v]) => `<div class="row"><span><b>${k === "journalist" ? "Journalists" : k === "coach" ? "National team coaches" : "Fans"}</b></span><span class="meta">${v.map((x) => esc(x.name) + " " + x.pts).join(" &middot; ")}</span></div>`).join("")}</div></div>
-    <div class="rv" hidden><div class="card" style="margin-top:16px"><h3>Competition awards <small>MVPs feed into the Ballon d'Or vote</small></h3><div class="scroll"><table><thead><tr><th class="l">Competition</th><th class="l">Winner</th><th class="l">Top scorer</th><th class="l">MVP</th><th class="l">Coach</th></tr></thead><tbody>
-      ${Object.values(a.comps || {}).map((c) => { const tm = (n) => (c.nation ? natLink(n) : clubLink(n)); return `<tr><td class="l">${esc(c.name)}</td><td class="l">${c.winner ? tm(c.winner) : ""}</td><td class="l">${c.scorers && c.scorers[0] ? playerLink(c.scorers[0]) + ` <span class="meta">${c.scorers[0].goals}</span>` : ""}</td><td class="l">${c.mvp && c.mvp[0] ? playerLink(c.mvp[0]) : ""}</td><td class="l">${c.coach && c.coach[0] ? esc(c.coach[0].name) : ""}</td></tr>`; }).join("")}</tbody></table></div></div></div>
-    <p class="rv" hidden style="margin-top:16px"><a href="#/world">Back to the world</a> &middot; <a href="#/ledger">Transfers</a></p>`;
-  $("#view").innerHTML = html;
-  const items = [...document.querySelectorAll("#view .rv")];
-  let idx = 0;
-  const upd = () => { $("#aw-count").textContent = idx >= items.length ? "That's everything." : idx + " / " + items.length; $("#aw-next").disabled = idx >= items.length; $("#aw-back").disabled = idx <= 0; };
-  $("#aw-back").onclick = () => { if (idx > 0) { idx--; items[idx].hidden = true; if (idx > 0) items[idx - 1].scrollIntoView({ block: "center", behavior: "smooth" }); } upd(); };
-  const next = () => { if (idx < items.length) { items[idx].hidden = false; items[idx].scrollIntoView({ block: "center", behavior: "smooth" }); idx++; } upd(); };
-  $("#aw-next").onclick = next;
-  $("#aw-skip").onclick = () => { items.forEach((e) => (e.hidden = false)); idx = items.length; upd(); };
-  $("#aw-season").onchange = (e) => (location.hash = "#/ceremony/" + e.target.value);
-  upd();
+  const have = COMP_GROUPS.filter(([k]) => Object.values(a.comps || {}).some((c) => compGroup(c) === k));
+  if (!have.some(([k]) => k === AWCG) && have.length) AWCG = have[0][0];
+  const list = Object.values(a.comps || {}).filter((c) => compGroup(c) === AWCG);
+  return `${back}${hdr("Team of the Year", "Best XI by position from the panel's scores")}
+    <div class="pitch-wrap" style="margin-top:10px">${pitchSVG(a.team)}</div>
+    <nav class="chips" aria-label="Cup awards">${have.map(([k, t]) => `<button data-cg="${k}" class="${k === AWCG ? "on" : ""}">${t}</button>`).join("")}</nav>
+    <div class="card" style="margin-top:2px;padding-top:2px;padding-bottom:2px">${list.map(awCompBlock).join("") || `<div class="dim small" style="padding:10px 0">Nothing in this group this season.</div>`}</div>`;
+}
+// ceremony mode: one award per screen. Winners are only shown when you get to them.
+function awWatch(d) {
+  const a = d.awards, S = d.season, rn = (arr, f) => arr.slice(1, 3).map((p, i) => `<div class="row"><span class="l"><span class="rk ${i ? "b" : "s"}">${i + 2}</span>${f(p)}</span><span class="dim">${p._v}</span></div>`).join("");
+  const player = (title, arr, val, tags) => {
+    const w = arr[0], runners = arr.slice(1, 3).map((p) => ({ ...p, _v: val(p) }));
+    return { title, html: `<div class="eyebrow gold">${title}</div><div class="medal">1</div><div class="big">${playerLink(w)}</div><div class="dim" style="font-size:13px">${awSub(w)}</div><div style="margin-top:12px">${tags(w)}</div>
+      <div class="runners">${rn([w, ...runners], (p) => `${playerLink(p)} <span class="dim small">${esc(p.club)}</span>`)}</div>` };
+  };
+  const co = a.coach;
+  const steps = [
+    player("Golden Boot", a.boot, (p) => p.goals, (w) => `<span class="tag gold">${w.goals} league goals</span>`),
+    player("Young Player of the Year", a.young, (p) => p.score.toFixed(1), (w) => `<span class="tag green">Age ${w.age}</span> <span class="tag">${awStat(w)}</span>`),
+    { title: "Coach of the Year", html: `<div class="eyebrow gold">Coach of the Year</div><div class="medal">1</div><div class="big">${esc(co[0].name)}</div><div class="dim" style="font-size:13px">${co[0].club ? clubLink(co[0].club) : esc(co[0].nation || "")} · ${esc(co[0].nat)} · prestige ${Math.round(co[0].prestige)}</div>
+      <div style="margin-top:12px">${co[0].finish === 1 ? `<span class="tag green">Won the league</span> ` : ""}${co[0].finish < co[0].expected ? `<span class="tag">Beat expectations by ${co[0].expected - co[0].finish} places</span>` : ""}</div>
+      <div class="runners">${co.slice(1, 3).map((c, i) => `<div class="row"><span class="l"><span class="rk ${i ? "b" : "s"}">${i + 2}</span>${esc(c.name)} <span class="dim small">${esc(c.club || c.nation || "")}</span></span><span class="dim">${Math.round(c.pts)}</span></div>`).join("")}</div>` },
+    { title: "Team of the Year", html: `<div class="eyebrow gold">Team of the Year</div><div class="pitch-wrap" style="margin-top:10px">${pitchSVG(a.team)}</div>` },
+    { title: "Cup awards", html: `<div class="eyebrow gold">Cup awards</div><div style="text-align:left;margin-top:8px">${Object.values(a.comps || {}).filter((c) => c.kind !== "league").map((c) => `<div class="row"><span>${esc(c.name)}</span><b class="gold small">${c.winner ? awTeam(c, c.winner) : ""}</b></div>`).join("")}</div>` },
+    player("Ballon d'Or", a.ballon, (p) => Math.round((100 * p.pts) / (a.ballon[0].pts || 1)) + "%", (w) => `<span class="tag gold">${awStat(w)}</span> <span class="tag green">${w.share}% of max votes</span>`),
+  ];
+  let i = 0;
+  const draw = () => {
+    const last = i === steps.length - 1, st = steps[i];
+    $("#view").innerHTML = `<div class="v2">
+      <div class="hd"><div><h1>Ceremony</h1><div class="sub">Season ${S} · one award at a time</div></div><a class="btn sm" href="#/ceremony/${S}">Skip to results</a></div>
+      <div class="prog"><span>Award ${i + 1} of ${steps.length}</span><span>${esc(st.title)}</span></div>
+      <div class="dots" aria-label="Progress">${steps.map((_, k) => `<i class="${k < i ? "done" : k === i ? "on" : ""}"></i>`).join("")}</div>
+      <div class="stage">${st.html}</div>
+      <div class="foot"><button class="btn" id="aw-back" ${i ? "" : "disabled"}>Back</button><button class="btn pri" id="aw-next">${last ? "See all results" : "Next: " + esc(steps[i + 1].title)}</button></div>
+      <h2 class="lbl2">Order</h2>
+      <div class="card" style="margin-top:0">${steps.map((s, k) => `<div class="row"><span class="l"><span class="rk ${k < i ? "g" : ""}">${k < i ? "✓" : k + 1}</span>${k === i ? "<b>" + esc(s.title) + "</b>" : esc(s.title)}</span><span class="${k === i ? "pos" : "dim"} small">${k === i ? "now" : k === i + 1 ? "next" : ""}</span></div>`).join("")}</div></div>`;
+    $("#aw-back").onclick = () => { if (i > 0) { i--; draw(); window.scrollTo(0, 0); } };
+    $("#aw-next").onclick = () => { if (last) location.hash = "#/ceremony/" + S; else { i++; draw(); window.scrollTo(0, 0); } };
+  };
+  draw();
 }
 async function viewTrophies(key, tab) {
   tab = tab || "winners";
@@ -1500,7 +1768,8 @@ async function routeInner(r, a, b) {
     if (r === "players") return await viewPlayers();
     if (r === "player") return await viewPlayer(a);
     if (r === "map") { location.replace("#/world"); return; }               // the league map was removed
-    if (r === "ceremony") return await viewCeremony(a ? +a : null);
+    if (r === "ceremony") return await viewCeremony(a ? +a : null, b);
+    if (r === "prospects") return await viewProspects();
     if (r === "trophies") return a === "winners" ? await viewTrophies(b, "winners") : await viewTrophies(null, a || "winners");
     if (r === "money") return await viewMoney();
     if (r === "ledger") return await viewLedger(a);
