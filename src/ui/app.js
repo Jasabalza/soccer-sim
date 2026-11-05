@@ -964,15 +964,6 @@ function tiesTable(ties, nations) {
   return `<div class="scroll"><table><tbody>${ties.slice().reverse().map((t) => `<tr><td class="l meta">${esc(t.round)}</td><td class="l">${L(t.a)} v ${L(t.b)}</td><td>${esc(t.text)}</td><td class="l"><b>${L(t.winner)}</b></td></tr>`).join("")}</tbody></table></div>`;
 }
 
-async function viewNations(confed) {
-  const d = await api("/api/nations" + (confed ? "?confed=" + confed : ""));
-  $("#view").innerHTML = `<h1>National teams ${confed ? "- " + esc(confed) : ""}</h1><div class="sub">Every nation, strongest first. Tap one for its squad.</div>
-    <details class="help"><summary>What do the columns mean?</summary><div class="meta"><b>Rating</b>: team strength, the best 11 players of the nation plus the national coach. <b>Pros</b>: players at professional clubs. <b>Talent</b>: quality of the nation's whole player pool. <b>Ranking pts</b>: world-ranking points, used to seed tournaments. <b>WC</b>: World Cup titles (and appearances). <b>Coach</b>: the national coach and their prestige.</div></details>
-    <div class="tabs nat-tabs">${["", "UEFA", "CONMEBOL", "CONCACAF", "AFC", "CAF", "OFC"].map((c) => `<button class="${(confed || "") === c ? "on" : ""}" data-c="${c}">${c || "World"}</button>`).join("")}</div>
-    <div class="scroll"><table class="hof wf nwl"><thead><tr><th>#</th><th class="l">Nation</th><th class="l hide-m">Conf.</th><th title="Team strength: best 11 players + national coach">Rating</th><th class="hide-m" title="Players at professional clubs">Pros</th><th class="hide-m" title="Quality of the whole player pool">Talent</th><th title="World-ranking points">Rank pts</th><th class="wc" title="World Cup titles (appearances)">WC</th><th class="l hide-m">Coach</th></tr></thead><tbody>
-    ${d.rows.map((r) => `<tr><td>${r.rank}</td><td class="l">${natLink(r.name)}<div class="meta show-m">${r.confed} &middot; coach ${esc(r.coach)}</div></td><td class="l meta hide-m">${r.confed}</td><td class="pts">${r.rating}</td><td class="hide-m">${r.pros}</td><td class="hide-m">${r.talent}</td><td>${r.rank_pts}</td><td class="wc">${r.titles}<span class="meta hide-m"> (${r.apps})</span></td><td class="l hide-m">${esc(r.coach)} <span class="meta">(${r.coach_prestige})</span></td></tr>`).join("")}</tbody></table></div>`;
-  document.querySelectorAll("[data-c]").forEach((b) => b.onclick = () => (location.hash = "#/nations" + (b.dataset.c ? "/" + b.dataset.c : "")));
-}
 
 function federationCard(n) {
   const f = n.federation; if (!f) return "";
@@ -998,13 +989,96 @@ function federationCard(n) {
     <div class="card" style="margin-top:14px"><h3>Young players abroad</h3>${f.abroad.length ? f.abroad.map((p) => `<div class="row"><span>${playerLink({ uid: p.uid, name: p.name, nat: n.name })} <span class="meta">${clubLink(p.club)}, ${p.age}</span></span><span>${p.ovr} / <b class="pts">${p.pot}</b></span></div>`).join("") : '<div class="meta">No players under 21 abroad.</div>'}
       <div class="meta" style="margin-top:6px">${f.n_abroad} under 21 abroad, ${f.n_home} at home. They keep their nationality and their success counts for ${esc(n.name)}.</div></div>`;
 }
+// ---------------------------------------------------------------- nations (v15.1): short list, nation page in tabs
+const NV = { sort: "rating", q: "", show: 25, tab: "squad", more: false };
+const NSORTS = [["rating", "Rating", (r) => r.rating], ["talent", "Talent", (r) => r.talent], ["pros", "Pros", (r) => r.pros], ["titles", "World Cup titles", (r) => r.titles], ["rank_pts", "Ranking points", (r) => r.rank_pts], ["name", "Name", null]];
+async function viewNations(confed) {
+  const d = await api("/api/nations" + (confed ? "?confed=" + confed : ""));
+  const draw = () => {
+    const srt = NSORTS.find((s) => s[0] === NV.sort) || NSORTS[0], q = NV.q.trim().toLowerCase();
+    let rows = d.rows.filter((r) => !q || r.name.toLowerCase().includes(q));
+    rows = srt[2] ? rows.slice().sort((a, b) => srt[2](b) - srt[2](a) || a.rank - b.rank) : rows.slice().sort((a, b) => a.name.localeCompare(b.name));
+    const shown = rows.slice(0, NV.show);
+    $("#nl-list").innerHTML = shown.length ? shown.map((r) => `<a class="nr" href="#/nation/${enc(r.name)}"><span class="no">${r.rank}</span>${flag(r.name, 34)}<span class="nm"><b>${esc(r.name)}</b><span>${r.confed} · coach ${esc(r.coach)}</span></span><span class="rt"><b>${srt[2] ? srt[2](r) : r.rating}</b><span>${srt[2] ? srt[1].toLowerCase() : "rating"}</span></span><span class="chev">›</span></a>`).join("") : `<div class="dim small" style="padding:14px">No nation matches.</div>`;
+    const left = rows.length - shown.length, mb = $("#nl-more");
+    mb.hidden = left <= 0; mb.textContent = `Show ${Math.min(25, left)} more`;
+  };
+  $("#view").innerHTML = `<div class="v2"><h1>National teams${confed ? " · " + esc(confed) : ""}</h1><div class="sub">${d.rows.length} nations. Tap one for its squad.</div>
+    <nav class="chips" aria-label="Confederation">${["", "UEFA", "CONMEBOL", "CONCACAF", "AFC", "CAF", "OFC"].map((c) => `<button class="${(confed || "") === c ? "on" : ""}" data-c="${c}">${c || "World"}</button>`).join("")}</nav>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <input class="search" id="nl-q" type="search" placeholder="Search a nation" value="${esc(NV.q)}" aria-label="Search a nation">
+      <select class="sel" id="nl-sort" aria-label="Sort">${NSORTS.map((s) => `<option value="${s[0]}" ${s[0] === NV.sort ? "selected" : ""}>Sort: ${s[1]}</option>`).join("")}</select>
+    </div>
+    <div class="list" id="nl-list"></div>
+    <button class="btn" id="nl-more" style="display:flex;margin-top:10px;width:100%">Show 25 more</button>
+    <div class="card"><h3>What the numbers mean</h3>
+      <details class="acc"><summary><span>Rating</span><span class="dim">best 11 + coach</span></summary><div class="b dim small">Team strength: the best 11 players of the nation plus the national coach.</div></details>
+      <details class="acc"><summary><span>Talent</span><span class="dim">whole player pool</span></summary><div class="b dim small">Quality of the nation's whole player pool, not only the first eleven.</div></details>
+      <details class="acc"><summary><span>Pros</span><span class="dim">at pro clubs</span></summary><div class="b dim small">Players at professional clubs.</div></details>
+      <details class="acc"><summary><span>Ranking points</span><span class="dim">used for seeding</span></summary><div class="b dim small">World-ranking points, used to seed tournaments.</div></details>
+    </div></div>`;
+  document.querySelectorAll("[data-c]").forEach((b) => (b.onclick = () => { NV.show = 25; location.hash = "#/nations" + (b.dataset.c ? "/" + b.dataset.c : ""); }));
+  $("#nl-q").oninput = (e) => { NV.q = e.target.value; NV.show = 25; draw(); };
+  $("#nl-sort").onchange = (e) => { NV.sort = e.target.value; NV.show = 25; draw(); };
+  $("#nl-more").onclick = () => { NV.show += 25; draw(); };
+  draw();
+}
+const NPOS = [["GK", 1], ["DEF", 4], ["MID", 3], ["FWD", 3]];
+function bestEleven(players) {
+  const used = new Set(), xi = [];
+  for (const [pos, k] of NPOS) for (const p of players.filter((x) => x.pos === pos).sort((a, b) => b.ovr - a.ovr).slice(0, k)) { xi.push(p); used.add(p.uid); }
+  return { xi, rest: players.filter((p) => !used.has(p.uid)).sort((a, b) => b.ovr - a.ovr) };
+}
+const prRow = (p) => `<div class="pr"><span class="p ${esc(p.pos)}">${esc(p.pos)}</span><div class="nm"><b>${playerLink(p)}</b><span>${p.club ? clubLink(p.club) : "free agent"}</span></div><span class="age">${p.age}</span><span class="ovr">${p.ovr}</span></div>`;
 async function viewNation(name) {
-  const n = await api("/api/nation?name=" + enc(name));
-  $("#view").innerHTML = `<div class="crumbs"><a href="#/nations">Nations</a> / ${esc(n.name)}</div><h1>${esc(n.name)}</h1>
-    <div class="sub">${esc(n.confed)} &middot; rating ${n.rating} &middot; talent ${n.talent} (base ${n.base}) &middot; ${n.pros} professionals &middot; World Cup: ${n.titles} title(s) in ${n.apps} appearance(s)</div>
-    <div class="cols"><div><h2 style="margin-top:0">Best players</h2><div class="scroll"><table><thead><tr><th class="l">Player</th><th class="l">Pos</th><th>Age</th><th>OVR</th><th class="l">Club</th></tr></thead><tbody>
-    ${n.players.map((p) => `<tr><td class="l">${playerLink(p)}</td><td class="l pos-${esc(p.pos)}">${esc(p.pos)}</td><td>${p.age}</td><td>${ovr(p.ovr)}</td><td class="l">${p.club ? clubLink(p.club) : '<span class="meta">free agent</span>'}</td></tr>`).join("")}</tbody></table></div></div>
-    <div>${federationCard(n)}${trophyRoom(n.trophies, "Trophy room")}<div class="card" style="margin-top:14px"><h3>National coach</h3><div class="kv"><span>Name</span><span>${esc(n.coach.name)}</span><span>Prestige</span><span>${n.coach.prestige}</span><span>Style</span><span>${esc(n.coach.personality)} / ${esc(n.coach.skill)}</span></div></div></div></div>`;
+  const [n, all] = await Promise.all([api("/api/nation?name=" + enc(name)), api("/api/nations")]);
+  const me = all.rows.find((r) => r.name === name), rk = me ? me.rank : null;
+  const sfx = (k) => { const t = k % 100; return t >= 11 && t <= 13 ? "th" : ["th", "st", "nd", "rd"][k % 10] || "th"; };
+  const tabs = [["squad", "Squad"], ["fed", "Federation"], ["hon", "Honours"]];
+  if (!n.federation) tabs.splice(1, 1);
+  if (!tabs.some((t) => t[0] === NV.tab)) NV.tab = "squad";
+  const body = () => {
+    if (NV.tab === "fed") return natFed(n);
+    if (NV.tab === "hon") return trophyRoom(n.trophies, "Trophy room");
+    const { xi, rest } = bestEleven(n.players), c = n.coach;
+    return `<div class="sep">Best eleven</div><div class="card" style="margin-top:6px;padding-top:2px;padding-bottom:2px">${xi.map(prRow).join("")}</div>
+      ${rest.length ? `<button class="btn" id="nt-more" style="display:flex;margin-top:10px;width:100%">${NV.more ? "Hide the others" : `Show the next ${rest.length} players`}</button>${NV.more ? `<div class="card" style="margin-top:10px;padding-top:2px;padding-bottom:2px">${rest.map(prRow).join("")}</div>` : ""}` : ""}
+      <div class="card"><h3>National coach</h3><div class="row"><span>${esc(c.name)}</span><span class="dim">prestige ${c.prestige} · ${esc(c.personality)} / ${esc(c.skill)}</span></div></div>`;
+  };
+  const draw = () => {
+    $("#view").innerHTML = `<div class="v2"><a class="crumb" href="#/nations">‹ Nations</a>
+      <div style="display:flex;align-items:center;gap:12px">${flag(n.name, 52)}<div><h1>${esc(n.name)}</h1><div class="sub">${esc(n.confed)}${rk ? " · ranked " + rk + sfx(rk) + " in the world" : ""}</div></div></div>
+      <div class="stat4"><div><b class="pos">${n.rating}</b><span>RATING</span></div><div><b>${n.talent}</b><span>TALENT</span></div><div><b>${n.pros}</b><span>PROS</span></div><div><b>${n.titles}</b><span>WC TITLES</span></div></div>
+      <nav class="tabs2" aria-label="Nation sections">${tabs.map(([k, t]) => `<button data-nt="${k}" class="${NV.tab === k ? "on" : ""}">${t}</button>`).join("")}</nav>
+      ${body()}</div>`;
+    document.querySelectorAll("[data-nt]").forEach((b) => (b.onclick = () => { NV.tab = b.dataset.nt; draw(); }));
+    const m = $("#nt-more"); if (m) m.onclick = () => { NV.more = !NV.more; draw(); };
+  };
+  draw();
+}
+function natFed(n) {
+  const f = n.federation, last = f.last, sp = f.split;
+  const tot = last ? last.prize + last.comp + last.soli : 0;
+  const acc = (title, right, inner) => `<details class="acc"><summary><span>${title}</span><span class="dim">${right}</span></summary><div class="b">${inner}</div></details>`;
+  const young = (p) => `<div class="pr"><div class="nm"><b>${playerLink({ uid: p.uid, name: p.name, nat: n.name })}</b><span>${p.club ? clubLink(p.club) : "free agent"} · ${p.age}</span></div><span>${p.ovr} / <b class="pos">${p.pot}</b></span></div>`;
+  const best = f.abroad.slice().sort((a, b) => b.pot - a.pot).slice(0, 3);
+  return `<div class="card"><h3>Federation stage <small>${esc(f.stages[f.stage])}</small></h3>
+      <div class="stages">${f.stages.map((t, i) => `<div class="${i < f.stage ? "done" : i === f.stage ? "on" : ""}">${t}</div>`).join("")}</div>
+      <div class="row" style="border-bottom:0;padding-bottom:4px"><span>Football culture</span><span><b>${f.culture}</b> <span class="dim">/ 100</span> ${f.delta ? `<span class="${f.delta > 0 ? "pos" : "neg"}">${f.delta > 0 ? "+" : ""}${f.delta}</span>` : ""}</span></div>
+      <div class="bar"><i style="width:${Math.min(100, f.culture)}%"></i></div>
+      <div class="dim small" style="margin-top:6px">${f.next_at ? `Next stage at ${f.next_at}.` : "Top stage."} ${f.lift > 0.5 ? `The score is ${f.lift} above where it started, which brings more high-potential youngsters.` : f.lift < -0.5 ? `The score is ${-f.lift} below where it started.` : ""}</div></div>
+    <div class="card" style="padding-top:2px;padding-bottom:2px">
+      ${acc(`Federation fund${last ? ` <span class="dim">· season ${last.season}</span>` : ""}`, last ? money(tot) : "opens after season 1", last ? `
+        <div class="row"><span>Share of prize money</span><span class="pos">+${money(last.prize)}</span></div>
+        <div class="row"><span>Training compensation</span><span class="pos">+${money(last.comp)}</span></div>
+        <div class="row"><span>Solidarity and development</span><span class="pos">+${money(last.soli)}</span></div>
+        ${[["Home academies", sp[0]], ["Partner academies abroad", sp[1]], ["Coaching", sp[2]]].map(([t, v]) => `<div class="ir"><span class="n">${t}</span><div class="bar"><i style="width:${Math.round(v * 100)}%"></i></div><span class="v">${Math.round(v * 100)}%</span></div>`).join("")}
+        <div class="dim small" style="margin-top:6px">Chosen automatically by the federation's stage.</div>` : `<div class="dim small">The fund opens after the first completed season.</div>`)}
+      ${acc("Why the score moved", `${f.events.length} event${f.events.length === 1 ? "" : "s"}`, f.events.length ? f.events.map((e) => `<div class="ev"><b class="${e.pts < 0 ? "neg" : ""}">${e.pts > 0 ? "+" : ""}${e.pts}</b><span>${esc(e.text)} <span class="dim">S${e.season}</span></span></div>`).join("") : `<div class="dim small">Nothing yet.</div>`)}
+      ${f.golden ? acc("Golden generation", `${f.golden.count} prospects`, `<div class="dim small">${f.golden.count} prospects with ${f.golden.bar}+ potential aged ${f.golden.ages[0]} to ${f.golden.ages[1]}. Expect the national team to peak in a few seasons.</div>${f.golden.players.map(young).join("")}`) : ""}
+      ${acc("Young players abroad", String(f.n_abroad), `<div class="dim small">${f.n_abroad} under 21 abroad, ${f.n_home} at home. They keep their nationality and their success counts for ${esc(n.name)}.</div>`)}
+    </div>
+    ${best.length ? `<div class="card"><h3>Best young players abroad <small>top three</small></h3>${best.map(young).join("")}</div>` : ""}`;
 }
 function pitchSVG(team) {
   const rows = { FWD: 130, MID: 300, DEF: 470, GK: 620 };
