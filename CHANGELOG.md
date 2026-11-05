@@ -1,5 +1,16 @@
 # Changelog
 
+## v15.2: League & Competition Pages
+- **League page in tabs.** Table, Money, Hall of Fame, Fixtures and Stats, with a header of average OVR, club income, TV money and how rich the league is. The table shows a gold number for league titles won.
+- **Money tab.** League health (revenue, growth, state), where the money comes from and where it goes, every club's finances with a wage-limit bar and a Strong / Steady / Tight / In debt label (tap to open that club's Finance tab), and a comparison with neighbouring leagues. API: `/api/leaguemoney`.
+- **Hall of Fame tab.** Titles by club (with continental cup wins), clubs yet to win with their best finish, a strip of winners by season, champions with coach and points, and records. API: `/api/leaguehof`.
+- **Stats tab.** All time or Per season. All time: top scorer, goals, assists, clean sheets, Golden Boots, coaches (top 40, show more), single-season records, Golden Boot winners. Per season: any past season or the current one, with scorers, assists, clean sheets, MVP and coaches. API: `/api/compalltime`.
+- **Continent pages for every confederation** (UEFA, CONMEBOL, CONCACAF, CAF, AFC, OFC): Overview, Competitions and Leagues tabs. Each competition is a card with its holders, most titles and current edition or next year. API: `/api/comphub`.
+- **Competition pages** for every continental cup, European-style championship (Euro, Copa America, Gold Cup, AFCON, Asian Cup, OFC Nations Cup), Nations League, the World Cup and the Club World Cup, each with This season, History and Stats tabs. History has holders, titles by club or nation, finalists who never won, titles by league or confederation, every final (winner's score first), hosts and records. API: `/api/comphist`. The World page lists the two global tournaments.
+- **Economy pass.** Running costs now take 25% of TV, gate and sponsor income (was 10%), so clubs keep less cash: across the world about 27% of clubs read Strong, 55% Steady and 17% Tight (was 72% Strong). New games only; saves already in progress keep their own settings.
+- The UEFA page is titled UEFA (with Europe underneath). New loading-screen subtext.
+- Known limit: all-time totals add up each edition's stored top lists (top 20 league, top 10 cup), so they are exact for the leaders.
+
 ## v15.1: The Season Loop
 - **A guided season loop.** Season, Summer tournaments, Awards, Transfers, Graduates, then the next season. A stepper in the sim bar shows where you are, and the main button follows it: "Wrap up season N" opens the awards, "Continue to transfers" opens the transfer record, "Start season N+1" goes back to the world. Simming many seasons is unchanged.
 - **Wrap-up starts with a choice:** Watch the ceremony (winners revealed one at a time) or Skip to results. The results page no longer has a watch button.

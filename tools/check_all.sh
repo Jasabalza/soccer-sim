@@ -12,6 +12,6 @@ echo "order independence:"; node tools/t_order.js > $T/order.txt; sed 's/^/  /' 
 echo "tournament single games, any order:"; node tools/t_order2.js 1,2 5 > $T/order2.txt; sed 's/^/  /' $T/order2.txt; grep -q DIFFERENT $T/order2.txt && fail=1
 node tools/t_games_api.js > $T/games_api.txt 2>&1; tail -1 $T/games_api.txt | sed 's/^/  games api: /'; grep -q "ALL OK" $T/games_api.txt || fail=1
 echo "v15 modules:"
-for t in t_finance t_cwc t_fed t_rivals_v15 t_market_v15 t_flow t_groups; do node tools/$t.js > $T/$t.txt 2>&1; r=$(tail -1 $T/$t.txt); echo "  $t: $r"; grep -qi "fail\|error\|ERR " $T/$t.txt && fail=1; done
+for t in t_finance t_cwc t_fed t_rivals_v15 t_market_v15 t_flow t_groups t_pages_v152; do node tools/$t.js > $T/$t.txt 2>&1; r=$(tail -1 $T/$t.txt); echo "  $t: $r"; grep -qi "fail\|error\|ERR " $T/$t.txt && fail=1; done
 if [ -n "$OLD_BUNDLE" ]; then node tools/t_migrate_v15.js "$OLD_BUNDLE" > $T/mig.txt 2>&1; echo "  old save migration: $(tail -1 $T/mig.txt)"; grep -q "ALL OK" $T/mig.txt || fail=1; fi
 [ $fail = 0 ] && echo "ALL CHECKS PASSED" || echo "CHECKS FAILED"
