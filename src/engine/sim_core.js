@@ -263,6 +263,7 @@ class World {
     self.compute_cup_fields(null);
     self.money_update($kw({"initial": true}));
     self.start_season();
+    $mods.hof.init(self);
   }
   _load_data() {
     const self = this;
@@ -740,6 +741,7 @@ class World {
       if (!$in("acad", c)) self._init_v15(c, n, L);
     }
     for (const nm of self.nations.keysArr()) $mods.fed.init($idx(self.nations, nm));
+    $mods.hof.ensure(self); $mods.hof.foundOnce(self);
     return true;
   }
   renegotiate_tv() {
@@ -1033,6 +1035,7 @@ class World {
     self.apply_results(rec, recs, tables, finish, expected, cwc, wc);
     self.coach_offseason();
     self.season_end(rec);
+    $mods.hof.rollover(self, self.season);
     self.nations_offseason(rec, wc);
     tr = (() => { const $r = []; let t; for (const $c0 of $iter(self.transfers)) { t = $c0; if (!($eq($idx(t, "season"), self.season))) continue; $r.push(t); } return $r; })();
     net = (() => { const $r = new $Dict(); let ln; for (const $c0 of $iter(self.leagues)) { ln = $c0; $r.set(ln, 0.0); } return $r; })();
@@ -1267,6 +1270,7 @@ class World {
     c = $idx(self.clubs, n);
     co = $idx(c, "coach");
     $setidx(c, "cp", fclamp($sub($idx(c, "cp"), $mul(co.prestige, cfg.transfer_share)), 0, 1000));
+    $mods.hof.coachLeft(self, co);
     co.club = null;
     co.last_club = n;
     co.prev_attr = self.attr(n);
@@ -1277,6 +1281,7 @@ class World {
       $t1 = self.stats, $setidx($t1, "coach_retire", $idx($t1, "coach_retire") + 1);
       $M.append(self.retired_coaches, co);
       $M.append(self.retired_all, co);
+      $mods.hof.onCoachRetire(self, co);
       if (((co.prestige >= 60) || (co.titles >= 3))) {
         self.news("coach", ("Coach " + $str(co.name) + " retires after " + $str(co.seasons) + " seasons (" + $str(co.titles) + " league titles, " + $str(co.cups) + " continental cups)"));
       }
@@ -1305,6 +1310,7 @@ class World {
     $M.append(co.clubs, n);
     $setidx(c, "coach", co);
     $setidx(c, "stint", 0);
+    $mods.hof.coachHired(self, co, n);
     $t1 = self.stats, $setidx($t1, "hires", $idx($t1, "hires") + 1);
     if (((co.last_club != null) && (!$eq(co.last_club, n)))) {
       $t2 = self.stats, $setidx($t2, "moves", $idx($t2, "moves") + 1);
@@ -1326,6 +1332,7 @@ class World {
       if (((co.age >= 70) || (co.unemployed_years > 6))) {
         $M.append(self.retired_coaches, co);
         $M.append(self.retired_all, co);
+        $mods.hof.onCoachRetire(self, co);
         $t1 = self.stats, $setidx($t1, "coach_retire", $idx($t1, "coach_retire") + 1);
       } else {
         $M.append(keep, co);
@@ -1411,6 +1418,7 @@ class World {
       old = $idx(n, "coach");
       if ((old != null)) {
         old.intl = null;
+        $mods.hof.natCoachSet(self, old, null);
         if ((old.age <= 74)) {
           $M.append(pool, old);
         }
@@ -1440,6 +1448,7 @@ class World {
         $setidx(n, "coach", self._new_coach(fclamp($add((8 + (($idx(n, "base") - 40) * 0.4)), rng.uniform((-5), 5)), 3, 60), $kw({"age": rng.randint(45, 66), "nat": nm})));
       }
       $idx(n, "coach").intl = nm;
+      $mods.hof.natCoachSet(self, $idx(n, "coach"), nm);
       $idx(n, "coach").contract = self.cfg.nat_coach_years;
     }
     self.retired_coaches = (() => { const $r = []; let co; for (const $c0 of $iter(pool)) { co = $c0; if (!((co.intl == null) && (co.age <= 75))) continue; $r.push(co); } return $r; })();
@@ -1472,6 +1481,9 @@ class World {
   }
   _should_retire(p) {
     const self = this;
+    if ($mods.hof.stretch(self, p)) {
+      return false;
+    }
     if ((p.age >= 39)) {
       return true;
     }
@@ -1682,6 +1694,7 @@ class World {
       p = $f85;
       if ($T(self._should_retire(p))) {
         $setidx(rec, "retired", $idx(rec, "retired") + 1);
+        $mods.hof.onRetire(self, p);
         if ((p.peak >= 86)) {
           $M.append(self.retired_players, p);
         }
@@ -1733,7 +1746,7 @@ class World {
     keep = [];
     for (const $f91 of $iter(self.players)) {
       p = $f91;
-      if (((p.club == null) && $lt(rng.random(), self._outflow_chance(p.age)))) {
+      if (((p.club == null) && $lt(rng.random(), self._outflow_chance(p.age)) && !(p.age <= 40 && p.career.length >= 8 && $mods.hof.isChaser(p)))) {
         $setidx(rec, "outflow", $idx(rec, "outflow") + 1);
         gone = gone + 1;
       } else {
