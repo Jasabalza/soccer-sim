@@ -208,7 +208,7 @@ $mods["hof"] = (function () {
     const kind = kindOf(card, key), C = CFG[kind], st = card.st[key], n = st.n;
     const s = scoreOf(w, card, key);
     const base = 1 / (1 + Math.exp(-(s - C.mid) / C.scale));
-    return clamp(base + nrm(w.seed + "|" + Y + "|" + key + "|" + card.id) * CFG.noise + CFG.ramp * (n - 1), 0, 1);
+    return clamp(base + nrm(w.seed + "|" + Y + "|" + key + "|" + card.id) * CFG.noise + CFG.ramp * (n - 1), 0, 0.99);
   }
   const entry = (card, key, st, extra) => Object.assign({ id: card.id, name: card.name, nat: card.nat, pos: card.pos || null, k: card.k, pct: Math.round(st.pct * 1000) / 1000, n: st.n, left: Math.max(0, CFG.window - st.n), ret: card.ret }, extra || {});
   // one vote for one scope in one year. kindK is "p" (players) or "c" (coaches). Returns {ind, bal, off}

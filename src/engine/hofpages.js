@@ -84,7 +84,7 @@ $mods["hofpages"] = (function () {
   function favourites(w, Y) {
     const h = st(w), out = [];
     for (const f of (w.favs || [])) {
-      const ln = f.startsWith("league:") ? f.slice(7) : null, nat = f.startsWith("nation:") ? f.slice(7) : null;
+      const ln = f.startsWith("L:") ? f.slice(2) : null, nat = f.startsWith("nation:") ? f.slice(7) : null;
       if (ln && w.leagues.has(ln)) { const r = h.res["L:" + ln + "|" + Y]; if (r) out.push({ kind: "league", name: ln, inducted: r.ind.map((e) => e.name) }); else out.push({ kind: "league", name: ln, inducted: [] }); }
       else if (nat && w.nations.has(nat)) { const r = h.res["C:" + nat + "|" + Y]; out.push({ kind: "nation", name: nat, inducted: r ? r.ind.map((e) => e.name) : [] }); }
     }

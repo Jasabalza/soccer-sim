@@ -13,7 +13,7 @@ const URL='http://localhost:8791/test_artifact.html';
  const ox=async(k)=>{ const [sw,iw]=await p.evaluate(()=>[document.documentElement.scrollWidth,innerWidth]); ok(sw<=iw+1,k+' overflows horizontally '+sw+'>'+iw); };
  const shot=async(k)=>p.screenshot({path:OUT+'/p152_'+k+'.png',fullPage:true});
  // before any season: every page must open on an empty world
- await go('#/league/Premier%20League'); ok((await p.$$('#lg-tabs [data-lt]')).length===5,'league has 5 tabs'); 
+ await go('#/league/Premier%20League'); ok((await p.$$('#lg-tabs [data-lt]')).length===6,'league has 6 tabs'); 
  for(const t of ['money','hof','fix','stats','table']){ await p.click(`#lg-tabs [data-lt="${t}"]`); await p.waitForTimeout(500); }
  await go('#/continent/CAF'); ok((await p.$$('#cn-ov .cc')).length===2,'CAF shows its 2 national competitions, got '+(await p.$$('#cn-ov .cc')).length);
  await go('#/c/ct%3AUEFA/history'); ok(/Nothing has been decided/.test(await p.innerText('#cp-body')),'empty history message');
