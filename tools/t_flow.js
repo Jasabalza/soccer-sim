@@ -21,7 +21,7 @@ const seed = process.argv[2] || "3";
     if ((await ph()) !== "done") fail.push("expected done after the last game, got " + (await ph()));
     console.log("season " + yr + " phases: " + seen.join(" > "));
     if (seen.includes("summer") || yr === 4) break;
-    await call("/api/rollover", {}); await call("/api/flow", { step: "transfers" }); await call("/api/flow", { step: "done" });
+    await call("/api/rollover", {}); await call("/api/flow", { step: "graduates" }); await call("/api/flow", { step: "done" });
   }
   if (!all.has("summer")) fail.push("never saw a summer phase");
   const r = await call("/api/rollover", {});
@@ -39,6 +39,16 @@ const seed = process.argv[2] || "3";
   if (f.header.phase !== "transfers") fail.push("transfers step not reached: " + f.header.phase);
   const lg = await raw("/api/ledger?season=" + season);
   if (lg.code !== 200) fail.push("ledger for the rolled season failed");
+  f = await call("/api/flow", { step: "graduates" });
+  if (f.header.phase !== "graduates") fail.push("graduates step not reached: " + f.header.phase);
+  for (const sc of ["grads", "all"]) {
+    const pr = await call("/api/prospects?scope=" + sc);
+    if (!pr.rows.length) fail.push("no prospects for scope " + sc);
+    else if (pr.rows.some((r, i) => i && r.pot > pr.rows[i - 1].pot)) fail.push("prospects not sorted by potential (" + sc + ")");
+    else console.log("prospects " + sc + ": " + pr.total + " | best " + pr.rows[0].name + " " + pr.rows[0].ovr + "/" + pr.rows[0].pot);
+  }
+  const pl = await call("/api/prospects?scope=all&league=" + encodeURIComponent((await call("/api/prospects?scope=all")).leagues[0]));
+  if (pl.rows.some((r) => r.league !== pl.league)) fail.push("league filter leaks");
   f = await call("/api/flow", { step: "done" });
   if (f.header.phase === "awards" || f.header.phase === "transfers" || f.header.flow) fail.push("flow not cleared: " + JSON.stringify(f.header));
   if (f.header.season !== season + 1) fail.push("new season should be " + (season + 1) + " got " + f.header.season);

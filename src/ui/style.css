@@ -626,3 +626,5 @@ button.wide { width: 100%; min-height: 44px; margin-top: 10px; }
 .v2 .cols span { flex: none; width: 34px; text-align: center; } .v2 .cols span:first-child { flex: 1; width: auto; text-align: left; }
 .v2 a[data-goto] { cursor: pointer; }
 .v2 .fin i { max-width: 36px; } .v2 .fin { justify-content: flex-start; }
+#simbar .stages.flow { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+#simbar .stages.flow div { font-size: 11px; padding: 6px 0; white-space: nowrap; overflow: hidden; text-overflow: clip; }

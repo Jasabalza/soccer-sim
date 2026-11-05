@@ -64,9 +64,9 @@ function renderShell() {
 }
 let SBOPEN = false;
 // the season loop: Season -> Summer tournaments -> Awards -> Transfers -> next season (the engine's header.phase says where we are)
-const FLOW_STEPS = [["season", "Season"], ["summer", "Summer"], ["awards", "Awards"], ["transfers", "Transfers"]];
+const FLOW_STEPS = [["season", "Season"], ["summer", "Summer"], ["awards", "Awards"], ["transfers", "Transfers"], ["graduates", "Graduates"]];
 function flowBar(h) {
-  const at = { season: 0, summer: 1, done: 2, awards: 2, transfers: 3 }[h.phase] ?? 0;
+  const at = { season: 0, summer: 1, done: 2, awards: 2, transfers: 3, graduates: 4 }[h.phase] ?? 0;
   const cell = (i, [k, t]) => `<div class="${i < at ? "done" : i === at ? "on" : ""}"${i === at ? ' aria-current="step"' : ""}>${i < at ? "&#10003; " : ""}${t}</div>`;
   return `<div class="stages flow" id="flowbar" aria-label="Season loop">${FLOW_STEPS.map((x, i) => cell(i, x)).join("")}</div>`;
 }
@@ -79,8 +79,9 @@ function renderSimBar() {
   const main = play
     ? `<button class="main" id="sb-week">Next week</button><button class="main" id="sb-4">4 weeks</button><button class="pri main" id="sb-end">${ph === "summer" ? "Finish summer" : "Rest of season"}</button>`
     : ph === "done" ? `<button class="pri main" id="sb-roll">Wrap up season ${h.season}</button>`
-    : ph === "awards" ? `<button class="main" id="sb-cer">Awards ceremony</button><button class="pri main" id="sb-tr">Continue to transfers</button>`
-    : `<button class="main" id="sb-mk">Transfers</button><button class="pri main" id="sb-next">Start season ${h.season}</button>`;
+    : ph === "awards" ? `<button class="main" id="sb-cer">Awards</button><button class="pri main" id="sb-tr">Continue to transfers</button>`
+    : ph === "transfers" ? `<button class="main" id="sb-mk">Transfers</button><button class="pri main" id="sb-gr">Continue to graduates</button>`
+    : `<button class="main" id="sb-pg">Graduates</button><button class="pri main" id="sb-next">Start season ${h.season}</button>`;
   bar_.innerHTML = `
     ${flowBar(h)}
     <span class="lbl wl">WORLD</span>
@@ -99,9 +100,11 @@ function renderSimBar() {
   on("#sb-4", () => simWorld({ weeks: 4 }));
   on("#sb-end", () => simWorld({ to_end: true }));
   on("#sb-roll", rollover);
-  on("#sb-cer", () => (location.hash = "#/ceremony/" + fs));
+  on("#sb-cer", () => (location.hash = "#/ceremony/" + fs + "/start"));
   on("#sb-tr", () => flowStep("transfers"));
   on("#sb-mk", () => (location.hash = "#/ledger/" + fs));
+  on("#sb-gr", () => flowStep("graduates"));
+  on("#sb-pg", () => (location.hash = "#/prospects"));
   on("#sb-next", () => flowStep("done"));
   on("#sb-tog", () => { SBOPEN = !SBOPEN; renderSimBar(); });
   $("#sb-years").onclick = simYears;
@@ -157,14 +160,14 @@ async function rollover() {
   for (const k in HOLD) delete HOLD[k];
   const r = await busy("Wrapping up the season...", () => api("/api/rollover", {}));
   await refreshStatus();
-  if (r && r.review) location.hash = "#/ceremony/" + r.review.season; else await route();
+  if (r && r.review) location.hash = "#/ceremony/" + r.review.season + "/start"; else await route();
 }
 // move the off-season along: awards -> transfers (opens the transfer record) -> next season (back to the world page)
 async function flowStep(step) {
   const fs = STATUS.header.flow ? STATUS.header.flow.season : STATUS.header.season - 1;
   await api("/api/flow", { step });
   await refreshStatus();
-  const to = step === "transfers" ? "#/ledger/" + fs : "#/world";
+  const to = step === "transfers" ? "#/ledger/" + fs : step === "graduates" ? "#/prospects" : "#/world";
   if (location.hash === to) await route(); else location.hash = to;
 }
 async function simYears() {
@@ -1126,6 +1129,23 @@ function awardRow(p, rank, max, extra, unit) {
     <div class="meta">${clubLink(p.club)} &middot; ${stat}${extra ? " &middot; " + extra : ""}</div></div>
     <div class="votes"><div class="vbar"><i style="width:${Math.round((100 * p.pts) / max)}%"></i></div><b>${p.pts}</b><span class="meta"> ${unit || "pts"}${p.first != null ? ` &middot; ${p.first} first places` : ""}</span></div></div>`;
 }
+// ---------------------------------------------------------------- young talent (v15.1): top academy graduates and prospects
+const PV = { scope: "grads", league: "" };
+async function viewProspects() {
+  const q = "scope=" + PV.scope + (PV.league ? "&league=" + enc(PV.league) : "");
+  const d = await api("/api/prospects?" + q);
+  const row = (p, i) => `<div class="pr"><span class="rk ${["g", "s", "b"][i] || ""}">${i + 1}</span><span class="p ${esc(p.pos)}">${esc(p.pos)}</span><div class="nm"><b>${playerLink(p)}</b><span>${p.age} \u00b7 ${p.club ? clubLink(p.club) : "no club yet"}${p.grad ? " \u00b7 academy" : ""}</span></div><span class="ovr m">${p.ovr}</span><span class="pt">${p.pot}</span></div>`;
+  const h = STATUS && STATUS.header, off = h && h.flow;
+  $("#view").innerHTML = `<div class="v2"><div class="hd"><div><h1>Top graduates</h1><div class="sub">${PV.scope === "grads" ? "Latest academy graduates" : "Every player aged 19 or under"}, best potential first</div></div></div>
+    <nav class="chips" aria-label="Which players">${[["grads", "Academy graduates"], ["all", "All young talent"]].map(([k, t]) => `<button data-ps="${k}" class="${PV.scope === k ? "on" : ""}">${t}</button>`).join("")}</nav>
+    <select class="sel" id="pv-l" aria-label="League" style="width:100%"><option value="">All leagues</option>${d.leagues.map((l) => `<option ${l === PV.league ? "selected" : ""}>${esc(l)}</option>`).join("")}</select>
+    <div class="cols"><span>Player</span><span>OVR</span><span>POT</span></div>
+    <div class="card" style="margin-top:6px;padding-top:2px;padding-bottom:2px">${d.rows.length ? d.rows.map(row).join("") : `<div class="dim small" style="padding:14px 0">Nobody here yet. Graduates appear after the first season.</div>`}</div>
+    <div class="dim small" style="margin-top:8px">${d.total} players match. POT is the most a player can reach.</div>${off ? `<div style="margin-top:12px"><button class="btn pri" id="pv-next" style="width:100%">${h.phase === "graduates" ? "Start season " + h.season : "Continue"}</button></div>` : ""}</div>`;
+  document.querySelectorAll("[data-ps]").forEach((b) => (b.onclick = () => { PV.scope = b.dataset.ps; viewProspects(); }));
+  $("#pv-l").onchange = (e) => { PV.league = e.target.value; viewProspects(); };
+  const nx = $("#pv-next"); if (nx) nx.onclick = () => flowStep(h.phase === "graduates" ? "done" : "graduates");
+}
 // ---------------------------------------------------------------- awards (v15.1)
 // Results first: #/ceremony/<season> (the whole season at a glance), /ballon (top ten and votes), /team (Team of the Year and cup awards),
 // /watch (the ceremony, one award per screen). Nothing is hidden on the results page.
@@ -1151,6 +1171,7 @@ async function viewCeremony(season, sub) {
   const hdr = (title, subt) => `<div class="hd"><div><h1>${title}</h1><div class="sub">${subt}</div></div></div>`;
   let html;
   if (sub === "watch") return awWatch(d);
+  if (sub === "start") return awGate(d);
   if (sub === "ballon") html = awBallon(d, back, hdr);
   else if (sub === "team") html = awTeamPage(d, back, hdr);
   else html = awResults(d);
@@ -1160,6 +1181,16 @@ async function viewCeremony(season, sub) {
   document.querySelectorAll("#view [data-cg]").forEach((b) => (b.onclick = () => { AWCG = b.dataset.cg; viewCeremony(season, sub); }));
 }
 let AWCG = "club";
+// the choice after wrap-up: watch the ceremony (winners revealed one at a time) or go straight to the results. Nothing is shown here.
+function awGate(d) {
+  const S = d.season;
+  $("#view").innerHTML = `<div class="v2"><div class="hd"><div><h1>Season ${S} awards</h1><div class="sub">${esc(d.season_label)}</div></div></div>
+    <div class="card" style="margin-top:16px;text-align:center;padding:22px 14px">
+      <div class="eyebrow gold">The season is over</div>
+      <div style="font-size:18px;font-weight:700;margin:8px 0 4px">Ballon d'Or, Golden Boot, Young Player, Coach and more</div>
+      <div class="dim small">Watch them revealed one at a time, or skip and see every winner on one page.</div>
+      <div style="display:grid;gap:10px;margin-top:18px"><a class="btn pri" href="#/ceremony/${S}/watch" style="min-height:52px;font-size:15px">Watch the ceremony</a><a class="btn" href="#/ceremony/${S}" style="min-height:52px;font-size:15px">Skip to results</a></div></div></div>`;
+}
 function awResults(d) {
   const a = d.awards, b = a.ballon, w = b[0], bt = a.boot[0], yg = a.young[0], co = a.coach[0];
   const mx = b[0].pts || 1, S = d.season;
@@ -1169,7 +1200,6 @@ function awResults(d) {
   const nComps = Object.keys(a.comps || {}).length;
   return `
     <div class="hd"><div><h1>Awards</h1><div class="sub">Season ${S} (${esc(d.season_label)}) · ${a.voters} voters</div></div>${awSelect(d)}</div>
-    <div style="display:flex;gap:10px;align-items:center;margin-top:12px;flex-wrap:wrap"><a class="btn pri" href="#/ceremony/${S}/watch">Watch the ceremony</a><span class="dim small">Or read the results below. Nothing is hidden.</span></div>
     <nav class="chips sticky" aria-label="Jump to an award"><button class="on" data-go="aw-ballon">Ballon d'Or</button><button data-go="aw-boot">Golden Boot</button><button data-go="aw-young">Young player</button><button data-go="aw-coach">Coach</button><button data-go="aw-team">Team of the Year</button><button data-go="aw-cups">Cups</button></nav>
     <section id="aw-ballon" class="card hero" style="margin-top:4px">
       <div class="eyebrow gold">Ballon d'Or</div>
@@ -1718,6 +1748,7 @@ async function routeInner(r, a, b) {
     if (r === "player") return await viewPlayer(a);
     if (r === "map") { location.replace("#/world"); return; }               // the league map was removed
     if (r === "ceremony") return await viewCeremony(a ? +a : null, b);
+    if (r === "prospects") return await viewProspects();
     if (r === "trophies") return a === "winners" ? await viewTrophies(b, "winners") : await viewTrophies(null, a || "winners");
     if (r === "money") return await viewMoney();
     if (r === "ledger") return await viewLedger(a);

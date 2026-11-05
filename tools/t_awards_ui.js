@@ -16,7 +16,7 @@ const URL='http://localhost:8791/test_artifact.html';
  await go('#/ceremony'); const SS=await p.evaluate(()=>+document.querySelector('#aw-season').value); console.log('season',SS);
  ck(/Awards/.test(await p.innerText('#view h1')),'results page title');
  ck((await p.$$('#aw-ballon, #aw-boot, #aw-young, #aw-coach, #aw-team, #aw-cups')).length===6,'six award sections');
- ck(await noScroll(),'results: no sideways scroll');
+ ck(!(await p.$('a[href$="/watch"]')),'results page has no watch button'); ck(await noScroll(),'results: no sideways scroll');
  await p.screenshot({path:OUT+'/aw_1.png',fullPage:true});
  await p.click('[data-go="aw-team"]'); await p.waitForTimeout(500);
  const det=await p.$$('#aw-cups details'); ck(det.length>0,'cup accordions: '+det.length); if(det.length){ await det[0].evaluate(e=>e.open=true); }
