@@ -509,7 +509,7 @@ function v_news() {
 const LEDGER_KEYS = ["tv", "gate", "sponsor", "prize", "sales", "owner", "income", "wages", "running", "interest", "transfers", "academy", "stadium", "payout", "profit", "cash", "debt"];
 function ledger_rows(c) {
   const out = [];
-  for (const e of $M.get(c, "ledger", [])) { const row = {"season": $idx(e, "season")}; for (const k of LEDGER_KEYS) row[k] = mx($idx(e, k)); out.push($dict($kw(row))); }
+  for (const e of $M.get(c, "ledger", [])) { const row = {"season": $idx(e, "season")}; for (const k of LEDGER_KEYS) row[k] = mx($idx(e, k)); row.acad = $M.get(e, "acad", null); row.cap = $M.get(e, "cap", null); row.fans = $M.get(e, "fans", null); out.push($dict($kw(row))); }
   return out;
 }
 function payroll_of(w, name) { let t = 0; for (const p of w.players) if (p.club === name) t += p.wage; return t; }
@@ -551,7 +551,7 @@ function v_worldmoney() {
   for (const [n, c] of $M.items(w.clubs)) { const r = $idx(c, "funds") / Math.max(1e-9, $idx(c, "income")); if (r > 2.0) over++; piles.push([n, r, $idx(c, "funds")]); }
   piles.sort((a, b) => b[1] - a[1]);
   const growth = out.length ? out[out.length - 1].get_("growth") : null;
-  const health = growth == null ? "no data yet" : (growth < -0.01 ? "Shrinking" : growth < 0.02 ? "Flat" : growth <= 0.05 ? "Healthy" : "Overheating");
+  const health = growth == null ? "no data yet" : (growth < -0.02 ? "Shrinking" : growth < 0.02 ? "Stable" : growth <= 0.05 ? "Growing" : "Overheating");
   return $dict($kw({"season": ls, "seasons": out, "leagues": leagues, "health": health, "growth": growth, "money_x": w.cfg.money_x,
     "cash": mx($sum((() => { const r = []; for (const [n, c] of $M.items(w.clubs)) r.push($idx(c, "funds")); return r; })())),
     "debt": mx($sum((() => { const r = []; for (const [n, c] of $M.items(w.clubs)) r.push($M.get(c, "debt", 0.0)); return r; })())),

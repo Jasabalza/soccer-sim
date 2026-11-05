@@ -292,7 +292,7 @@ function wireSaves(inGame) {
 
 // ---------------------------------------------------------------- favorites
 // A favorite is a key: "L:<league>" or "<kind>:<confed>" (cup, ct, nl, qual). The list is kept inside the world, so it travels with every save.
-const APP_VERSION = "v14.1", APP_TAG = "The Favorites Update";
+const APP_VERSION = "v15.0", APP_TAG = "The Business Update";
 let FAVS = null, PICK_ASKED = false;                    // FAVS: null until the player has chosen, then an array of keys
 const CT_NAMES = { UEFA: "European Championship", CONMEBOL: "Copa America", CONCACAF: "Gold Cup", CAF: "Africa Cup of Nations", AFC: "Asian Cup", OFC: "OFC Nations Cup" };
 const NL_NAMES = { UEFA: "UEFA Nations League", CONMEBOL: "CONMEBOL Nations League", CONCACAF: "CONCACAF Nations League", CAF: "CAF Nations League", AFC: "AFC Nations League", OFC: "OFC Nations League" };
@@ -488,7 +488,7 @@ async function viewWorld() {
     ${q ? `<div class="quick"><a class="stat" href="#/league/${enc(q.league.name)}"><div class="k">Strongest league</div><div class="v">${esc(q.league.name)}</div><div class="meta">avg OVR ${q.league.avg}</div></a>
       <a class="stat" href="#/club/${enc(q.club.name)}"><div class="k">Strongest club</div><div class="v">${crest(q.club.name, 18)} ${esc(q.club.name)}</div><div class="meta">rating ${q.club.eff}</div></a>
       <a class="stat" href="#/nation/${enc(q.nation.name)}"><div class="k">Strongest nation</div><div class="v">${flag(q.nation.name, 22)} ${esc(q.nation.name)}</div><div class="meta">rating ${q.nation.eff}</div></a>
-      <a class="stat" href="#/club/${enc(q.rich.name)}"><div class="k">Richest club</div><div class="v">${esc(q.rich.name)}</div><div class="meta">${money(q.rich.budget)} budget</div></a>
+      <a class="stat" href="#/club/${enc(q.rich.name)}"><div class="k">Richest club</div><div class="v">${esc(q.rich.name)}</div><div class="meta">${money(q.rich.budget)} yearly income</div></a>
       <a class="stat" href="#/players"><div class="k">Players</div><div class="v">${q.players.toLocaleString()}</div><div class="meta">${q.clubs} clubs &middot; ${q.nations} nations</div></a></div>` : ""}`;
   $("#view").innerHTML = `<div class="whead"><h1>The world</h1>${chosen ? `<div class="seg" role="group"><button data-fv="all" class="${onlyFav ? "" : "on"}">All</button><button data-fv="fav" class="${onlyFav ? "on" : ""}">Favorites ${FAVS.length}</button></div>` : ""}</div>
     <div class="sub">${chosen ? "Star the competitions you care about, then flip to Favorites to hide the rest." : "Click a continent to go deeper, or use the buttons at the top to sim everything."}</div>
@@ -571,6 +571,69 @@ async function viewLeague(name, season) {
 function sortRows(rows, key, dir) {
   return rows.slice().sort((a, b) => { const x = a[key], y = b[key]; return (typeof x === "string" ? x.localeCompare(y) : x - y) * dir || b.ovr - a.ovr; });
 }
+
+// ---- v15 club tabs: finance, academy, stadium ----------------------------------------------------------
+const dotsHTML = (n, max = 3) => `<span class="dots">${"●".repeat(n)}<s>${"●".repeat(max - n)}</s></span>`;
+function barsHTML(rows, h) {
+  const m = Math.max(1e-9, ...rows.map((r) => Math.abs(r.v)));
+  return `<div class="bars" style="height:${h * 2 + 18}px">${rows.map((r) => `<div class="bar-c" title="${esc(r.title || "")}"><div class="bar-top" style="height:${h}px">${r.v >= 0 ? `<i style="height:${Math.max(2, Math.abs(r.v) / m * h)}px"></i>` : ""}</div><div class="bar-bot" style="height:${h}px">${r.v < 0 ? `<i class="neg" style="height:${Math.max(2, Math.abs(r.v) / m * h)}px"></i>` : ""}</div><span>${esc(r.label)}</span></div>`).join("")}</div>`;
+}
+const LROWS = [["TV money", "tv", 1], ["Gate (tickets)", "gate", 1], ["Prize money", "prize", 1], ["Sponsors", "sponsor", 1], ["Player sales", "sales", 1], ["Owner funding", "owner", 1]];
+const CROWS = [["Wages", "wages"], ["Running costs", "running"], ["Transfers in", "transfers"], ["Academy", "academy"], ["Stadium project", "stadium"], ["Interest", "interest"]];
+function financeTab(c, sel) {
+  const f = c.finance, L = f.ledger, row = (sel != null ? L.find((r) => r.season === sel) : null) || L[L.length - 1];
+  if (!row) return `<div class="empty">The books open after the first completed season.</div>`;
+  const prev = L[L.indexOf(row) - 1], costs = CROWS.reduce((a, [, k]) => a + row[k], 0), over = f.payroll / Math.max(1e-9, c.budget) > f.wage_cap;
+  const surplus = [];
+  L.forEach((r, i) => { const q = L[i - 1]; if (!q) return; if (r.acad != null && q.acad != null && r.acad - q.acad >= 0.4) surplus.push([r.season, `Academy level ${Math.round(q.acad)} to ${Math.round(r.acad)}`]); if (r.cap != null && q.cap != null && r.cap > q.cap) surplus.push([r.season, `Stadium expansion +${Math.round((r.cap - q.cap) * 10) / 10}k seats`]); });
+  return `<div class="cols"><div>
+    <div class="card"><h3>Cash <small>${c.finance.debt > 0 ? '<span class="tag red">in debt</span>' : ""}</small></h3>
+      <div style="display:flex;justify-content:space-between;align-items:flex-end"><span class="bigv">${money(c.funds)}</span><span class="meta">${prev ? moneyS(row.cash - prev.cash) + " vs last season" : ""}</span></div>
+      <div class="mbar" style="margin:8px 0 4px"><i style="width:${Math.min(100, c.funds / Math.max(1e-9, f.comfort) * 100)}%"></i></div>
+      <div class="meta">Comfort level: 2x yearly income = ${money(f.comfort)}. Cash above it is invested in the academy and stadium. ${f.debt > 0 ? "Debt: " + money(f.debt) + "." : ""}</div></div>
+    <div class="card" style="margin-top:14px"><h3>Season ${row.season} ledger <small><select id="fin-s">${L.map((r) => `<option ${r.season === row.season ? "selected" : ""}>${r.season}</option>`).join("")}</select></small></h3>
+      ${LROWS.filter(([, k]) => row[k] || k !== "owner").map(([t, k]) => `<div class="row"><span>${t}</span><span class="pts">${moneyS(row[k])}</span></div>`).join("")}
+      <div class="row" style="font-weight:700"><span>Income</span><span>${money(row.income)}</span></div>
+      ${CROWS.map(([t, k]) => `<div class="row"><span>${t}</span><span class="${row[k] ? "neg" : ""}">${row[k] ? "-" + money(row[k]) : money(0)}</span></div>`).join("")}
+      <div class="row" style="font-weight:700"><span>Costs</span><span>-${money(costs)}</span></div>
+      <div class="row" style="font-weight:700"><span>Profit</span><span class="${row.profit >= 0 ? "pts" : "neg"}">${moneyS(row.profit)}</span></div>
+      <div class="meta" style="margin-top:6px">Paid out to the transfer budget after the season: ${money(row.payout)}. Prize money from the Club World Cup arrives every fourth season; the yearly income counts a quarter of it each year.</div></div></div>
+    <div><div class="card"><h3>Wage bill vs yearly income</h3>
+      <div style="display:flex;justify-content:space-between"><span class="bigv" style="${over ? "color:var(--red)" : ""}">${Math.round(f.wage_ratio * 100)}%</span><span class="meta">limit ${Math.round(f.wage_cap * 100)}%</span></div>
+      <div class="mbar" style="margin:8px 0 4px"><i style="width:${Math.min(100, f.wage_ratio / f.wage_cap * 100)}%;${over ? "background:var(--red)" : ""}"></i></div>
+      <div class="meta">Wages ${money(f.payroll)} of ${money(c.budget)} yearly income. Room left: ${money(f.wage_room)}. Above the limit the club cannot sign anyone on higher wages.</div></div>
+    <div class="card" style="margin-top:14px"><h3>Profit by season</h3>${barsHTML(L.slice(-8).map((r) => ({ label: "S" + r.season, v: r.profit, title: moneyS(r.profit) })), 54)}</div>
+    <div class="card" style="margin-top:14px"><h3>Where the surplus went</h3>${surplus.length ? surplus.slice(-5).reverse().map(([sn, t]) => `<div class="row"><span>S${sn}</span><span>${esc(t)}</span></div>`).join("") : '<div class="meta">Nothing yet. A club invests once it has money above its comfort level.</div>'}</div></div></div>`;
+}
+function academyTab(c) {
+  const a = c.finance.academy, sc = a.scouting, tot = a.origins.reduce((x, o) => x + o.n, 0);
+  const top = a.origins.slice(0, 5), rest = a.origins.slice(5).reduce((x, o) => x + o.n, 0);
+  const prospects = c.squad.filter((p) => p.age <= 21).sort((x, y) => y.pot - x.pot).slice(0, 5);
+  return `<div class="cols"><div>
+    <div class="card"><h3>Academy level</h3><div style="display:flex;justify-content:space-between;align-items:flex-end"><span class="bigv">${a.level} <span class="meta" style="font-size:15px">of 10</span></span><span class="meta">${money(a.cost)} a year</span></div>
+      <div class="mbar" style="margin:8px 0"><i style="width:${a.level * 10}%"></i></div>
+      <div class="meta">The club is aiming for level ${a.target}. Spending is chosen automatically from the club's money; an academy that is starved for years loses a level.</div></div>
+    <div class="card" style="margin-top:14px"><h3>Where recent graduates came from</h3>
+      ${top.length ? top.map((o) => `<div class="ir"><span class="n">${natLink(o.nat)}</span><div class="mbar"><i style="width:${Math.round(o.share * 100)}%"></i></div><span class="v">${Math.round(o.share * 100)}%</span></div>`).join("") + (rest ? `<div class="ir"><span class="n">Other nations</span><div class="mbar"><i style="width:${Math.round(rest / Math.max(1, tot) * 100)}%"></i></div><span class="v">${Math.round(rest / Math.max(1, tot) * 100)}%</span></div>` : "") : '<div class="meta">No graduates yet.</div>'}
+      <div class="meta" style="margin-top:6px">Foreign intake slots a year: ${sc.slots}. Prospects choose by academy reputation, league, money and chance to play.</div></div>
+    <div class="card" style="margin-top:14px"><h3>Recent graduates</h3>${a.graduates.length ? a.graduates.map((g) => `<div class="row"><span>${esc(g.name)} <span class="meta">${natLink(g.nat)} &middot; ${g.pos}, ${g.age}</span></span><span>${g.ovr} / <b class="pts">${g.pot}</b>${g.club && g.club !== c.name ? ` <span class="meta">now ${clubLink(g.club)}</span>` : ""}</span></div>`).join("") : '<div class="meta">No graduates yet.</div>'}</div></div>
+    <div><div class="card"><h3>Scouting reach</h3>${sc.regions.map((r) => `<div class="row"><span>${esc(r.name)}${r.home ? ' <span class="meta">home</span>' : ""}</span>${dotsHTML(r.dots)}</div>`).join("")}
+      <div class="row"><span>Pipelines</span><span class="meta">${sc.pipelines.length ? sc.pipelines.map(natLink).join(" &middot; ") : "none yet"}</span></div>
+      <div class="meta" style="margin-top:6px">Reach grows with the academy level and the club's name. A pipeline is a country the club keeps signing kids from, which makes its best youngsters more likely to arrive.</div></div>
+    <div class="card" style="margin-top:14px"><h3>Best prospects in the squad</h3>${prospects.length ? prospects.map((p) => `<div class="row"><span>${playerLink(p)} <span class="meta">${p.pos}, ${p.age}</span></span><span>${p.ovr} / <b class="pts">${p.pot}</b></span></div>`).join("") : '<div class="meta">No players under 21.</div>'}</div></div></div>`;
+}
+function stadiumTab(c, rivs) {
+  const s = c.finance.stadium, L = c.finance.ledger, caps = L.filter((r) => r.cap != null).slice(-8);
+  const live = (rivs || []).filter((r) => r.intensity >= 0.7);
+  return `<div class="cols"><div>
+    <div class="card"><h3>Capacity</h3><div style="display:flex;justify-content:space-between;align-items:flex-end"><span class="bigv">${s.capacity.toLocaleString()}</span><span class="meta">${Math.round(s.fill * 100)}% full</span></div>
+      <div class="mbar" style="margin:8px 0"><i style="width:${Math.round(s.fill * 100)}%"></i></div>
+      <div class="meta">Demand this season: ${s.demand.toLocaleString()} fans${s.turned_away > 0 ? `. About ${s.turned_away.toLocaleString()} could not get in.` : "."}${s.honeymoon ? " A new ground is open: the fan base is still growing." : ""}</div></div>
+    <div class="card" style="margin-top:14px"><h3>Expansion project</h3>${s.project ? `<div class="row"><span>+${s.project.add.toLocaleString()} seats</span><span>${s.project.years - s.project.left} of ${s.project.years} seasons built</span></div><div class="mbar" style="margin:6px 0"><i style="width:${Math.round((s.project.years - s.project.left) / s.project.years * 100)}%"></i></div><div class="meta">Cost ${money(s.project.cost)}${s.project.big ? ". A big rebuild: the fans will celebrate the opening." : "."} Chosen automatically when demand stays above capacity and the club has spare cash.</div>` : '<div class="meta">No project under way. The club builds when demand stays above capacity and it has spare cash.</div>'}</div></div>
+    <div><div class="card"><h3>Derbies</h3>${live.length ? live.map((r) => `<div class="row"><span>${clubLink(r.a === c.name ? r.b : r.a)} <span class="meta">${esc(r.name)}</span></span><span class="pts">live</span></div>`).join("") : '<div class="meta">No live derbies in this league.</div>'}<div class="meta" style="margin-top:6px">Each live rivalry fills the ground and lifts ticket income by 3% (up to three). A league full of rivalries is worth more to broadcasters too.</div></div>
+    <div class="card" style="margin-top:14px"><h3>Capacity by season</h3>${caps.length > 1 ? lineChart(caps.map((r) => [r.season, r.cap]), 360, 140, "#3ddc84", false) : '<div class="meta">Shows after a few seasons.</div>'}</div>
+    <div class="card" style="margin-top:14px"><h3>New stadium</h3><div class="meta">A club that outgrows its ground by a lot builds a bigger one over several seasons. When it opens, the fan base gets a one-season boost.</div></div></div></div>`;
+}
 async function viewClub(name) {
   const c = await api("/api/club?name=" + enc(name));
   const render = () => {
@@ -588,18 +651,31 @@ async function viewClub(name) {
     <div class="cols3" style="grid-template-columns:repeat(5,1fr);margin-bottom:14px">
       <div class="stat"><div class="k">Team OVR (best 11)</div><div class="v">${c.ovr}</div></div>
       <div class="stat"><div class="k">With coach</div><div class="v">${c.eff}</div></div>
-      <div class="stat"><div class="k">Budget</div><div class="v">${money(c.budget)}</div></div>
+      <div class="stat"><div class="k">Yearly income</div><div class="v">${money(c.budget)}</div></div>
       <div class="stat"><div class="k">Transfer funds</div><div class="v">${money(c.funds)}</div></div>
       <div class="stat"><div class="k">Squad</div><div class="v">${c.squad_size}</div></div></div>
-    <div class="cols"><div><h2 style="margin-top:0">Squad</h2><div class="scroll" id="squad"></div><div style="margin-top:14px">${trophyRoom(c.trophies, "Trophy room")}</div></div>
+    <div class="tabs" id="ct-tabs"><button class="on" data-ct="ov">Overview</button><button data-ct="fin">Finance</button><button data-ct="acad">Academy</button><button data-ct="stad">Stadium</button></div>
+    <div id="ct-ov"><div class="cols"><div><h2 style="margin-top:0">Squad</h2><div class="scroll" id="squad"></div><div style="margin-top:14px">${trophyRoom(c.trophies, "Trophy room")}</div></div>
     <div><div class="card"><h3>Coach <small>${co.hot ? '<span class="tag red">hot seat</span>' : ""}</small></h3>
       <div class="kv"><span>Name</span><span>${esc(co.name)} (${esc(co.nat)}), ${co.age}</span><span>Prestige</span><span>${co.prestige}</span><span>Style</span><span>${esc(co.personality)} / ${esc(co.skill)}</span><span>Here</span><span>${co.stint} season(s)</span><span>Career</span><span>${co.titles} titles, ${co.cups} cups, ${co.win}% wins</span></div></div>
     <div class="card" style="margin-top:14px"><h3>Money</h3><div class="kv"><span>Income</span><span>${money(c.income)}</span><span>Cup prizes (last)</span><span>${money(c.prize_prev)}</span><span>Sold last summer</span><span>${money(c.sold)}</span><span>Bought last summer</span><span>${money(c.bought)}</span><span>Stature</span><span>${c.stature}</span></div></div>
     <div class="card" style="margin-top:14px"><h3>Recent transfers</h3>${c.transfers.length ? c.transfers.map((t) => `<div class="row"><span><span class="tag ${t.dir === "IN" ? "green" : "red"}">${t.dir}</span> ${esc(t.player)} <span class="meta">(${t.ovr}, ${t.age})</span><div class="meta">${t.dir === "IN" ? "from" : "to"} ${clubLink(t.other)} &middot; S${t.season}</div></span><b>${money(t.fee)}</b></div>`).join("") : '<div class="meta">None yet.</div>'}</div>
-    <div class="card" style="margin-top:14px"><h3>League finishes</h3>${c.finishes.length ? c.finishes.slice(0, 10).map((f) => `<div class="row"><span>Season ${f.season}</span><span>${f.pos}${["st", "nd", "rd"][f.pos - 1] || "th"} &middot; ${f.pts} pts</span></div>`).join("") : '<div class="meta">No completed season yet.</div>'}</div></div></div>`;
+    <div class="card" style="margin-top:14px"><h3>League finishes</h3>${c.finishes.length ? c.finishes.slice(0, 10).map((f) => `<div class="row"><span>Season ${f.season}</span><span>${f.pos}${["st", "nd", "rd"][f.pos - 1] || "th"} &middot; ${f.pts} pts</span></div>`).join("") : '<div class="meta">No completed season yet.</div>'}</div></div></div><div id="ct-chart"></div></div>
+    <div id="ct-fin" hidden></div><div id="ct-acad" hidden></div><div id="ct-stad" hidden></div>`;
   render();
+  { // v15 tabs: the finance, academy and stadium views are built when first opened
+    const built = {}, show = async (t) => {
+      document.querySelectorAll("#ct-tabs [data-ct]").forEach((b) => b.classList.toggle("on", b.dataset.ct === t));
+      ["ov", "fin", "acad", "stad"].forEach((k) => { $("#ct-" + k).hidden = k !== t; });
+      if (built[t] || t === "ov") return; built[t] = 1;
+      if (t === "fin") { const draw = (sel) => { $("#ct-fin").innerHTML = financeTab(c, sel); const sl = $("#fin-s"); if (sl) sl.onchange = (e) => draw(+e.target.value); }; draw(null); }
+      if (t === "acad") $("#ct-acad").innerHTML = academyTab(c);
+      if (t === "stad") { const rv = await api("/api/rivalries?club=" + enc(c.name)).catch(() => ({ rows: [] })); $("#ct-stad").innerHTML = stadiumTab(c, rv.rows); }
+    };
+    document.querySelectorAll("#ct-tabs [data-ct]").forEach((b) => b.onclick = () => show(b.dataset.ct));
+  }
   const fin = c.finishes.slice().reverse().map((f) => [f.season, f.pos]);
-  if (fin.length > 1) $("#view").insertAdjacentHTML("beforeend", `<div class="card" style="margin-top:14px"><h3>League finish by season <small>lower is better</small></h3>${lineChart(fin, 620, 170, "#4aa8ff", true)}</div>`);
+  if (fin.length > 1) $("#ct-chart").insertAdjacentHTML("beforeend", `<div class="card" style="margin-top:14px"><h3>League finish by season <small>lower is better</small></h3>${lineChart(fin, 620, 170, "#4aa8ff", true)}</div>`);
 }
 
 // ---- trophy rooms ------------------------------------------------------------------------------------
@@ -869,13 +945,38 @@ async function viewNations(confed) {
     ${d.rows.map((r) => `<tr><td>${r.rank}</td><td class="l">${natLink(r.name)}<div class="meta show-m">${r.confed} &middot; coach ${esc(r.coach)}</div></td><td class="l meta hide-m">${r.confed}</td><td class="pts">${r.rating}</td><td class="hide-m">${r.pros}</td><td class="hide-m">${r.talent}</td><td>${r.rank_pts}</td><td class="wc">${r.titles}<span class="meta hide-m"> (${r.apps})</span></td><td class="l hide-m">${esc(r.coach)} <span class="meta">(${r.coach_prestige})</span></td></tr>`).join("")}</tbody></table></div>`;
   document.querySelectorAll("[data-c]").forEach((b) => b.onclick = () => (location.hash = "#/nations" + (b.dataset.c ? "/" + b.dataset.c : "")));
 }
+
+function federationCard(n) {
+  const f = n.federation; if (!f) return "";
+  const st = f.stages.map((t, i) => `<div class="${i < f.stage ? "done" : i === f.stage ? "on" : ""}">${t}</div>`).join("");
+  const sp = f.split, last = f.last;
+  const tot = last ? last.prize + last.comp + last.soli : 0;
+  const ach = f.events.length ? f.events.map((e) => `<div class="ev"><b class="${e.pts < 0 ? "neg" : ""}">${e.pts > 0 ? "+" : ""}${e.pts}</b><span>${esc(e.text)} <span class="meta">S${e.season}</span></span></div>`).join("") : '<div class="meta">Nothing yet. Cup MVPs, a Ballon d\'Or, World Cup runs and a good crop of professionals move the score.</div>';
+  return `<div class="card"><h3>Federation <small>${esc(f.stages[f.stage])}</small></h3>
+    <div class="stages">${st}</div>
+    <div class="row"><span>Football culture</span><span><b>${f.culture}</b> <span class="meta">/ 100</span> ${f.delta ? `<span class="${f.delta > 0 ? "pts" : "neg"}">${f.delta > 0 ? "+" : ""}${f.delta}</span>` : ""}</span></div>
+    <div class="bar" style="margin:4px 0 6px"><i style="width:${Math.min(100, f.culture)}%"></i></div>
+    <div class="meta">${f.next_at ? `Next stage at ${f.next_at}. ` : "Top stage. "}${f.lift > 0.5 ? `The score is ${f.lift} above where it started, which brings more high-potential youngsters.` : f.lift < -0.5 ? `The score is ${-f.lift} below where it started.` : "A higher score means more high-potential youngsters and better academies at home."}</div></div>
+    <div class="card" style="margin-top:14px"><h3>Federation fund${last ? ` <small>season ${last.season}</small>` : ""}</h3>
+      ${last ? `<div class="row"><span class="bigv">${money(tot)}</span><span class="meta">paid in</span></div>
+      <div class="row"><span>Share of prize money</span><span class="pts">+${money(last.prize)}</span></div>
+      <div class="row"><span>Training compensation</span><span class="pts">+${money(last.comp)}</span></div>
+      <div class="row"><span>Solidarity and development</span><span class="pts">+${money(last.soli)}</span></div>
+      <h4 class="sh" style="margin-top:10px">Spent on</h4>
+      ${[["Home academies", sp[0]], ["Partner academies abroad", sp[1]], ["Coaching", sp[2]]].map(([t, v]) => `<div class="ir"><span class="n">${t}</span><div class="mbar"><i style="width:${Math.round(v * 100)}%"></i></div><span class="v">${Math.round(v * 100)}%</span></div>`).join("")}
+      <div class="meta" style="margin-top:6px">Chosen automatically by the federation's stage.</div>` : '<div class="meta">The fund opens after the first completed season.</div>'}</div>
+    <div class="card" style="margin-top:14px"><h3>Why the score moved</h3>${ach}</div>
+    ${f.golden ? `<div class="card" style="margin-top:14px"><h3>Golden generation arriving</h3><div class="meta">${f.golden.count} prospects with ${f.golden.bar}+ potential aged ${f.golden.ages[0]} to ${f.golden.ages[1]}. Expect the national team to peak in a few seasons.</div>${f.golden.players.map((p) => `<div class="row"><span>${playerLink({ uid: p.uid, name: p.name, nat: n.name })} <span class="meta">${p.club ? esc(p.club) : "free agent"}, ${p.age}</span></span><span>${p.ovr} / <b class="pts">${p.pot}</b></span></div>`).join("")}</div>` : ""}
+    <div class="card" style="margin-top:14px"><h3>Young players abroad</h3>${f.abroad.length ? f.abroad.map((p) => `<div class="row"><span>${playerLink({ uid: p.uid, name: p.name, nat: n.name })} <span class="meta">${clubLink(p.club)}, ${p.age}</span></span><span>${p.ovr} / <b class="pts">${p.pot}</b></span></div>`).join("") : '<div class="meta">No players under 21 abroad.</div>'}
+      <div class="meta" style="margin-top:6px">${f.n_abroad} under 21 abroad, ${f.n_home} at home. They keep their nationality and their success counts for ${esc(n.name)}.</div></div>`;
+}
 async function viewNation(name) {
   const n = await api("/api/nation?name=" + enc(name));
   $("#view").innerHTML = `<div class="crumbs"><a href="#/nations">Nations</a> / ${esc(n.name)}</div><h1>${esc(n.name)}</h1>
     <div class="sub">${esc(n.confed)} &middot; rating ${n.rating} &middot; talent ${n.talent} (base ${n.base}) &middot; ${n.pros} professionals &middot; World Cup: ${n.titles} title(s) in ${n.apps} appearance(s)</div>
     <div class="cols"><div><h2 style="margin-top:0">Best players</h2><div class="scroll"><table><thead><tr><th class="l">Player</th><th class="l">Pos</th><th>Age</th><th>OVR</th><th class="l">Club</th></tr></thead><tbody>
     ${n.players.map((p) => `<tr><td class="l">${playerLink(p)}</td><td class="l pos-${esc(p.pos)}">${esc(p.pos)}</td><td>${p.age}</td><td>${ovr(p.ovr)}</td><td class="l">${p.club ? clubLink(p.club) : '<span class="meta">free agent</span>'}</td></tr>`).join("")}</tbody></table></div></div>
-    <div>${trophyRoom(n.trophies, "Trophy room")}<div class="card" style="margin-top:14px"><h3>National coach</h3><div class="kv"><span>Name</span><span>${esc(n.coach.name)}</span><span>Prestige</span><span>${n.coach.prestige}</span><span>Style</span><span>${esc(n.coach.personality)} / ${esc(n.coach.skill)}</span></div></div></div></div>`;
+    <div>${federationCard(n)}${trophyRoom(n.trophies, "Trophy room")}<div class="card" style="margin-top:14px"><h3>National coach</h3><div class="kv"><span>Name</span><span>${esc(n.coach.name)}</span><span>Prestige</span><span>${n.coach.prestige}</span><span>Style</span><span>${esc(n.coach.personality)} / ${esc(n.coach.skill)}</span></div></div></div></div>`;
 }
 function pitchSVG(team) {
   const rows = { FWD: 130, MID: 300, DEF: 470, GK: 620 };
@@ -991,13 +1092,47 @@ function multiLine(seasons, series, w, h) {
     <text x="4" y="${Y(y1 - 1) + 4}" class="axis">${y1 - 1}</text><text x="4" y="${Y(y0 + 1) + 4}" class="axis">${y0 + 1}</text><text x="${X(0)}" y="${h - 6}" class="axis" text-anchor="middle">S${seasons[0]}</text><text x="${X(seasons.length - 1)}" y="${h - 6}" class="axis" text-anchor="middle">S${seasons[seasons.length - 1]}</text></svg>
     <div class="legend">${names.map((n, k) => `<span><i style="background:${cols[k % 8]}"></i>${esc(n)}</span>`).join("")}</div>`;
 }
+function econCard(e) {
+  if (!e || !e.seasons.length) return `<div class="card"><h3>World economy</h3><div class="meta">The economy opens after the first completed season.</div></div>`;
+  const L = e.seasons[e.seasons.length - 1], hc = { Stable: "pts", Growing: "pts", Shrinking: "neg", Overheating: "neg" }[e.health] || "meta";
+  const srcs = [["TV", L.tv, "#4aa8ff"], ["Gate", L.gate, "#3ddc84"], ["Sponsors", L.sponsor, "#f5c542"], ["Prizes", L.prize, "#b48cff"], ["Owners", L.owner, "#ff9f43"]];
+  const uses = [["Wages", L.wages, "#ff6b6b"], ["Running", L.running, "#c79bff"], ["Interest", L.interest, "#8fa89a"], ["Academy", L.academy, "#35d0c4"], ["Stadium", L.stadium, "#e8f1ea"], ["Transfers", L.payout, "#4aa8ff"]];
+  const stack = (a) => { const t = a.reduce((x, r) => x + Math.max(0, r[1]), 0) || 1; return `<div class="stack">${a.map((r) => `<i style="width:${(Math.max(0, r[1]) / t * 100).toFixed(1)}%;background:${r[2]}"></i>`).join("")}</div><div class="leg">${a.map((r) => `<span><u style="background:${r[2]}"></u>${r[0]} ${Math.round(Math.max(0, r[1]) / t * 100)}%</span>`).join("")}</div>`; };
+  const rev = L.revenue;
+  return `<div class="card"><h3>World economy <small>season ${e.season}</small></h3>
+    <div class="row"><span class="bigv">${money(rev)}</span><span class="meta">revenue of all ${e.clubs} clubs</span></div>
+    <div class="row"><span>Growth on last season</span><span class="${hc}">${e.growth == null ? "-" : (e.growth > 0 ? "+" : "") + (e.growth * 100).toFixed(1) + "%"} &middot; ${esc(e.health)}</span></div>
+    <div class="row"><span>Cash held by clubs</span><b>${money(e.cash)}</b></div>
+    <div class="row"><span>Debt</span><b>${money(e.debt)}</b></div>
+    <h4 class="sh" style="margin-top:10px">Where the money comes from</h4>${stack(srcs)}
+    <h4 class="sh" style="margin-top:10px">Where it goes</h4>${stack(uses)}
+    <div class="meta" style="margin-top:8px">Stable means revenue grew by less than 2%. Above 5% the economy is overheating and prices rise faster than the game can absorb.</div></div>
+    <div class="card" style="margin-top:12px"><h3>Revenue by league <small>season ${e.season}</small></h3>
+    ${e.leagues.slice(0, 16).map((r) => `<div class="ir"><span class="n">${leagueLink(r.league)}</span><div class="mbar"><i style="width:${Math.round(r.share * 100)}%"></i></div><span class="v" style="flex-basis:64px">${money(r.revenue)}</span><span class="meta" style="flex:0 0 52px;text-align:right">${r.growth == null ? "" : (r.growth > 0 ? "+" : "") + (r.growth * 100).toFixed(1) + "%"}</span></div>`).join("")}</div>
+    <div class="card" style="margin-top:12px"><h3>Biggest cash piles</h3>${e.piles.map((x) => `<div class="row"><span>${clubLink(x.club)}</span><span><b>${money(x.funds)}</b> <span class="meta">${x.ratio}x yearly income</span></span></div>`).join("")}
+    <div class="meta" style="margin-top:6px">${e.over2x} of ${e.clubs} clubs hold more than twice their yearly income. Surplus cash goes into the academy, the stadium and the transfer budget.</div></div>`;
+}
 async function viewMoney() {
-  const d = await api("/api/money"); const ch = await api("/api/charts");
+  const d = await api("/api/money"); const ch = await api("/api/charts"); const ec = await api("/api/worldmoney").catch(() => null);
   $("#view").innerHTML = `<h1>Leagues: strength and money</h1><div class="sub">How strong and how rich each league is, strongest first.</div>
-    <details class="help"><summary>What do the columns mean?</summary><div class="meta"><b>Avg OVR</b>: average rating of the league's clubs. <b>Budget</b>: average club budget. <b>TV</b>: the league's TV-money multiplier (1.00 is the baseline; higher means more TV money per club). <b>Euro spots</b>: how many of the league's clubs get into the continental cups (Champions League and the others) each season. <b>Champion</b>: last season's winner.</div></details>
-    <div class="scroll"><table class="hof wf"><thead><tr><th class="l">League</th><th class="l hide-m">Conf.</th><th>Avg OVR</th><th>Budget</th><th class="hide-m">TV</th><th title="Clubs from this league that qualify for continental cups each season">Euro spots</th><th class="l hide-m">Champion</th></tr></thead><tbody>
+    <details class="help"><summary>What do the columns mean?</summary><div class="meta"><b>Avg OVR</b>: average rating of the league's clubs. <b>Income</b>: average yearly income per club. <b>TV</b>: the league's TV-money multiplier (1.00 is the baseline; higher means more TV money per club). <b>Euro spots</b>: how many of the league's clubs get into the continental cups (Champions League and the others) each season. <b>Champion</b>: last season's winner.</div></details>
+    <div class="scroll"><table class="hof wf"><thead><tr><th class="l">League</th><th class="l hide-m">Conf.</th><th>Avg OVR</th><th>Income</th><th class="hide-m">TV</th><th title="Clubs from this league that qualify for continental cups each season">Euro spots</th><th class="l hide-m">Champion</th></tr></thead><tbody>
     ${d.rows.map((r) => `<tr><td class="l">${leagueLink(r.league)}<div class="meta show-m">${r.confed}${r.champion ? " &middot; " + esc(r.champion) : ""}</div></td><td class="l meta hide-m">${r.confed}</td><td>${r.avg}</td><td>${money(r.budget)}</td><td class="hide-m">${r.tv.toFixed(2)}</td><td>${r.places}</td><td class="l hide-m">${r.champion ? clubLink(r.champion) : "-"}</td></tr>`).join("")}</tbody></table></div>`;
+  $("#view").querySelector(".sub").insertAdjacentHTML("afterend", `<div style="margin:12px 0">${econCard(ec)}</div>`);
   $("#view").insertAdjacentHTML("beforeend", `<div class="card" style="margin-top:14px"><h3>League strength over time <small>average OVR, top eight leagues</small></h3>${multiLine(ch.seasons, ch.leagues, 760, 240)}</div>`);
+}
+function bidDetail(x) {
+  const b = x.detail; if (!b) return "";
+  const tr = b.traits || {}, tn = (k, v) => v >= 0.66 ? k + ": high" : v <= 0.33 ? k + ": low" : null;
+  const traits = [tn("Money", tr.money), tn("Loyalty", tr.loyal), tn("Ambition", tr.ambition), tn("Trophies", tr.trophies)].filter(Boolean).join(", ");
+  return `<details class="bidd"><summary>How the price was set</summary>
+    <div class="row"><span>Base value</span><b>${money(b.base)}</b></div>
+    <div class="row"><span>Asking price after demand ${b.demand}x${b.premium > 1.001 ? ` and a ${Math.round((b.premium - 1) * 100)}% rival premium` : ""}</span><b>${money(b.asking)}</b></div>
+    <div class="row"><span>Paid</span><b class="pts">${money(x.fee)}</b></div>
+    ${b.comp > 0 ? `<div class="row"><span>Training compensation to ${clubLink(b.trainer)}</span><b>${money(b.comp)}</b></div>` : ""}
+    ${traits ? `<div class="meta" style="margin:4px 0">Player: ${traits}</div>` : ""}
+    <h4 class="sh" style="margin-top:6px">Bids</h4>
+    ${b.bids.map((c, i) => `<div class="row"><span>${i === 0 ? "&#127942; " : ""}${clubLink(c.club)}${c.rival ? ' <span class="tag red">rival</span>' : ""}</span><span class="meta">bid ${money(c.bid)} &middot; wage ${money(c.wage)} &middot; score ${c.score}</span></div>`).join("")}</details>`;
 }
 async function viewLedger(season) {
   const d = await api("/api/ledger" + (season ? "?season=" + season : ""));
@@ -1007,7 +1142,7 @@ async function viewLedger(season) {
     <div class="sub">${d.n} moves (${d.abroad} between leagues) &middot; ${money(d.total)} paid in fees</div>
     <div class="cols"><div><h2 style="margin-top:0">Biggest fees</h2><div class="fees">
     ${d.top.map((x) => `<div class="fee"><div class="fee-top"><span><b>${esc(x.player)}</b> ${ovr(x.ovr)} <span class="meta">age ${x.age}</span></span><b class="pts">${money(x.fee)}</b></div>
-      <div class="meta">${clubLink(x.frm)} &rarr; ${clubLink(x.to)} &middot; ${esc(x.why || (x.kind === "abroad" ? "Moved to a different league" : x.kind === "league" ? "Moved within the league system" : x.kind))}</div></div>`).join("")}</div></div>
+      <div class="meta">${clubLink(x.frm)} &rarr; ${clubLink(x.to)} &middot; ${esc(x.why || (x.kind === "bid" ? "Won in a bidding contest" : x.kind === "abroad" ? "Moved to a different league" : x.kind === "league" ? "Moved within the league system" : x.kind))}</div>${bidDetail(x)}</div>`).join("")}</div></div>
     <div><h2 style="margin-top:0">Transfer money by league</h2><div class="meta" style="margin-bottom:6px">Fees a league's clubs received for sales minus fees they paid for signings. <span style="color:var(--accent)">Green</span>: the league made money on transfers. <span style="color:var(--red)">Red</span>: it spent more than it earned.</div>
       <div class="card">${d.net.map((r) => `<div class="row"><span>${leagueLink(r.league)}</span><b style="color:${r.net >= 0 ? "var(--accent)" : "var(--red)"}">${moneyS(r.net)}</b></div>`).join("")}</div></div></div>`;
   $("#t-s").onchange = (e) => (location.hash = "#/ledger/" + e.target.value);
@@ -1074,13 +1209,13 @@ const RVS = { type: "clubs", sort: "heat", status: "all", scope: "world", q: "",
 async function viewRivals() {
   const d = await api("/api/rivals_page?" + Object.entries(RVS).map(([k, v]) => k + "=" + enc(v)).join("&"));
   const nat = d.type === "nations", L = nat ? natLink : clubLink;
-  const sortName = { heat: "Hottest", meetings: "Most meetings", big: "Biggest win" };
+  const sortName = { heat: "Heat", history: "History", rising: "Rising", meetings: "Most meetings", big: "Biggest win" };
   const tag = (r) => r.known ? `<span class="tag ${r.level === 3 ? "red" : "gold"}">${esc(r.kind)}</span>` : `<span class="tag green">Rising</span>`;
   const rowHTML = (r, i) => `<div class="rvrow"><div class="rk">${d.offset + i + 1}</div><div class="rvm">
       <div><a href="#/matchup/-/${enc(r.a)}/${enc(r.b)}"><b>${esc(r.name)}</b></a> ${tag(r)}${r.named ? ' <span class="meta">(your name)</span>' : ""}</div>
       <div class="rvt">${L(r.a)} <span class="meta">v</span> ${L(r.b)}</div>
       <div class="meta">${r.meet ? `${r.meet} meeting${r.meet === 1 ? "" : "s"} &middot; ${r.wins[0]}-${r.draws}-${r.wins[1]}${r.bigline ? ` &middot; biggest win: ${esc(r.bigline[0])} ${r.bigline[1][1]}-${r.bigline[1][2]} (S${r.bigline[1][0]})` : ""}` : "no meetings on record yet"}</div></div>
-      <div class="rvh" title="Rivalry strength (heat ${r.heat})"><div class="bar"><i style="width:${Math.min(100, Math.round(r.intensity * 100))}%"></i></div><span class="meta">${Math.round(r.intensity * 100)}%</span></div></div>`;
+      <div class="rvh2" title="History is where the rivalry started. Heat is what this world has added."><div class="m hs"><span>History</span><div class="bar"><i style="width:${r.history}%"></i></div><b>${r.history}</b></div><div class="m ht"><span>Heat</span><div class="bar"><i style="width:${r.heat_pct}%"></i></div><b>${r.heat_pct}</b></div>${r.rise > 0.5 ? `<div class="up">+${Math.round(r.rise)} this season</div>` : ""}${!r.meet && r.known ? '<div class="meta">Not met yet</div>' : ""}</div></div>`;
   const scopeOpts = `<option value="world" ${d.scope === "world" ? "selected" : ""}>World</option><optgroup label="Confederation">${d.confeds.map((c) => `<option value="${c}" ${d.scope === c ? "selected" : ""}>${c}</option>`).join("")}</optgroup>${nat ? "" : `<optgroup label="League">${d.leagues.map((l) => `<option value="L:${esc(l)}" ${d.scope === "L:" + l ? "selected" : ""}>${esc(l)}</option>`).join("")}</optgroup>`}`;
   $("#view").innerHTML = `<h1>Rivalries</h1>
     <div class="sub">The hottest rivalries in your world. Tap one for the head-to-head page, where you can rename it.</div>
@@ -1088,15 +1223,18 @@ async function viewRivals() {
       <select id="rv-scope" title="Where to look">${scopeOpts}</select>
       <select id="rv-sort" title="Rank by">${Object.entries(sortName).map(([k, v]) => `<option value="${k}" ${d.sort === k ? "selected" : ""}>Rank by: ${v}</option>`).join("")}</select>
       <input id="rv-q" placeholder="Search a team or rivalry" value="${esc(RVS.q)}"></div>
-    <div class="rvbar"><button data-st="all" class="${d.status === "all" ? "pri" : ""}">All</button><button data-st="real" class="${d.status === "real" ? "pri" : ""}">Real</button><button data-st="rising" class="${d.status === "rising" ? "pri" : ""}">Rising</button>
-      <span class="meta">${d.status === "real" ? "Real: long-standing rivalries from real football." : d.status === "rising" ? "Rising: new rivalries your world has built from matches, titles, finals and transfers." : "Real rivalries from real football, plus new ones your world has built."}</span></div>
+    <div class="rvbar"><div class="tabs">${["history", "heat", "rising"].map((k) => `<button data-so="${k}" class="${d.sort === k ? "on" : ""}">${sortName[k]}</button>`).join("")}</div><span class="meta">History is where it started. Heat is what this world has added. Rising shows who gained most this season.</span></div>
+    <div class="rvbar"><button data-st="all" class="${d.status === "all" ? "pri" : ""}">All</button><button data-st="real" class="${d.status === "real" ? "pri" : ""}">Real</button><button data-st="rising" class="${d.status === "rising" ? "pri" : ""}">Earned</button>
+      <span class="meta">${d.status === "real" ? "Real: long-standing rivalries from real football." : d.status === "rising" ? "Earned: new rivalries your world has built from matches, titles, finals and transfers." : "Real rivalries from real football, plus new ones your world has built."}</span></div>
     ${d.rows.length ? `<div class="rvlist">${d.rows.map(rowHTML).join("")}</div>
-      <p class="meta" style="text-align:center">Showing ${d.offset + d.rows.length} of ${d.total}${d.offset + d.rows.length < d.total ? ` <button id="rv-more">Show 25 more</button>` : ""}</p>` : '<div class="empty">Nothing matches. Try a wider scope or clear the search.</div>'}`;
+      <p class="meta" style="text-align:center">Showing ${d.offset + d.rows.length} of ${d.total}${d.offset + d.rows.length < d.total ? ` <button id="rv-more">Show 25 more</button>` : ""}</p>` : '<div class="empty">Nothing matches. Try a wider scope or clear the search.</div>'}
+    ${!nat && d.derby && d.derby.length ? `<div class="card" style="margin-top:14px"><h3>Derby effect on the league</h3>${d.derby.filter((x) => d.scope.startsWith("L:") ? x.league === d.scope.slice(2) : true).slice(0, d.scope.startsWith("L:") ? 1 : 16).map((x) => `<div class="row"><span>${leagueLink(x.league)}</span><span><b class="gold">${x.index}</b> <span class="meta">TV ${x.tv > 0 ? "+" : ""}${x.tv}% &middot; gate ${x.gate > 0 ? "+" : ""}${x.gate}%</span></span></div>`).join("")}<div class="meta" style="margin-top:6px">The derby index measures how many live rivalries a league holds. Compared with the world's middle league, a higher index brings more TV money and a fuller ground, and a lower one a little less.</div></div>` : ""}`;
   const redo = (ch) => { Object.assign(RVS, ch, { limit: 25 }); route(); };
   document.querySelectorAll("[data-ty]").forEach((b) => b.onclick = () => redo({ type: b.dataset.ty, scope: "world" }));
   document.querySelectorAll("[data-st]").forEach((b) => b.onclick = () => redo({ status: b.dataset.st }));
   $("#rv-scope").onchange = (e) => redo({ scope: e.target.value });
   $("#rv-sort").onchange = (e) => redo({ sort: e.target.value });
+  document.querySelectorAll("[data-so]").forEach((b) => b.onclick = () => redo({ sort: b.dataset.so }));
   let tm = null; $("#rv-q").oninput = (e) => { clearTimeout(tm); tm = setTimeout(() => { Object.assign(RVS, { q: e.target.value, limit: 25 }); route().then(() => { const i = $("#rv-q"); if (i) { i.focus(); i.setSelectionRange(i.value.length, i.value.length); } }); }, 350); };
   if ($("#rv-more")) $("#rv-more").onclick = () => { RVS.limit = d.offset + d.rows.length + 25; RVS.offset = 0; route(); };
 }
@@ -1296,7 +1434,7 @@ async function godClub(name) {
   const c = await api("/api/club?name=" + enc(name)); const st = await api("/api/settings"); godDialog.clubs = st.clubs;
   godDialog(`Edit ${name}`, "club", { name }, [
     { k: "team_ovr", label: "Team OVR (best 11 average; shifts every player)", val: Math.round(c.top11) },
-    { k: "budget", label: "Budget (millions of euros per year)", val: c.budget, step: 1 }, { k: "funds", label: "Transfer funds (millions of euros)", val: c.funds, step: 1 },
+    { k: "budget", label: "Yearly income (millions of euros)", val: c.budget, step: 1 }, { k: "funds", label: "Transfer funds (millions of euros)", val: c.funds, step: 1 },
     { k: "stature", label: "Stature (0-100)", val: c.stature, step: 1 }]);
 }
 async function godNation(name) {

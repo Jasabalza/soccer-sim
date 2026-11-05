@@ -486,3 +486,29 @@ button.wide { width: 100%; min-height: 44px; margin-top: 10px; }
 .leg u { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 4px; text-decoration: none; }
 .gt td:not(.l), .gt th:not(.l) { text-align: center; }
 .g-groups.one { grid-template-columns: 1fr; }
+
+/* v15: club finance, academy and stadium tabs */
+.bigv { font-size: 28px; font-weight: 800; }
+.dots { letter-spacing: 3px; color: var(--accent); } .dots s { text-decoration: none; color: var(--line); }
+.mbar { height: 7px; background: rgba(255,255,255,.07); border-radius: 4px; overflow: hidden; } .mbar i { display: block; height: 100%; background: var(--accent); }
+.ir { display: flex; align-items: center; gap: 8px; font-size: 13px; padding: 4px 0; } .ir .n { flex: 0 0 130px; } .ir .mbar { flex: 1; } .ir .v { flex: 0 0 38px; text-align: right; color: var(--dim); }
+.bars { display: flex; gap: 4px; align-items: stretch; } .bar-c { flex: 1; display: flex; flex-direction: column; align-items: stretch; text-align: center; font-size: 10px; color: var(--dim); }
+.bar-top, .bar-bot { display: flex; align-items: flex-end; justify-content: center; } .bar-bot { align-items: flex-start; }
+.bar-top i, .bar-bot i { display: block; width: 70%; background: var(--accent); border-radius: 3px; } .bar-bot i.neg { background: var(--red); }
+.bar-c span { margin-top: 2px; }
+.neg { color: var(--red); }
+
+/* v15 rivalries: history and heat */
+.rvh2 { flex: 0 0 190px; } .rvh2 .m { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--dim); margin: 3px 0; } .rvh2 .m span { flex: 0 0 44px; } .rvh2 .m .bar { flex: 1; min-width: 40px; } .rvh2 .m b { flex: 0 0 26px; text-align: right; color: var(--text); }
+.rvh2 .hs i { background: #f5c542; } .rvh2 .ht i { background: #ff6b6b; } .rvh2 .up { color: var(--accent); font-size: 12px; font-weight: 700; }
+@media (max-width: 700px) { .rvrow .rvh2 { flex: 0 0 100%; padding-left: 38px; } }
+/* v15 nation: federation stages */
+.stages { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; margin: 6px 0 10px; } .stages div { text-align: center; font-size: 11px; padding: 8px 2px; border-radius: 7px; background: rgba(255,255,255,.03); border: 1px solid var(--line); color: var(--dim); line-height: 1.2; }
+.stages div.done { background: rgba(61,220,132,.12); border-color: #2c7a4d; color: #9be8bb; } .stages div.on { background: var(--accent); color: #06210f; border-color: var(--accent); font-weight: 800; }
+.ev { display: flex; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--line); font-size: 13px; } .ev:last-child { border-bottom: 0; } .ev b { flex: 0 0 40px; color: var(--accent); }
+
+/* v15 world economy and bid detail */
+.stack { display: flex; height: 14px; border-radius: 5px; overflow: hidden; margin: 6px 0 4px; } .stack i { display: block; height: 100%; }
+.leg { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 11px; color: var(--dim); } .leg u { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 4px; text-decoration: none; }
+.bigv { font-size: 26px; font-weight: 800; }
+.bidd { margin-top: 6px; font-size: 13px; } .bidd summary { cursor: pointer; color: var(--accent); font-size: 12px; }
