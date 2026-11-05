@@ -11561,6 +11561,8 @@ function awResults(d) {
   const nComps = Object.keys(a.comps || {}).length;
   return `
     <div class="hd"><div><h1>Awards</h1><div class="sub">Season ${S} (${esc(d.season_label)}) · ${a.voters} voters</div></div>${awSelect(d)}</div>
+    <section id="aw-hof" class="card hofcta" style="margin-top:4px"><h3>World Hall of Fame <small>induction day</small></h3><div class="dim small">The world votes on the players and coaches whose time has come.</div>
+      <div class="hofcta-b"><a class="btn pri" href="#/hofday/${S}/watch">Watch the vote</a><a class="btn" href="#/hofday/${S}">Results</a></div></section>
     <nav class="chips sticky" aria-label="Jump to an award"><button class="on" data-go="aw-ballon">Ballon d'Or</button><button data-go="aw-boot">Golden Boot</button><button data-go="aw-young">Young player</button><button data-go="aw-coach">Coach</button><button data-go="aw-team">Team of the Year</button><button data-go="aw-cups">Cups</button></nav>
     <section id="aw-ballon" class="card hero" style="margin-top:4px">
       <div class="eyebrow gold">Ballon d'Or</div>
@@ -11585,9 +11587,7 @@ function awResults(d) {
     <section id="aw-cups" class="card"><h3>Cup awards <small>MVPs feed the Ballon d'Or</small></h3>
       ${cupsShow.map((c) => `<details class="acc"><summary><span>${esc(c.name)}</span><span class="dim">${c.winner ? esc(c.winner) : ""}</span></summary><div class="b">${awCompBlock(c)}</div></details>`).join("")}
       <a class="more" href="#/ceremony/${S}/team"><span>All ${nComps} competitions</span><span>&rsaquo;</span></a>
-    </section>
-    <section class="card hofcta"><h3>World Hall of Fame <small>induction day</small></h3><div class="dim small">The world votes on the players and coaches whose time has come.</div>
-      <div class="hofcta-b"><a class="btn pri" href="#/hofday/${S}/watch">Watch the vote</a><a class="btn" href="#/hofday/${S}">Results</a></div></section>`;
+    </section>`;
 }
 function awBallon(d, back, hdr) {
   const a = d.awards, b = a.ballon, mx = b[0].pts || 1, w = b[0];
