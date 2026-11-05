@@ -1,0 +1,174 @@
+{
+ "leagues": [
+  {
+   "name": "Premier League",
+   "country": "England",
+   "confed": "UEFA",
+   "prestige": 90,
+   "games": 38,
+   "foreign": 0.62,
+   "clubs": "Manchester City 90, Arsenal 88, Liverpool 86, Chelsea 80, Newcastle United 80, Aston Villa 80, Manchester United 79, Tottenham Hotspur 78, Brighton & Hove Albion 76, West Ham United 74, Crystal Palace 74, AFC Bournemouth 74, Brentford 74, Fulham 74, Nottingham Forest 74, Everton 74, Wolverhampton Wanderers 72, Leeds United 72, Sunderland 70, Burnley 68"
+  },
+  {
+   "name": "La Liga",
+   "country": "Spain",
+   "confed": "UEFA",
+   "prestige": 88,
+   "games": 38,
+   "foreign": 0.42,
+   "clubs": "Real Madrid 90, FC Barcelona 87, Atlético Madrid 82, Athletic Club 76, Real Sociedad 75, Real Betis 74, Girona FC 74, Villarreal CF 73, Sevilla FC 72, Valencia CF 72, CA Osasuna 71, Getafe CF 71, Rayo Vallecano 70, RCD Mallorca 70, RC Celta de Vigo 70, Deportivo Alavés 70, UD Las Palmas 66, Elche CF 66, Levante UD 66, Real Oviedo 65"
+  },
+  {
+   "name": "Bundesliga",
+   "country": "Germany",
+   "confed": "UEFA",
+   "prestige": 87,
+   "games": 34,
+   "foreign": 0.45,
+   "clubs": "Bayern Munich 89, Borussia Dortmund 83, Bayer Leverkusen 83, RB Leipzig 82, Eintracht Frankfurt 75, VfB Stuttgart 74, SC Freiburg 73, TSG Hoffenheim 72, VfL Wolfsburg 71, Union Berlin 71, Borussia Mönchengladbach 70, SV Werder Bremen 70, 1. FSV Mainz 05 70, FC Augsburg 69, 1. FC Heidenheim 68, FC St. Pauli 66, 1. FC Köln 66, Holstein Kiel 64"
+  },
+  {
+   "name": "Serie A",
+   "country": "Italy",
+   "confed": "UEFA",
+   "prestige": 86,
+   "games": 38,
+   "foreign": 0.55,
+   "clubs": "Inter Milan 87, Napoli 82, AC Milan 81, Juventus 80, Atalanta 80, AS Roma 77, SS Lazio 77, ACF Fiorentina 75, Bologna FC 75, Como 1907 74, Torino FC 73, Genoa CFC 72, Udinese Calcio 70, Cagliari Calcio 70, US Sassuolo 70, Parma Calcio 69, US Lecce 68, Hellas Verona 68, Cremonese 67, Pisa SC 66"
+  },
+  {
+   "name": "Ligue 1",
+   "country": "France",
+   "confed": "UEFA",
+   "prestige": 84,
+   "games": 34,
+   "foreign": 0.45,
+   "clubs": "Paris Saint-Germain 88, Olympique de Marseille 77, AS Monaco 76, Lille OSC 76, Olympique Lyonnais 75, OGC Nice 74, RC Lens 73, Stade Rennais 73, Stade Brestois 70, RC Strasbourg 68, Toulouse FC 68, AJ Auxerre 66, FC Nantes 65, FC Lorient 63, Le Havre AC 62, FC Metz 62, Paris FC 62, Angers SCO 61"
+  },
+  {
+   "name": "Liga MX",
+   "country": "Mexico",
+   "confed": "CONCACAF",
+   "prestige": 72,
+   "games": 34,
+   "foreign": 0.25,
+   "clubs": "Club América 76, Tigres UANL 75, CF Monterrey 75, Cruz Azul 74, Deportivo Toluca 73, CD Guadalajara (Chivas) 73, CF Pachuca 73, Club Universidad Nacional (Pumas) 71, Santos Laguna 70, Club León 70, Atlas FC 69, Club Necaxa 68, Club Juárez 67, Club Tijuana 66, Atlante 66, Club Puebla 65, Querétaro FC 64, Atlético San Luis 64"
+  },
+  {
+   "name": "MLS",
+   "country": "USA",
+   "confed": "CONCACAF",
+   "prestige": 70,
+   "games": 34,
+   "foreign": 0.4,
+   "clubs": "Inter Miami CF 77, LAFC 75, LA Galaxy 72, Seattle Sounders FC 72, New York City FC 71, Atlanta United FC 71, FC Cincinnati 71, Columbus Crew 70, Sporting Kansas City 70, Philadelphia Union 69, FC Dallas 69, Nashville SC 68, New York Red Bulls 68, Orlando City SC 68, San Diego FC 68, Austin FC 67, Colorado Rapids 67, New England Revolution 67, Charlotte FC 66, CF Montréal 66, Toronto FC 66, Houston Dynamo FC 66, Portland Timbers 66, Vancouver Whitecaps FC 66, Minnesota United FC 65, Chicago Fire FC 64, Real Salt Lake 62, San Jose Earthquakes 62, St. Louis City SC 62, D.C. United 62"
+  },
+  {
+   "name": "Eredivisie",
+   "country": "Netherlands",
+   "confed": "UEFA",
+   "prestige": 76,
+   "games": 34,
+   "foreign": 0.55,
+   "clubs": "PSV Eindhoven 78, Feyenoord 77, Ajax 76, AZ Alkmaar 73, FC Twente 72, FC Utrecht 70, NEC Nijmegen 68, Go Ahead Eagles 67, Sparta Rotterdam 67, SC Heerenveen 66, FC Groningen 65, Fortuna Sittard 64, PEC Zwolle 63, Heracles Almelo 63, NAC Breda 63, Excelsior 62, Telstar 60, FC Volendam 60"
+  },
+  {
+   "name": "Primeira Liga",
+   "country": "Portugal",
+   "confed": "UEFA",
+   "prestige": 76,
+   "games": 34,
+   "foreign": 0.55,
+   "clubs": "Sporting CP 80, Benfica 79, FC Porto 79, SC Braga 75, Vitória SC 70, Famalicão 66, Gil Vicente 66, Estoril Praia 65, Moreirense 64, Santa Clara 64, Casa Pia 63, Rio Ave 63, Arouca 62, Nacional 62, Estrela da Amadora 61, Académico de Viseu 59, Alverca 59, Marítimo 59"
+  },
+  {
+   "name": "Belgian Pro League",
+   "country": "Belgium",
+   "confed": "UEFA",
+   "prestige": 70,
+   "games": 30,
+   "foreign": 0.55,
+   "clubs": "Club Brugge 76, Union Saint-Gilloise 73, Anderlecht 73, Genk 72, Gent 70, Antwerp 69, Standard Liège 66, Cercle Brugge 66, KV Mechelen 65, Charleroi 63, Sint-Truiden 63, Westerlo 63, OH Leuven 62, Zulte Waregem 60, Dender 60, La Louvière 58"
+  },
+  {
+   "name": "Süper Lig",
+   "country": "Turkey",
+   "confed": "UEFA",
+   "prestige": 72,
+   "games": 34,
+   "foreign": 0.45,
+   "clubs": "Galatasaray 79, Fenerbahçe 78, Beşiktaş 74, Trabzonspor 72, Başakşehir 70, Samsunspor 66, Göztepe 66, Kasımpaşa 63, Konyaspor 63, Alanyaspor 63, Eyüpspor 62, Amed 62, Çorum 62, Çaykur Rizespor 62, Gaziantep FK 61, Erzurumspor 61, Kocaelispor 60, Gençlerbirliği 60"
+  },
+  {
+   "name": "Scottish Premiership",
+   "country": "Scotland",
+   "confed": "UEFA",
+   "prestige": 62,
+   "games": 33,
+   "foreign": 0.5,
+   "clubs": "Celtic 72, Rangers 71, Heart of Midlothian 66, Aberdeen 64, Hibernian 63, Dundee United 60, Motherwell 59, Kilmarnock 58, Dundee 58, St Mirren 58, Falkirk 56, St Johnstone 55"
+  },
+  {
+   "name": "Brazil Série A",
+   "country": "Brazil",
+   "confed": "CONMEBOL",
+   "prestige": 78,
+   "games": 38,
+   "foreign": 0.15,
+   "clubs": "Flamengo 80, Palmeiras 80, Botafogo 76, Fluminense 74, São Paulo 74, Corinthians 74, Atlético Mineiro 74, Internacional 73, Grêmio 73, Cruzeiro 73, Bahia 71, Vasco da Gama 71, Santos 70, Fortaleza 70, Athletico Paranaense 70, Red Bull Bragantino 69, Vitória 66, Mirassol 66, Juventude 64, Sport Recife 63"
+  },
+  {
+   "name": "Argentina Liga Profesional",
+   "country": "Argentina",
+   "confed": "CONMEBOL",
+   "prestige": 76,
+   "games": 38,
+   "foreign": 0.15,
+   "clubs": "River Plate 77, Boca Juniors 76, Racing Club 74, Estudiantes 74, Vélez Sarsfield 73, Independiente 72, Talleres 72, Lanús 72, Rosario Central 72, San Lorenzo 71, Argentinos Juniors 70, Huracán 68, Belgrano 68, Godoy Cruz 67, Newell's Old Boys 67, Defensa y Justicia 66, Banfield 66, Instituto 65, Platense 64, Tigre 63"
+  },
+  {
+   "name": "Saudi Pro League",
+   "country": "Saudi Arabia",
+   "confed": "AFC",
+   "prestige": 70,
+   "games": 34,
+   "foreign": 0.65,
+   "clubs": "Al Hilal 78, Al Nassr 77, Al Ittihad 75, Al Ahli 74, Al Qadsiah 71, Al Shabab 67, Al Taawoun 66, Al Ettifaq 66, Al Fateh 64, Al Fayha 63, Al Khaleej 63, Al Najma 62, Damac 62, Al Okhdood 60, Al Riyadh 60, NEOM SC 60, Al Kholood 60, Al Hazem 58"
+  },
+  {
+   "name": "J1 League",
+   "country": "Japan",
+   "confed": "AFC",
+   "prestige": 68,
+   "games": 38,
+   "foreign": 0.25,
+   "clubs": "Vissel Kobe 72, Kashima Antlers 71, Kawasaki Frontale 70, Sanfrecce Hiroshima 70, Yokohama F. Marinos 70, Urawa Red Diamonds 70, Machida Zelvia 68, Gamba Osaka 67, Cerezo Osaka 67, Kashiwa Reysol 67, FC Tokyo 66, Nagoya Grampus 66, Avispa Fukuoka 64, Shimizu S-Pulse 64, Kyoto Sanga 64, Albirex Niigata 62, Tokyo Verdy 62, Fagiano Okayama 60, Yokohama FC 60, Shonan Bellmare 60"
+  }
+ ],
+ "cups": {
+  "UEFA": {
+   "name": "UEFA Champions League",
+   "size": 16,
+   "weight": 1.0,
+   "cwc_slots": 8
+  },
+  "CONMEBOL": {
+   "name": "Copa Libertadores",
+   "size": 16,
+   "weight": 0.8,
+   "cwc_slots": 4
+  },
+  "CONCACAF": {
+   "name": "CONCACAF Champions Cup",
+   "size": 16,
+   "weight": 0.7,
+   "cwc_slots": 2
+  },
+  "AFC": {
+   "name": "AFC Champions League Elite",
+   "size": 16,
+   "weight": 0.7,
+   "cwc_slots": 2
+  }
+ }
+}

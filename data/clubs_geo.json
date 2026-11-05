@@ -1,0 +1,1191 @@
+{
+"Manchester City": [
+53.48,
+-2.2
+],
+"Arsenal": [
+51.56,
+-0.11
+],
+"Liverpool": [
+53.43,
+-2.96
+],
+"Chelsea": [
+51.48,
+-0.19
+],
+"Newcastle United": [
+54.98,
+-1.62
+],
+"Aston Villa": [
+52.51,
+-1.88
+],
+"Manchester United": [
+53.46,
+-2.29
+],
+"Tottenham Hotspur": [
+51.6,
+-0.07
+],
+"Brighton & Hove Albion": [
+50.86,
+-0.08
+],
+"West Ham United": [
+51.54,
+0.02
+],
+"Crystal Palace": [
+51.4,
+-0.09
+],
+"AFC Bournemouth": [
+50.74,
+-1.84
+],
+"Brentford": [
+51.49,
+-0.29
+],
+"Fulham": [
+51.47,
+-0.22
+],
+"Nottingham Forest": [
+52.94,
+-1.13
+],
+"Everton": [
+53.42,
+-3.0
+],
+"Wolverhampton Wanderers": [
+52.59,
+-2.13
+],
+"Leeds United": [
+53.78,
+-1.57
+],
+"Sunderland": [
+54.91,
+-1.39
+],
+"Burnley": [
+53.79,
+-2.23
+],
+"Real Madrid": [
+40.45,
+-3.69
+],
+"FC Barcelona": [
+41.38,
+2.12
+],
+"Atlético Madrid": [
+40.44,
+-3.6
+],
+"Athletic Club": [
+43.26,
+-2.95
+],
+"Real Sociedad": [
+43.3,
+-1.97
+],
+"Real Betis": [
+37.36,
+-5.98
+],
+"Girona FC": [
+41.96,
+2.83
+],
+"Villarreal CF": [
+39.94,
+-0.1
+],
+"Sevilla FC": [
+37.38,
+-5.97
+],
+"Valencia CF": [
+39.47,
+-0.36
+],
+"CA Osasuna": [
+42.8,
+-1.64
+],
+"Getafe CF": [
+40.33,
+-3.71
+],
+"Rayo Vallecano": [
+40.39,
+-3.66
+],
+"RCD Mallorca": [
+39.59,
+2.65
+],
+"RC Celta de Vigo": [
+42.21,
+-8.74
+],
+"Deportivo Alavés": [
+42.84,
+-2.69
+],
+"UD Las Palmas": [
+28.1,
+-15.46
+],
+"Elche CF": [
+38.27,
+-0.66
+],
+"Levante UD": [
+39.5,
+-0.36
+],
+"Real Oviedo": [
+43.36,
+-5.87
+],
+"Bayern Munich": [
+48.22,
+11.62
+],
+"Borussia Dortmund": [
+51.49,
+7.45
+],
+"Bayer Leverkusen": [
+51.04,
+7.0
+],
+"RB Leipzig": [
+51.34,
+12.35
+],
+"Eintracht Frankfurt": [
+50.07,
+8.65
+],
+"VfB Stuttgart": [
+48.79,
+9.23
+],
+"SC Freiburg": [
+48.02,
+7.83
+],
+"TSG Hoffenheim": [
+49.24,
+8.89
+],
+"VfL Wolfsburg": [
+52.43,
+10.8
+],
+"Union Berlin": [
+52.46,
+13.57
+],
+"Borussia Mönchengladbach": [
+51.17,
+6.39
+],
+"SV Werder Bremen": [
+53.07,
+8.84
+],
+"1. FSV Mainz 05": [
+49.98,
+8.22
+],
+"FC Augsburg": [
+48.32,
+10.89
+],
+"1. FC Heidenheim": [
+48.67,
+10.15
+],
+"FC St. Pauli": [
+53.55,
+9.97
+],
+"1. FC Köln": [
+50.93,
+6.87
+],
+"Holstein Kiel": [
+54.35,
+10.12
+],
+"Inter Milan": [
+45.48,
+9.03
+],
+"Napoli": [
+40.83,
+14.19
+],
+"AC Milan": [
+45.48,
+9.21
+],
+"Juventus": [
+45.11,
+7.64
+],
+"Atalanta": [
+45.71,
+9.68
+],
+"AS Roma": [
+41.93,
+12.54
+],
+"SS Lazio": [
+41.93,
+12.36
+],
+"ACF Fiorentina": [
+43.78,
+11.28
+],
+"Bologna FC": [
+44.49,
+11.31
+],
+"Como 1907": [
+45.81,
+9.08
+],
+"Torino FC": [
+45.04,
+7.65
+],
+"Genoa CFC": [
+44.42,
+8.95
+],
+"Udinese Calcio": [
+46.08,
+13.2
+],
+"Cagliari Calcio": [
+39.2,
+9.14
+],
+"US Sassuolo": [
+44.71,
+10.65
+],
+"Parma Calcio": [
+44.8,
+10.34
+],
+"US Lecce": [
+40.36,
+18.21
+],
+"Hellas Verona": [
+45.44,
+10.97
+],
+"Cremonese": [
+45.14,
+10.02
+],
+"Pisa SC": [
+43.72,
+10.4
+],
+"Paris Saint-Germain": [
+48.84,
+2.25
+],
+"Olympique de Marseille": [
+43.27,
+5.4
+],
+"AS Monaco": [
+43.73,
+7.42
+],
+"Lille OSC": [
+50.61,
+3.13
+],
+"Olympique Lyonnais": [
+45.77,
+4.98
+],
+"OGC Nice": [
+43.71,
+7.19
+],
+"RC Lens": [
+50.43,
+2.82
+],
+"Stade Rennais": [
+48.11,
+-1.71
+],
+"Stade Brestois": [
+48.4,
+-4.46
+],
+"RC Strasbourg": [
+48.56,
+7.75
+],
+"Toulouse FC": [
+43.58,
+1.43
+],
+"AJ Auxerre": [
+47.79,
+3.59
+],
+"FC Nantes": [
+47.26,
+-1.52
+],
+"FC Lorient": [
+47.75,
+-3.37
+],
+"Le Havre AC": [
+49.5,
+0.17
+],
+"FC Metz": [
+49.11,
+6.16
+],
+"Paris FC": [
+48.82,
+2.35
+],
+"Angers SCO": [
+47.46,
+-0.53
+],
+"Club América": [
+19.3,
+-99.15
+],
+"Tigres UANL": [
+25.72,
+-100.31
+],
+"CF Monterrey": [
+25.67,
+-100.24
+],
+"Cruz Azul": [
+19.38,
+-99.18
+],
+"Deportivo Toluca": [
+19.29,
+-99.67
+],
+"CD Guadalajara (Chivas)": [
+20.68,
+-103.46
+],
+"CF Pachuca": [
+20.12,
+-98.74
+],
+"Club Universidad Nacional (Pumas)": [
+19.33,
+-99.19
+],
+"Santos Laguna": [
+25.63,
+-103.39
+],
+"Club León": [
+21.12,
+-101.66
+],
+"Atlas FC": [
+20.68,
+-103.33
+],
+"Club Necaxa": [
+21.88,
+-102.3
+],
+"Club Juárez": [
+31.74,
+-106.49
+],
+"Club Tijuana": [
+32.5,
+-117.01
+],
+"Atlante": [19.38, -99.18],
+"Club Puebla": [
+19.05,
+-98.16
+],
+"Querétaro FC": [
+20.58,
+-100.39
+],
+"Atlético San Luis": [
+22.15,
+-100.98
+],
+"Inter Miami CF": [
+25.96,
+-80.24
+],
+"LAFC": [
+34.01,
+-118.29
+],
+"LA Galaxy": [
+33.86,
+-118.26
+],
+"Seattle Sounders FC": [
+47.6,
+-122.33
+],
+"New York City FC": [
+40.83,
+-73.93
+],
+"Atlanta United FC": [
+33.76,
+-84.4
+],
+"FC Cincinnati": [
+39.11,
+-84.52
+],
+"Columbus Crew": [
+39.97,
+-83.02
+],
+"Sporting Kansas City": [
+39.12,
+-94.82
+],
+"Philadelphia Union": [
+39.83,
+-75.38
+],
+"FC Dallas": [
+33.15,
+-96.84
+],
+"Nashville SC": [
+36.13,
+-86.77
+],
+"New York Red Bulls": [
+40.74,
+-74.15
+],
+"Orlando City SC": [
+28.54,
+-81.39
+],
+"San Diego FC": [
+32.78,
+-117.12
+],
+"Austin FC": [
+30.39,
+-97.72
+],
+"Colorado Rapids": [
+39.81,
+-104.89
+],
+"New England Revolution": [
+42.09,
+-71.26
+],
+"Charlotte FC": [
+35.23,
+-80.85
+],
+"CF Montréal": [
+45.56,
+-73.55
+],
+"Toronto FC": [
+43.63,
+-79.42
+],
+"Houston Dynamo FC": [
+29.75,
+-95.35
+],
+"Portland Timbers": [
+45.52,
+-122.69
+],
+"Vancouver Whitecaps FC": [
+49.28,
+-123.11
+],
+"Minnesota United FC": [
+44.95,
+-93.17
+],
+"Chicago Fire FC": [
+41.86,
+-87.62
+],
+"Real Salt Lake": [
+40.58,
+-111.9
+],
+"San Jose Earthquakes": [
+37.35,
+-121.93
+],
+"St. Louis City SC": [
+38.63,
+-90.21
+],
+"D.C. United": [
+38.87,
+-77.01
+],
+"PSV Eindhoven": [
+51.44,
+5.47
+],
+"Feyenoord": [
+51.89,
+4.52
+],
+"Ajax": [
+52.31,
+4.94
+],
+"AZ Alkmaar": [
+52.61,
+4.74
+],
+"FC Twente": [
+52.24,
+6.84
+],
+"FC Utrecht": [
+52.08,
+5.15
+],
+"NEC Nijmegen": [
+51.84,
+5.84
+],
+"Go Ahead Eagles": [
+52.26,
+6.17
+],
+"Sparta Rotterdam": [
+51.92,
+4.43
+],
+"SC Heerenveen": [
+52.96,
+5.94
+],
+"FC Groningen": [
+53.21,
+6.59
+],
+"Fortuna Sittard": [
+51.0,
+5.84
+],
+"PEC Zwolle": [
+52.52,
+6.12
+],
+"Heracles Almelo": [
+52.36,
+6.67
+],
+"NAC Breda": [
+51.59,
+4.77
+],
+"Excelsior": [
+51.92,
+4.52
+],
+"Telstar": [
+52.46,
+4.62
+],
+"FC Volendam": [
+52.5,
+5.07
+],
+"Sporting CP": [
+38.76,
+-9.16
+],
+"Benfica": [
+38.75,
+-9.18
+],
+"FC Porto": [
+41.16,
+-8.58
+],
+"SC Braga": [
+41.56,
+-8.43
+],
+"Vitória SC": [
+41.45,
+-8.3
+],
+"Famalicão": [
+41.41,
+-8.52
+],
+"Gil Vicente": [
+41.54,
+-8.62
+],
+"Estoril Praia": [
+38.71,
+-9.4
+],
+"Moreirense": [
+41.38,
+-8.35
+],
+"Santa Clara": [
+37.75,
+-25.67
+],
+"Casa Pia": [
+38.71,
+-9.25
+],
+"Rio Ave": [
+41.37,
+-8.74
+],
+"Arouca": [
+40.93,
+-8.25
+],
+"Nacional": [
+32.65,
+-16.92
+],
+"Estrela da Amadora": [
+38.75,
+-9.22
+],
+"Académico de Viseu": [40.66, -7.91],
+"Alverca": [
+38.89,
+-9.03
+],
+"Marítimo": [32.65, -16.93],
+"Club Brugge": [
+51.19,
+3.09
+],
+"Union Saint-Gilloise": [
+50.82,
+4.33
+],
+"Anderlecht": [
+50.83,
+4.3
+],
+"Genk": [
+50.97,
+5.53
+],
+"Gent": [
+51.02,
+3.72
+],
+"Antwerp": [
+51.23,
+4.44
+],
+"Standard Liège": [
+50.61,
+5.54
+],
+"Cercle Brugge": [
+51.19,
+3.27
+],
+"KV Mechelen": [
+51.03,
+4.48
+],
+"Charleroi": [
+50.41,
+4.45
+],
+"Sint-Truiden": [
+50.82,
+5.19
+],
+"Westerlo": [
+51.09,
+4.92
+],
+"OH Leuven": [
+50.88,
+4.7
+],
+"Zulte Waregem": [
+50.89,
+3.43
+],
+"Dender": [
+50.88,
+4.07
+],
+"La Louvière": [
+50.47,
+4.19
+],
+"Galatasaray": [
+41.1,
+28.99
+],
+"Fenerbahçe": [
+40.99,
+29.04
+],
+"Beşiktaş": [
+41.04,
+29.01
+],
+"Trabzonspor": [
+41.0,
+39.72
+],
+"Başakşehir": [
+41.11,
+28.8
+],
+"Samsunspor": [
+41.29,
+36.33
+],
+"Göztepe": [
+38.4,
+27.12
+],
+"Kasımpaşa": [
+41.05,
+28.97
+],
+"Konyaspor": [
+37.87,
+32.49
+],
+"Alanyaspor": [
+36.54,
+31.99
+],
+"Eyüpspor": [
+41.05,
+28.93
+],
+"Amed": [37.91, 40.24],
+"Çorum": [40.55, 34.95],
+"Çaykur Rizespor": [
+41.02,
+40.52
+],
+"Gaziantep FK": [
+37.07,
+37.38
+],
+"Erzurumspor": [39.91, 41.27],
+"Kocaelispor": [
+40.77,
+29.93
+],
+"Gençlerbirliği": [
+39.93,
+32.85
+],
+"Celtic": [
+55.85,
+-4.21
+],
+"Rangers": [
+55.85,
+-4.31
+],
+"Heart of Midlothian": [
+55.94,
+-3.23
+],
+"Aberdeen": [
+57.16,
+-2.09
+],
+"Hibernian": [
+55.96,
+-3.17
+],
+"Dundee United": [
+56.48,
+-2.97
+],
+"Motherwell": [
+55.78,
+-3.98
+],
+"Kilmarnock": [
+55.61,
+-4.51
+],
+"Dundee": [
+56.47,
+-2.97
+],
+"St Mirren": [
+55.85,
+-4.43
+],
+"Falkirk": [
+56.0,
+-3.8
+],
+"St Johnstone": [56.41, -3.48],
+"Flamengo": [
+-22.91,
+-43.14
+],
+"Palmeiras": [
+-23.53,
+-46.68
+],
+"Botafogo": [
+-22.89,
+-43.29
+],
+"Fluminense": [
+-22.91,
+-43.32
+],
+"São Paulo": [
+-23.6,
+-46.72
+],
+"Corinthians": [
+-23.55,
+-46.47
+],
+"Atlético Mineiro": [
+-19.93,
+-44.01
+],
+"Internacional": [
+-30.07,
+-51.24
+],
+"Grêmio": [
+-29.97,
+-51.19
+],
+"Cruzeiro": [
+-19.87,
+-43.97
+],
+"Bahia": [
+-12.98,
+-38.5
+],
+"Vasco da Gama": [
+-22.89,
+-43.23
+],
+"Santos": [
+-23.95,
+-46.34
+],
+"Fortaleza": [
+-3.8,
+-38.52
+],
+"Athletico Paranaense": [
+-25.45,
+-49.28
+],
+"Red Bull Bragantino": [
+-22.95,
+-46.54
+],
+"Vitória": [
+-12.96,
+-38.5
+],
+"Mirassol": [
+-20.82,
+-49.5
+],
+"Juventude": [
+-29.17,
+-51.52
+],
+"Sport Recife": [
+-8.06,
+-34.9
+],
+"River Plate": [
+-34.55,
+-58.45
+],
+"Boca Juniors": [
+-34.64,
+-58.36
+],
+"Racing Club": [
+-34.67,
+-58.46
+],
+"Estudiantes": [
+-34.91,
+-57.96
+],
+"Vélez Sarsfield": [
+-34.64,
+-58.52
+],
+"Independiente": [
+-34.67,
+-58.28
+],
+"Talleres": [
+-31.4,
+-64.22
+],
+"Lanús": [
+-34.7,
+-58.39
+],
+"Rosario Central": [
+-32.93,
+-60.68
+],
+"San Lorenzo": [
+-34.65,
+-58.44
+],
+"Argentinos Juniors": [
+-34.59,
+-58.47
+],
+"Huracán": [
+-34.64,
+-58.4
+],
+"Belgrano": [
+-31.37,
+-64.25
+],
+"Godoy Cruz": [
+-32.89,
+-68.84
+],
+"Newell's Old Boys": [
+-32.96,
+-60.65
+],
+"Defensa y Justicia": [
+-34.78,
+-58.28
+],
+"Banfield": [
+-34.74,
+-58.39
+],
+"Instituto": [
+-31.4,
+-64.19
+],
+"Platense": [
+-34.55,
+-58.49
+],
+"Tigre": [
+-34.43,
+-58.58
+],
+"Al Hilal": [
+24.6,
+46.62
+],
+"Al Nassr": [
+24.77,
+46.7
+],
+"Al Ittihad": [
+21.54,
+39.18
+],
+"Al Ahli": [
+21.62,
+39.14
+],
+"Al Qadsiah": [
+26.28,
+50.21
+],
+"Al Shabab": [
+24.65,
+46.78
+],
+"Al Taawoun": [
+26.33,
+43.97
+],
+"Al Ettifaq": [
+26.43,
+50.1
+],
+"Al Fateh": [
+25.37,
+49.59
+],
+"Al Fayha": [
+25.9,
+45.35
+],
+"Al Khaleej": [
+26.48,
+50.04
+],
+"Al Najma": [26.08, 43.99],
+"Damac": [
+18.22,
+42.5
+],
+"Al Okhdood": [
+17.49,
+44.13
+],
+"Al Riyadh": [
+24.72,
+46.68
+],
+"NEOM SC": [
+28.4,
+36.55
+],
+"Al Kholood": [
+25.87,
+43.5
+],
+"Al Hazem": [
+25.85,
+43.45
+],
+"Vissel Kobe": [
+34.65,
+135.17
+],
+"Kashima Antlers": [
+35.99,
+140.64
+],
+"Kawasaki Frontale": [
+35.59,
+139.73
+],
+"Sanfrecce Hiroshima": [
+34.4,
+132.46
+],
+"Yokohama F. Marinos": [
+35.51,
+139.61
+],
+"Urawa Red Diamonds": [
+35.9,
+139.72
+],
+"Machida Zelvia": [
+35.55,
+139.45
+],
+"Gamba Osaka": [
+34.8,
+135.54
+],
+"Cerezo Osaka": [
+34.61,
+135.52
+],
+"Kashiwa Reysol": [
+35.85,
+139.97
+],
+"FC Tokyo": [
+35.66,
+139.53
+],
+"Nagoya Grampus": [
+35.12,
+136.95
+],
+"Avispa Fukuoka": [
+33.58,
+130.43
+],
+"Shimizu S-Pulse": [
+35.01,
+138.48
+],
+"Kyoto Sanga": [
+35.02,
+135.58
+],
+"Albirex Niigata": [
+37.88,
+139.06
+],
+"Tokyo Verdy": [
+35.64,
+139.55
+],
+"Fagiano Okayama": [
+34.66,
+133.92
+],
+"Yokohama FC": [35.46, 139.61],
+"Shonan Bellmare": [
+35.34,
+139.35
+]
+}

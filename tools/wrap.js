@@ -1,0 +1,2 @@
+const fs=require("fs");
+for (const k of ["artifact","pc"]) { if (k==="artifact") { const s=fs.readFileSync("dist/soccersim_artifact.html","utf8"); fs.writeFileSync("dist/test_artifact.html",'<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><style>:root{color-scheme:light}body{margin:0}</style></head><body>'+s+'</body></html>'); } }
