@@ -7,7 +7,7 @@ const URL='http://localhost:8791/test_artifact.html';
  p.on('pageerror',e=>errs.push('PE '+e.message)); p.on('console',m=>{if(m.type()==='error')errs.push(m.text().slice(0,200))});
  const idle=async()=>{await p.waitForFunction(()=>document.querySelector('#busy').hidden,null,{timeout:300000});await p.waitForTimeout(300);};
  const OUT=process.argv[2]||'.';
- await p.goto(URL); await p.waitForTimeout(800); await p.click('#go-new'); await p.waitForSelector('#nav a'); await p.waitForTimeout(500);
+ await p.goto(URL); await p.waitForTimeout(800); await p.click('#go-new'); await p.waitForSelector('#nav a'); await p.waitForTimeout(500); if(await p.$('#fp-cancel')){ await p.click('#fp-cancel'); await p.waitForTimeout(300); }
  // three seasons forward, then step to the World Cup
  await p.evaluate(async()=>{ for(let i=0;i<3;i++) await api('/api/years',{n:1}); });
  let wc=null;
@@ -19,7 +19,7 @@ const URL='http://localhost:8791/test_artifact.html';
  console.log('overflow-x:', await p.evaluate(()=>[document.documentElement.scrollWidth, innerWidth]));
  await p.screenshot({path:OUT+'/wc_groups.png'});
  // play all group matchday 1 games one by one via the round list
- await p.click('.rlist summary'); await p.waitForTimeout(300);
+ await p.$$eval('.rlist',a=>a.forEach(d=>d.open=true)); await p.waitForTimeout(300);
  let n=0; while(await p.$('.round-card [data-gm]')&&n<30){ const h=await p.innerText('.round-card h3'); await p.click('.round-card [data-gm]'); await idle(); n++; if((await p.innerText('.round-card h3').catch(()=>h)).split('\n')[0]!==h.split('\n')[0]) break; await p.waitForTimeout(100); const sm=await p.$('.rlist:not([open]) summary'); if(sm) await sm.click(); }
  console.log('played',n,'| card now:',(await p.innerText('.round-card h3')).replace(/\n/g,' '));
  await p.screenshot({path:OUT+'/wc_after_md1.png'});

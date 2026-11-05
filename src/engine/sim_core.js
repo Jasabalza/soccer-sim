@@ -721,6 +721,24 @@ class World {
     $M.append(self.transfers, $dict($kw({"season": self.season, "player": p.name, "nat": p.nat, "age": p.age, "ovr": p.ovr, "pot": p.pot, "frm": seller, "to": buyer, "fee": fee, "kind": kind, "frm_league": $idx($idx(self.clubs, seller), "league"), "to_league": $idx($idx(self.clubs, buyer), "league"), "why": $mods.market.take_why()})));
     if (p.ovr >= 80 || $mods.rivals.intensity(self, seller, buyer) > 0) $mods.rivals.transfer_heat(self, seller, buyer, p.ovr >= 80 ? 2.5 : 1.5);
   }
+  // bring a save made before v15 up to date (new settings, an unfinished old-style Club World Cup)
+  migrate_v15() {
+    const self = this, base = $new(Settings, []), cfg = self.cfg;
+    for (const k of Object.keys(base)) if (cfg[k] === undefined) cfg[k] = base[k];
+    for (const [id, c] of [...$M.items(self.comps)]) {
+      if (c && c.kind === "cwc" && c.qual === undefined && !c.winner) {
+        const fresh = $new(C.ClubWorldCup, [self]);
+        $setidx(self.comps, id, fresh);
+      }
+    }
+    for (const [ln, L] of $M.items(self.leagues)) for (const n of $idx(L, "clubs")) {
+      const c = $idx(self.clubs, n);
+      if (!$in("debt", c)) { $setidx(c, "debt", 0.0); $setidx(c, "ledger", []); $setidx(c, "parts", null); }
+      if (!$in("acad", c)) self._init_v15(c, n, L);
+    }
+    for (const nm of self.nations.keysArr()) $mods.fed.init($idx(self.nations, nm));
+    return true;
+  }
   renegotiate_tv() {
     const self = this;
     let L, ln, rel;
