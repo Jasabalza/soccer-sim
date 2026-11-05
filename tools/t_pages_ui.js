@@ -18,6 +18,13 @@ const URL='http://localhost:8791/test_artifact.html';
  const nb=await p.$$('.bidd'); console.log('bid details',nb.length); if(nb.length){ await nb[0].evaluate(e=>e.open=true); await p.screenshot({path:OUT+'/pg_bid.png',fullPage:true}); }
  await p.evaluate(()=>location.hash='#/rivals'); await p.waitForTimeout(800);
  for(const so of ['history','rising']){ await p.selectOption('#rv-sort',so); await p.waitForTimeout(800); console.log('sort',so,(await p.$$('.rvrow')).length,'rows'); }
+ // transfers: league filter and all seasons
+ await p.evaluate(()=>location.hash='#/ledger'); await p.waitForTimeout(900);
+ await p.selectOption('#t-l','Premier League'); await p.waitForTimeout(900);
+ console.log('PL season rows',(await p.$$('.fee')).length,'| title:',(await p.innerText('h1')).replace(/\n/g,' '),'| stat tiles',(await p.$$('.quick .stat')).length);
+ await p.selectOption('#t-s','all'); await p.waitForTimeout(900);
+ console.log('PL all-seasons rows',(await p.$$('.fee')).length); await p.screenshot({path:OUT+'/pg_ledger_pl.png',fullPage:true});
+ await p.click('[data-tl="La Liga"]'); await p.waitForTimeout(900); console.log('tapped La Liga ->',(await p.innerText('h1')).replace(/\n/g,' '));
  console.log('errors:',errs.slice(0,6));
  await b.close();
 })();

@@ -1039,6 +1039,15 @@ class World {
       $t6 = $idx(t, "to_league"), $setidx(net, $t6, $sub($idx(net, $t6), $idx(t, "fee")));
     }
     $setidx(rec, "transfers", $dict($kw({"n": $len(tr), "total": $sum((() => { const $r = []; let t; for (const $c0 of $iter(tr)) { t = $c0; $r.push($idx(t, "fee")); } return $r; })()), "abroad": $sum((() => { const $r = []; let t; for (const $c0 of $iter(tr)) { t = $c0; if (!($idx(t, "kind") === "abroad")) continue; $r.push(1); } return $r; })()), "top": $slice($sorted(tr, $kw({"key": ((t) => (-$idx(t, "fee")))})), null, 10, null), "net_by_league": net})));
+    {   // v15: the biggest moves of each league (as buyer or seller) and its transfer totals, for the league filter on the Transfers page
+      const srt = $sorted(tr, $kw({"key": ((t) => (-$idx(t, "fee")))})), tl = new $Dict(), ts = new $Dict();
+      for (const ln of self.leagues.keysArr()) {
+        const mine = srt.filter((t) => $idx(t, "frm_league") === ln || $idx(t, "to_league") === ln);
+        tl.set(ln, mine.slice(0, 15));
+        ts.set(ln, $dict($kw({"n": mine.length, "paid": $sum(mine.filter((t) => $idx(t, "to_league") === ln).map((t) => $idx(t, "fee"))), "recv": $sum(mine.filter((t) => $idx(t, "frm_league") === ln).map((t) => $idx(t, "fee"))), "abroad": mine.filter((t) => $idx(t, "frm_league") !== $idx(t, "to_league")).length})));
+      }
+      $setidx($idx(rec, "transfers"), "top_lg", tl); $setidx($idx(rec, "transfers"), "lg_stat", ts);
+    }
     for (const $f50 of $iter($M.items(finish))) {
       [n, f] = $iter($f50);
       $setidx($idx(self.clubs, n), "last_finish", f);
