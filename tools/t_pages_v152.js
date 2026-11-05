@@ -37,6 +37,11 @@ const seed = process.argv[2] || "3", SEASONS = +(process.argv[3] || 9);
       const a = await call("/api/compalltime?" + q({ key }));
       ok(a.editions <= h.editions_n, key + " stat editions <= editions");
       ok(a.goals.every((p, i) => i === 0 || p.goals <= a.goals[i - 1].goals), key + " goals sorted");
+      // each list is ranked on its own: first place is 1, ranks never go down, and tied values share a rank
+      for (const [nm, f] of [["goals", "goals"], ["assists", "assists"], ["cs", "cs"], ["golden", "golden"]]) {
+        const L = a[nm] || [];
+        ok(L.every((p, i) => (i === 0 ? p.rank === 1 : p.rank >= L[i - 1].rank && (p[f] === L[i - 1][f]) === (p.rank === L[i - 1].rank))), key + " " + nm + " ranks are 1,2,3.. with ties shared");
+      }
       // independent check: the leader's goals equal the sum over the per-season stored lists
       if (a.goals.length) {
         const top = a.goals[0]; let sum = 0;

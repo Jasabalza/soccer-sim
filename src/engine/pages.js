@@ -155,10 +155,10 @@ function alltime(w, key) {
   for (const b of boots) { const t = P.get(b.uid); if (t) { t.golden += 1; t.golden_seasons.push(b.season); } }
   for (const [nm, n] of coach_titles) { let c = coaches.get(nm); if (!c) { c = {name: nm, nat: null, team: null, awards: 0, titles: 0, seasons: []}; coaches.set(nm, c); } c.titles = n; }
   const all = [...P.values()].map((t) => Object.assign(t, {teams: t.teams.slice(-4)}));
-  const list = (field, min, lim) => all.filter((t) => t[field] >= min).sort((a, b) => b[field] - a[field] || b.assists - a.assists || a.name.localeCompare(b.name)).slice(0, lim);
+  const list = (field, min, lim) => all.filter((t) => t[field] >= min).sort((a, b) => b[field] - a[field] || b.assists - a.assists || a.name.localeCompare(b.name)).slice(0, lim).map((t) => Object.assign({}, t));
   const best = (arr) => { arr = arr.filter((x) => x.v > 0); if (!arr.length) return null; const m = Math.max(...arr.map((x) => x.v)); return {v: m, who: arr.filter((x) => x.v === m).slice(0, 3)}; };
   const goals = rank_ties(list("goals", 1, 40), (t) => t.goals), assists = rank_ties(list("assists", 1, 40), (t) => t.assists), cs = rank_ties(list("cs", 1, 40), (t) => t.cs);
-  const golden = rank_ties(all.filter((t) => t.golden > 0).sort((a, b) => b.golden - a.golden || b.goals - a.goals).slice(0, 40), (t) => t.golden);
+  const golden = rank_ties(all.filter((t) => t.golden > 0).sort((a, b) => b.golden - a.golden || b.goals - a.goals).slice(0, 40).map((t) => Object.assign({}, t)), (t) => t.golden);
   const coach_list = rank_ties([...coaches.values()].filter((c) => c.titles + c.awards > 0).sort((a, b) => b.titles - a.titles || b.awards - a.awards || a.name.localeCompare(b.name)).slice(0, 40), (c) => c.titles * 100 + c.awards);
   return deep({key, emblem: emb, title: title_of(w, key), editions: editions.length, seasons: editions, goals, assists, cs, golden, coaches: coach_list,
     records: {goals: best(rec.goals), assists: best(rec.assists), cs: best(rec.cs)}, boots: boots.reverse(), top: goals.length ? goals[0] : null,

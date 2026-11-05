@@ -38,6 +38,9 @@ function boot(bundle) {
     await nc("/api/ledger"); await nc("/api/money");
     const cw = await nc("/api/comp?id=" + encodeURIComponent("CWC:" + (await nc("/api/status")).header.season)); console.log(" ", tag, "CWC page ok, winner", cw.winner || "-", "groups", (cw.groups || []).length);
     await nc("/api/records");
+    // old saves keep the 16-club slots; after migrating, the Club World Cup must be the full 32 clubs in 8 groups once it is drawn
+    { const sd = (await nc("/api/status")).header.season, cwx = await nc("/api/comp?id=" + encodeURIComponent("CWC:" + sd)); const nclub = (cwx.field || []).length;
+      if (!cwx.winner && !(cwx.bracket && (cwx.bracket.ties || []).length) && nclub) { if (nclub !== 32 || (cwx.groups || []).length !== 8) throw new Error(tag + ": migrated unplayed CWC has " + nclub + " clubs / " + (cwx.groups || []).length + " groups"); console.log("  ", tag, "CWC field 32 clubs, 8 groups"); } }
     // run the rest of the season, then a rollover, then a second season, checking the new pages along the way
     for (let seas = 0; seas < 2; seas++) {
       for (let k = 0; k < 16; k++) { const s2 = await nc("/api/status"); if (s2.header.season_done) break; await nc("/api/sim", { scope: "world", weeks: 60 }); }

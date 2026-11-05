@@ -725,9 +725,12 @@ class World {
   migrate_v15() {
     const self = this, base = $new(Settings, []), cfg = self.cfg;
     for (const k of Object.keys(base)) if (cfg[k] === undefined) cfg[k] = base[k];
+    // saves made before v15 keep the old 16-club Club World Cup slots (8/4/2/2): bring them to the 32-club format
+    const SLOTS = {UEFA: 14, CONMEBOL: 6, CONCACAF: 6, AFC: 6};
+    for (const [cf, n] of Object.entries(SLOTS)) if ($in(cf, self.cups)) $setidx($idx(self.cups, cf), "cwc_slots", n);
     for (const [id, c] of [...$M.items(self.comps)]) {
-      if (c && c.kind === "cwc" && c.qual === undefined && !c.winner) {
-        const fresh = $new(C.ClubWorldCup, [self]);
+      if (c && c.kind === "cwc" && !c.winner && (c.qual === undefined || ($len(c.field) > 0 && $len(c.field) < 32 && c.ptr === 0 && $len(c.glog) === 0 && $len(c.ties) === 0))) {
+        const fresh = $new(C.ClubWorldCup, [self]);       // an unplayed draw made with the old slots is redrawn when next opened
         $setidx(self.comps, id, fresh);
       }
     }

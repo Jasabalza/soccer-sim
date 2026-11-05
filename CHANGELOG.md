@@ -1,5 +1,10 @@
 # Changelog
 
+## v15.2 fixes
+- **All-time leaderboard ranks.** The rank circles in the all-time lists could show the wrong numbers (28, 4, 1, 4...) because the goals, assists, clean sheet and Golden Boot lists shared the same player records and overwrote each other's ranks. Each list is now ranked on its own: 1, 2, 3 with ties sharing a rank.
+- **Club World Cup group stage matches the World Cup.** Group chips (All, A, B ...) show whenever there is more than one group, with games opening for the chosen group.
+- **Older saves get the full 32-club Club World Cup.** Saves made before the 32-club format kept the old 16-club places (8/4/2/2). Loading one now sets the places to 14/6/6/6 and redraws a Club World Cup that has not started. A started one is left as it is.
+
 ## v15.2: League & Competition Pages
 - **League page in tabs.** Table, Money, Hall of Fame, Fixtures and Stats, with a header of average OVR, club income, TV money and how rich the league is. The table shows a gold number for league titles won.
 - **Money tab.** League health (revenue, growth, state), where the money comes from and where it goes, every club's finances with a wage-limit bar and a Strong / Steady / Tight / In debt label (tap to open that club's Finance tab), and a comparison with neighbouring leagues. API: `/api/leaguemoney`.

@@ -34,7 +34,8 @@ const URL='http://localhost:8791/test_artifact.html';
  await p.click('#lg-tabs [data-lt="stats"]'); await p.waitForTimeout(1500); await ox('league stats'); await shot('league_stats_all');
  ok((await p.$$('#lg-stats .pl')).length>=10,'all-time rows, got '+(await p.$$('#lg-stats .pl')).length);
  const more=await p.$('#st-more'); if(more){ await more.click(); await p.waitForTimeout(400); ok((await p.$$('#lg-stats .pl')).length>20,'show more adds rows'); }
- for(const ch of ['assists','cs','golden','coaches','goals']){ await p.click(`#lg-stats [data-ach="${ch}"]`); await p.waitForTimeout(300); }
+ for(const ch of ['assists','cs','golden','coaches','goals']){ await p.click(`#lg-stats [data-ach="${ch}"]`); await p.waitForTimeout(300);
+  const rk=await p.$$eval('#lg-stats .pl .rk',e=>e.map(x=>+x.textContent)); ok(rk.length===0||(rk[0]===1&&rk.every((v,i)=>i===0||(v>=rk[i-1]&&v<=i+1))),'all-time '+ch+' ranks run 1,2,3.. got '+rk.slice(0,8).join(',')); }
  await p.click('#lg-stats [data-sm="season"]'); await p.waitForTimeout(1200); await p.click('#lg-stats [data-ss]:nth-of-type(2)'); await p.waitForTimeout(900); await shot('league_stats_season');
  ok((await p.$$('#lg-stats .pl')).length>=10,'per-season rows');
  const chips=await p.$$('#lg-stats [data-ss]'); ok(chips.length>=9,'season chips, got '+chips.length);
