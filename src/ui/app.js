@@ -129,6 +129,7 @@ async function simIds(ids, opts, text) {
   const r = await busy(text || "Simulating...", () => api("/api/sim", { scope: "ids", ids, ...opts }));
   await afterSim(); await playFinished(r && r.finished);
 }
+const GSEL = {};      // the group chosen on a tournament's Groups tab
 const GM = {}, HOLD = {}, ROPEN = {};      // GM: the round on screen per competition; HOLD: a round that just finished, kept on screen until you move on
 async function simComp(comp, opts) {
   if (!(opts && opts.game)) delete HOLD[comp];
@@ -139,7 +140,7 @@ async function simComp(comp, opts) {
 async function simGames(id, keys) {
   const prev = GM[id], got = [], fin = [];
   await busy("Simulating...", async () => { for (const k of keys) { try { const q = await api("/api/sim", { comp: id, game: k }); if (q && q.game) got.push(q.game); if (q && q.finished) fin.push(...q.finished); } catch (e) { toast(e.message); break; } } });
-  if (prev && prev.ready && prev.event && got.length) {
+  if (prev && prev.ready && prev.event && got.length && !prev.groups_all) {
     const h = JSON.parse(JSON.stringify(prev));
     for (const q of got) { const x = h.games.find((g) => g.key === q.key); if (x) { x.done = true; x.text = q.text; x.winner = q.winner; } }
     h.played = h.games.filter((g) => g.done).length;
@@ -891,6 +892,13 @@ function wireRound(id) {
   document.querySelectorAll("#view [data-grp]").forEach((b) => b.onclick = () => { const g = GM[id]; if (!g) return; const keys = g.games.filter((x) => !x.done && x.grl === b.dataset.grp).map((x) => x.key); if (keys.length) simGames(id, keys); });
   const hg = $("#hold-go"); if (hg) hg.onclick = () => { delete HOLD[id]; route(); };
 }
+const gdoneOf = (all, i) => all.filter((m) => m.gr === i).every((m) => m.done);
+// the group stage on one line: the groups are played on the Groups tab
+function grpSummary(all) {
+  const n = all.filter((m) => m.done).length;
+  return `<div class="card round-card"><h3>Group stage <small>${n}/${all.length} played</small></h3><div class="rstrip">${bar(n, all.length)}</div>
+    <div class="meta" style="margin:6px 0">Play any group on the Groups tab, game by game or the whole group at once. The knockout starts once every group is finished.</div><button id="go-grp">Open the groups</button></div>`;
+}
 // one group: its table and, folded away, its results
 function groupBox(label, rows, results, open) {
   return `<details class="gbox" ${open ? "open" : ""}><summary><b>${esc(label)}</b> <span class="meta">${rows[0] ? "leader " + esc(rows[0]) : ""}</span></summary>${results}</details>`;
@@ -904,6 +912,7 @@ async function viewComp(id) {
   const gm = !locked && !finished0 && ["cup", "cwc", "qual", "ic", "wc", "ct", "nl"].includes(x.kind) ? await api("/api/games?comp=" + enc(id)).catch(() => null) : null;
   GM[id] = gm && gm.ready ? gm : null;
   const held = HOLD[id];
+  const gall = GM[id] && GM[id].groups_all && ["wc", "cwc", "ct"].includes(x.kind) ? GM[id].groups_all : null;     // group stage: every game of every matchday, so one group can be played on its own
   let body = "";
   if (x.kind === "qual") {
     body = `<div class="sub">Host ${esc(x.host)} &middot; ${x.slots} place(s) to win${x.qualified.length ? " &middot; qualified: " + x.qualified.map(natLink).join(", ") : ""}</div>
@@ -914,11 +923,18 @@ async function viewComp(id) {
     const lk = x.clubs ? clubLink : natLink, unit = x.clubs ? "Club" : "Nation";
     const gname = (g, i) => (g.label ? g.label : "Group " + String.fromCharCode(65 + (i % 26)) + (i >= 26 ? i : ""));
     // W / D / L come from the group's own results
-    const wdl = (g, n) => { let w = 0, d = 0, l = 0; for (const m of g.matches) { if (m.a !== n && m.b !== n) continue; const f = m.a === n ? m.sa - m.sb : m.sb - m.sa; if (f > 0) w++; else if (f < 0) l++; else d++; } return [w, d, l]; };
-    const gtable = (g) => `<table class="gt"><thead><tr><th class="l">${unit}</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GD</th><th>Pts</th></tr></thead><tbody>${g.teams.map((r, k) => { const [w, d, l] = wdl(g, r.nation); const gd = r.gf - r.ga; return `<tr class="${k < 2 && r.p ? "champ" : ""}"><td class="l">${lk(r.nation)}</td><td>${r.p}</td><td>${w}</td><td>${d}</td><td>${l}</td><td>${gd > 0 ? "+" + gd : gd}</td><td class="pts">${r.pts}</td></tr>`; }).join("")}</tbody></table>`;
+    const wdl = (g, n, gi) => { let w = 0, d = 0, l = 0; const src = gall ? gall.filter((m) => m.done && m.gr === gi).map((m) => { const [sa, sb] = m.text.split("-").map(Number); return { a: m.a, b: m.b, sa, sb }; }) : g.matches; for (const m of src) { if (m.a !== n && m.b !== n) continue; const f = m.a === n ? m.sa - m.sb : m.sb - m.sa; if (f > 0) w++; else if (f < 0) l++; else d++; } return [w, d, l]; };
+    const gtable = (g, gi) => `<table class="gt"><thead><tr><th class="l">${unit}</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GD</th><th>Pts</th></tr></thead><tbody>${g.teams.map((r, k) => { const [w, d, l] = wdl(g, r.nation, gi); const gd = r.gf - r.ga; return `<tr class="${k < 2 && r.p ? "champ" : ""}"><td class="l">${lk(r.nation)}</td><td>${r.p}</td><td>${w}</td><td>${d}</td><td>${l}</td><td>${gd > 0 ? "+" + gd : gd}</td><td class="pts">${r.pts}</td></tr>`; }).join("")}</tbody></table>`;
     const gres = (g) => (g.matches.length ? `<details class="gres"><summary class="meta">Results (${g.matches.length})</summary><div class="meta">${g.matches.map((m) => `<a href="#/matchup/${enc(id)}/${enc(m.a)}/${enc(m.b)}">${esc(m.a)} ${m.sa}-${m.sb} ${esc(m.b)}</a>`).join(" &middot; ")}</div></details>` : "");
     const many = x.groups.length > 4;
-    const chips = many ? `<div class="gchips" id="gchips"><button class="on" data-g="all">All</button>${x.groups.map((g, i) => `<button data-g="${i}">${esc(gname(g, i).replace("Group ", ""))}</button>`).join("")}</div>` : "";
+    const ggames = (g, i) => {
+      if (!gall) return "";
+      const gs = gall.filter((m) => m.gr === i), left = gs.filter((m) => !m.done).length;
+      const row = (m) => `<div class="fix2"><div class="fix"><span class="h">${lk(m.a)}</span><span class="s">${m.done ? esc(m.text) : "v"}</span><span>${lk(m.b)}</span></div><div class="fx-m"><a href="#/matchup/${enc(id)}/${enc(m.a)}/${enc(m.b)}">${m.done ? "Match info" : "Preview"}</a>${m.done ? "" : `<button class="mini" data-gm="${esc(m.key)}">Sim</button>`}</div></div>`;
+      return `<div class="ggames" ${many ? "hidden" : ""}><div class="grp-h"><b>Games</b> <span class="meta">${left ? left + " to play" : "group finished"}</span>${left ? `<button class="mini" data-gall="${i}">Sim whole group</button>` : ""}</div>${[0, 1, 2].map((md) => `<div class="meta" style="margin:8px 0 0">Matchday ${md + 1}</div>` + gs.filter((m) => m.md === md).map(row).join("")).join("")}</div>`;
+    };
+    const gdone = (i) => gall && gall.filter((m) => m.gr === i).every((m) => m.done);
+    const chips = many ? `<div class="gchips" id="gchips"><button class="on" data-g="all">All</button>${x.groups.map((g, i) => `<button data-g="${i}">${esc(gname(g, i).replace("Group ", ""))}${gdone(i) ? " \u2713" : ""}</button>`).join("")}</div>` : "";
     const fmt = x.format;
     const qcard = x.clubs && fmt ? `<div class="card" style="margin-top:14px"><h3>How clubs qualify</h3>
       <div class="row"><span>Continental champions</span><span class="pos">${Object.keys(fmt.slots).length} guaranteed</span></div>
@@ -932,7 +948,7 @@ async function viewComp(id) {
       <div class="tabs"><button class="on" data-t="ko">Knockout bracket</button><button data-t="grp">Groups</button><button data-t="stats">Stats</button></div>
       <div id="tab-stats" hidden></div>
       <div id="tab-ko">${x.bracket.rounds.length ? bracketHTML(liveBracket(x.bracket, gm), !x.clubs, { cid: id, ready: !!(gm && gm.ready) }) : '<div class="empty">The draw is made when the tournament is unlocked.</div>'}</div>
-      <div id="tab-grp" hidden>${x.groups.length ? `${chips}<div class="grid g-groups" id="gboxes">${x.groups.map((g, i) => `<div class="gwrap" data-gi="${i}">${groupBox(gname(g, i), g.teams.map((r) => r.nation), gtable(g) + gres(g), i === 0 || window.innerWidth > 700)}</div>`).join("")}</div><div class="meta" style="margin-top:6px">Top two of each group advance${x.kind === "wc" ? ", with the best third-placed sides filling the bracket" : ""}.</div>` : '<div class="empty">No draw yet.</div>'}</div>
+      <div id="tab-grp" hidden>${x.groups.length ? `${chips}<div class="grid g-groups" id="gboxes">${x.groups.map((g, i) => `<div class="gwrap" data-gi="${i}">${groupBox(gname(g, i), g.teams.map((r) => r.nation), gtable(g, i) + (gall ? "" : gres(g)), i === 0 || window.innerWidth > 700)}${ggames(g, i)}</div>`).join("")}</div><div class="meta" style="margin-top:6px">Top two of each group advance${x.kind === "wc" ? ", with the best third-placed sides filling the bracket" : ""}.</div>` : '<div class="empty">No draw yet.</div>'}</div>
       ${qcard}`;
   } else {
     body = `<div class="sub">${x.winner ? `Winner <b>${clubLink(x.winner)}</b>, runner-up ${clubLink(x.runner_up)}` : x.field.length ? `${x.field.length} clubs` : "The field is set when the qualifying cups finish."}</div>
@@ -948,7 +964,7 @@ async function viewComp(id) {
       <p style="margin:10px 0 0"><button id="k-up" class="pri">Sim up to here</button> <span class="meta">plays only what it needs, then stops so you can play it your way.</span></p>
       <p style="margin:8px 0 0"><button id="k-pre">Sim everything it needs, then this to the end</button></p></div>`
       : `<p id="k-row"><button id="k-n" ${finished ? "disabled" : ""}>Next ${x.kind === "qual" ? "window" : "round"}</button> <button id="k-e" class="pri" ${finished ? "disabled" : ""}>To the end</button> <span class="meta">${p.done}/${p.total} played${p.next ? " &middot; next: " + esc(p.next) + (p.next_date ? " &middot; " + p.next_date.text : "") : ""}</span></p>`}
-    ${held ? roundCard(held, id, null, { held: true, next: gm }) : roundCard(gm, id)}
+    ${gall ? grpSummary(gall) : held ? roundCard(held, id, null, { held: true, next: gm }) : roundCard(gm, id)}
     ${body}${x.past_finals && x.past_finals.length ? `<details class="gres" style="margin-top:14px"><summary><b>Previous finals</b> <span class="meta">${x.past_finals.length}</span></summary>${pastFinals(x.past_finals, x.kind === "wc").replace("<h2>Previous finals</h2>", "")}</details>` : ""}`;
   wireRound(id); wireBrackets($("#view"));
   document.querySelectorAll(".tabs [data-t]").forEach((b) => b.onclick = () => {
@@ -960,15 +976,20 @@ async function viewComp(id) {
   });
   { // keep the tab the user was on; nation tournaments open on Groups until knockouts start
     let want = COMPTAB[id];
-    if (!want && ["wc", "ct", "nl"].includes(x.kind) && x.groups && x.groups.length && !(x.bracket.ties || []).length) want = "grp";
+    if (!want && ["wc", "ct", "nl", "cwc"].includes(x.kind) && x.groups && x.groups.length && !(x.bracket.ties || []).length) want = "grp";
     const wb = want && document.querySelector(`.tabs [data-t="${want}"]`);
     if (wb) wb.click();
   }
   document.querySelectorAll("#gchips [data-g]").forEach((b) => b.onclick = () => {
+    GSEL[id] = b.dataset.g;
     document.querySelectorAll("#gchips [data-g]").forEach((o) => o.classList.toggle("on", o === b));
+    document.querySelectorAll("#gboxes .gwrap .ggames").forEach((e) => { e.hidden = b.dataset.g === "all"; });
     $("#gboxes").classList.toggle("one", b.dataset.g !== "all");
     document.querySelectorAll("#gboxes .gwrap").forEach((e) => { e.hidden = b.dataset.g !== "all" && e.dataset.gi !== b.dataset.g; const d = e.querySelector("details"); if (d && b.dataset.g !== "all") d.open = true; });
   });
+  if (gall && $("#gchips")) { let sel = GSEL[id]; if (sel == null) { const i = x.groups.findIndex((g, k) => !gdoneOf(gall, k)); sel = i >= 0 ? String(i) : "all"; } const cb = $(`#gchips [data-g="${sel}"]`); if (cb) cb.click(); }
+  document.querySelectorAll("#view [data-gall]").forEach((b) => (b.onclick = () => { const keys = gall.filter((m) => m.gr === +b.dataset.gall && !m.done).sort((a, b2) => a.md - b2.md).map((m) => m.key); if (keys.length) simGames(id, keys); }));
+  const gg = $("#go-grp"); if (gg) gg.onclick = () => { const t = document.querySelector('.tabs [data-t="grp"]'); if (t) t.click(); };
   if ($("#k-n")) $("#k-n").onclick = () => simComp(id, { matches: 1 });
   if ($("#k-e")) $("#k-e").onclick = () => simComp(id, { to_end: true });
   if ($("#k-up")) $("#k-up").onclick = () => simComp(id, { upto: true });

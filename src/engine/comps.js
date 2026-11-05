@@ -243,7 +243,8 @@ Comp.prototype.play = function(ev) {
     this._applied(ev, g, res);
   }
   const list = gs.map((g) => [g, pg[g.key]]);
-  this.pg = null;
+  for (const g of gs) delete pg[g.key];                // games of later matchdays played ahead of time (group stage) stay filed here
+  this.pg = Object.keys(pg).length ? pg : null;
   this._finish(ev, list);
 };
 // played games of the current event, for the screens
@@ -847,6 +848,50 @@ class WorldCup extends Comp {
     self.ko_current = adv;
   }
 }
+// Group stage of a World Cup, Club World Cup or continental championship: any group can be played to the end on its own, in any order.
+// A game of a later matchday is played with that matchday's own random stream, so the results do not depend on the order of play.
+// The knockout draw is made only when the last matchday of every group is finished (that is when the current event is the third matchday).
+WorldCup.prototype.group_games_all = function() {
+  const ev = this.cur_ev();
+  if (!ev || $idx(ev, "phase") !== "grp") return null;
+  this.ensure_prepared();
+  const out = [], pg = this.pg || {}, flog = {};
+  for (const [md, a, b, sa, sb] of this.glog) flog[a + "|" + b] = [md, sa, sb];
+  for (let md = 0; md < 3; md++) {
+    const evm = this.events[md];
+    for (const g of this._games(evm)) {
+      let done = false, sa = null, sb = null;
+      if (md < this.ptr && flog[g.key]) { done = true; [, sa, sb] = flog[g.key]; }
+      else if (g.key in pg) { done = true; sa = pg[g.key].sa; sb = pg[g.key].sb; }
+      out.push({ key: g.key, a: g.a, b: g.b, md, done, sa, sb });
+    }
+  }
+  return out;
+};
+WorldCup.prototype.play_group_game = function(key) {
+  const ev0 = this.cur_ev();
+  if (!ev0 || $idx(ev0, "phase") !== "grp") return this.play_game(key);
+  this.ensure_prepared();
+  let md = -1, g = null;
+  for (let m = this.ptr; m < 3 && !g; m++) { g = this._games(this.events[m]).find((x) => x.key === key); if (g) md = m; }
+  if (!g) throw $mkexc(ValueError, "That game is not part of the group stage.");
+  if (!this.pg) this.pg = {};
+  if (key in this.pg) throw $mkexc(ValueError, "That game has already been played.");
+  const evm = this.events[md], r = new $Random();
+  r.seed(this.w.seed + "|" + $idx(evm, "season") + "|" + this.id + "|g|" + md + "|" + key);
+  const res = this._sim(evm, g, r);
+  this.pg[key] = res;
+  this._applied(evm, g, res);
+  // every game of the current matchday is in: file it and move on (also through later matchdays that were played ahead)
+  while (this.ptr < this.events.length && this.has_event(this.w.season)) {
+    const evc = this.cur_ev(), gs = this._games(evc);
+    if (!gs.length || !gs.every((x) => x.key in (this.pg || {}))) break;
+    this.play_next();
+    if (!this.cur_ev() || $idx(this.cur_ev(), "phase") !== "grp") break;
+  }
+  this._autorun();
+  return res;
+};
 WorldCup.prototype.kind = "wc";
 WorldCup.prototype.is_nat = true;
 WorldCup.prototype.RANK_K = 100.0;

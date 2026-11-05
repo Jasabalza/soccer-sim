@@ -7,6 +7,7 @@
 - **Awards rework.** The results page shows everything at a glance (Ballon d'Or, Golden Boot, Young Player, Coach, Team of the Year, cup awards) with chips to jump around. Separate pages for the Ballon d'Or top ten and group votes, and the Team of the Year pitch with cup awards by group. The ceremony is now optional and shows one award per screen.
 - **Nations.** A shorter list with confederation chips, search, sort and "show 25 more". Nation pages have Squad (best eleven first), Federation and Honours tabs.
 - **Club page.** Overview, Squad (position chips, sort, under 23), Finance, Academy, Stadium and Honours tabs.
+- **Group stages (World Cup, Club World Cup, continental championships).** The round card is now a short summary (n/total played). The Groups tab shows one group at a time with its table and all six games: Sim a single game, or "Sim whole group" (all three matchdays). Group chips are ticked when finished; "All" shows tables only. The knockout starts only once every group is finished, and results are the same whatever order you play in. API: `groups_all` on `/api/games`, and `/api/sim {comp, game}` works for any unplayed group game.
 - Engine: `header.phase` and `header.flow` plus `POST /api/flow` for the off-season steps. Old saves load as before.
 
 ## v15.0: The Business Update
