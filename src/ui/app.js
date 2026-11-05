@@ -670,7 +670,7 @@ async function viewClub(name) {
     if (t === "sq") drawSquad();
     if (built[t]) return; built[t] = 1;
     if (t === "fin") { const draw = (sel) => { $("#ct-fin").innerHTML = financeTab(c, sel); const sl = $("#fin-s"); if (sl) sl.onchange = (e) => draw(+e.target.value); }; draw(null); }
-    if (t === "acad") $("#ct-acad").innerHTML = academyTab(c);
+    if (t === "acad") { $("#ct-acad").innerHTML = `<div id="acad-hof"></div>` + academyTab(c); academyHofBlock(c.name); }
     if (t === "stad") { const rv = await api("/api/rivalries?club=" + enc(c.name)).catch(() => ({ rows: [] })); $("#ct-stad").innerHTML = stadiumTab(c, rv.rows); }
   };
   document.querySelectorAll("#ct-tabs [data-ct]").forEach((b) => (b.onclick = () => show(b.dataset.ct)));
@@ -1734,6 +1734,7 @@ async function routeInner(r, a, b) {
     if (r === "ceremony") return await viewCeremony(a ? +a : null, b);
     if (r === "prospects") return await viewProspects();
     if (r === "hof") return await viewHof(a, b);
+    if (r === "academies") return await viewAcademies(a, b);
     if (r === "hofcard") return await viewHofCard(a);
     if (r === "hofday") return await viewHofDay(a ? +a : null, b);
     if (r === "hofleague") { const q = location.hash.replace(/^#\/?/, "").split("/").map(decodeURIComponent); return await viewHofLeague(a, b ? +b : null, q[3], q[4]); }

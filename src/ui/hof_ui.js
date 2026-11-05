@@ -76,7 +76,7 @@ async function viewHof(tier, name) {
     <div class="hof-sc">${HOF_LBL[tier]}${name ? " &middot; " + esc(name) : ""} <span class="dim small">&middot; ${d.total} ${people} inducted</span></div>
     <nav class="chips hof-tabs">${tabs.map(([k, t]) => `<button data-htab="${k}" class="${k === tab ? "on" : ""}">${t}</button>`).join("")}</nav>
     ${body}
-    <a class="more" href="#/trophies/players"><span>All-time rankings by points</span><span>&rsaquo;</span></a></div>`;
+    <a class="more" href="#/academies"><span>Academies ranking</span><span>&rsaquo;</span></a><a class="more" href="#/trophies/players"><span>All-time rankings by points</span><span>&rsaquo;</span></a></div>`;
   document.querySelectorAll("[data-tier]").forEach((b) => (b.onclick = () => (location.hash = "#/hof/" + b.dataset.tier)));
   document.querySelectorAll("[data-kind]").forEach((b) => (b.onclick = () => { HOF.kind = b.dataset.kind; route(); }));
   document.querySelectorAll("[data-htab]").forEach((b) => (b.onclick = () => { HOF.tab = b.dataset.htab; route(); }));
@@ -110,7 +110,7 @@ async function viewHofCard(id) {
   } else {
     const s = c.stats;
     tail = `<div class="card"><h3>Coaching career <small>${s.seasons} seasons &middot; ${s.titles} league titles &middot; ${s.cups} continental cups</small></h3>
-      <div class="hstep">${c.stints.map((x) => `<div class="hs"><i></i><div><b>${x.kind === "nat" ? natLink(x.team) : clubLink(x.team)}</b><div class="dim small">${x.est ? "earlier career" : (x.from || "") + (x.to ? " to " + x.to : " to now")} &middot; ${x.seasons} seasons${x.titles ? " &middot; " + x.titles + " titles" : ""}${x.cups ? " &middot; " + x.cups + " cups" : ""}${x.wc ? " &middot; World Cup" : ""}</div></div></div>`).join("")}</div></div>`;
+      <div class="hstep">${c.stints.map((x) => `<div class="hs"><i></i><div><b>${x.kind === "acad" ? "Academy manager, " + clubLink(x.team) : x.kind === "nat" ? natLink(x.team) : clubLink(x.team)}</b><div class="dim small">${x.est ? "earlier career" : (x.from || "") + (x.to ? " to " + x.to : " to now")} &middot; ${x.seasons} seasons${x.titles ? " &middot; " + x.titles + " titles" : ""}${x.cups ? " &middot; " + x.cups + " cups" : ""}${x.wc ? " &middot; World Cup" : ""}</div></div></div>`).join("")}</div></div>`;
   }
   $("#view").innerHTML = `<div class="v2"><a class="crumb" href="#/hof">&lsaquo; Hall of Fame</a>
     <div class="hd"><div><h1>${flag(c.nat, 26)} ${esc(c.name)}</h1><div class="sub">${c.k === "c" ? "Coach" : esc(c.pos || "")} &middot; ${natLink(c.nat)} &middot; retired ${esc(c.retired)}</div></div>${hofBadge(c.badge, 38)}</div>
@@ -244,4 +244,45 @@ async function hofLeagueBlock(league) {
     if (!d.ready) return null;
     return d;
   } catch (e) { return null; }
+}
+
+// ---------------------------------------------------------------- academies: prestige, manager, ranking
+const GRADE_TXT = { 1: ["Strong", "green"], 0: ["Average", ""], "-1": ["Weak", "red"] };
+async function academyHofBlock(club) {
+  const el = $("#acad-hof"); if (!el) return;
+  try {
+    const a = await api("/api/academy?club=" + enc(club)), m = a.manager, g = m ? GRADE_TXT[m.grade] : null, od = a.odds;
+    const bar = (x, c) => `<span style="display:block;height:100%;width:${Math.round(x * 100)}%;background:${c}"></span>`;
+    el.innerHTML = `<div class="v2"><div class="card hero"><h3>Academy prestige <small>#${a.rank} of ${a.of}</small></h3>
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px"><div class="big">${Math.round(a.prestige)}</div><span class="tag ${a.rising > 1 ? "green" : a.rising < -1 ? "red" : ""}">${a.rising > 1 ? "Rising" : a.rising < -1 ? "Falling" : "Steady"} ${a.rising > 0 ? "+" : ""}${a.rising}</span></div>
+      <div class="dim small">Earned from graduates: how good they became, what they won, and every Hall of Fame they enter.</div>
+      <div class="stat4"><div><b>${a.graduates}</b><span>GRADUATES</span></div><div><b>${a.pros}</b><span>FIVE+ SEASONS</span></div><div><b>${a.stars}</b><span>80+ PEAK</span></div><div><b>${a.halls}</b><span>HALL POINTS</span></div></div>
+      <a class="more" href="#/academies"><span>All academies ranked</span><span>&rsaquo;</span></a></div>
+    <div class="card"><h3>Academy manager ${g ? `<small><span class="tag ${g[1]}">${g[0]}</span></small>` : ""}</h3>
+      ${m ? `<div class="row"><span><b>${esc(m.name)}</b> <span class="dim small">${natLink(m.nat)} &middot; age ${m.age}</span></span><span class="dim small">since S${m.since}</span></div>` : '<div class="dim small">No manager yet.</div>'}
+      <div class="dim small" style="margin-top:6px">He adds ${m ? (m.grade > 0 ? "a boost to" : m.grade < 0 ? "a drag on" : "nothing extra to") : "nothing to"} the academy's development. If the first-team job opens he is a candidate, and the academy then draws a fresh manager.</div>
+      <div class="dim small" style="margin-top:8px">Next draw: ${hofPct(od.strong)} strong, ${hofPct(od.average)} average, ${hofPct(od.weak)} weak</div>
+      <div style="display:flex;height:6px;gap:2px;margin-top:6px;border-radius:3px;overflow:hidden">${bar(od.strong, "#3ddc84")}${bar(od.average, "#8fa89a")}${bar(od.weak, "#ff6b6b")}</div></div>
+    <div class="card"><h3>Best graduates</h3>${a.best.length ? a.best.map((b) => `<div class="row"><span>${flag(b.nat, 16)} ${b.uid ? `<a href="#/player/${b.uid}">${esc(b.name)}</a>` : esc(b.name)}${b.active ? ' <span class="tag green">playing</span>' : ""}</span><span class="dim small">peak ${b.peak}</span></div>`).join("") : '<div class="dim small">No graduates have broken through yet.</div>'}</div>
+    ${a.in_halls.length ? `<div class="card"><h3>Graduates in a Hall of Fame</h3><div class="hlist">${a.in_halls.map((r) => hofRow(r)).join("")}</div></div>` : ""}</div>`;
+  } catch (e) { el.innerHTML = ""; }
+}
+const ACV = { sort: "prestige", scope: "world" };
+async function viewAcademies(scope, name) {
+  scope = ["world", "continent", "league"].includes(scope) ? scope : ACV.scope; ACV.scope = scope;
+  const d = await api("/api/academies?scope=" + scope + (name ? "&name=" + enc(name) : ""));
+  if (scope !== "world" && !name) { location.replace("#/academies/" + scope + "/" + enc(scope === "league" ? d.leagues[0] : d.confeds[0])); return; }
+  let rows = d.rows.slice();
+  if (ACV.sort === "rising") rows = rows.filter((r) => r.rising > 0).sort((a, b) => b.rising - a.rising);
+  else if (ACV.sort === "under") rows = rows.filter((r) => r.under).sort((a, b) => b.level - a.level);
+  rows = rows.slice(0, 30);
+  const sel = scope === "world" ? "" : `<select id="ac-sel">${(scope === "league" ? d.leagues : d.confeds).map((n) => `<option ${n === name ? "selected" : ""}>${esc(n)}</option>`).join("")}</select>`;
+  $("#view").innerHTML = `<div class="v2"><a class="crumb" href="#/hof">&lsaquo; Hall of Fame</a><h1>Academies</h1><div class="sub">Ranked by prestige: what their graduates became.</div>
+    ${hofSeg("data-acs", [["world", "World"], ["continent", "Continent"], ["league", "League"]], scope)}
+    <div class="hof-ctl">${sel}${hofSeg("data-acsort", [["prestige", "Top"], ["rising", "Rising"], ["under", "Underachievers"]], ACV.sort)}</div>
+    <div class="hlist" style="margin-top:10px">${rows.length ? rows.map((r) => `<a class="hr hr-link" href="#/club/${enc(r.club)}" data-acad="1"><div class="hr-a"><span class="rk">${r.rank}</span>${crest(r.club, 26)}<div class="hr-m"><b>${esc(r.club)}</b><span class="dim small">level ${r.level} &middot; ${r.stars} stars &middot; ${r.graduates} graduates</span></div>${r.rising > 1 ? '<span class="tag green">rising</span>' : ""}${r.under ? '<span class="tag red">spent a lot</span>' : ""}<span class="hr-r">${Math.round(r.prestige)}</span></div><div class="hbar"><i style="width:${Math.min(100, r.prestige)}%"></i></div></a>`).join("") : '<div class="card dim small" style="margin:0">Nobody fits yet.</div>'}</div></div>`;
+  document.querySelectorAll("[data-acs]").forEach((b) => (b.onclick = () => (location.hash = "#/academies/" + b.dataset.acs)));
+  document.querySelectorAll("[data-acsort]").forEach((b) => (b.onclick = () => { ACV.sort = b.dataset.acsort; route(); }));
+  document.querySelectorAll("[data-acad]").forEach((a) => (a.onclick = () => { CV_OPEN = "acad"; }));
+  const s2 = $("#ac-sel"); if (s2) s2.onchange = () => (location.hash = "#/academies/" + scope + "/" + enc(s2.value));
 }

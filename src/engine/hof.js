@@ -156,7 +156,7 @@ $mods["hof"] = (function () {
     return card;
   }
   // ---- retirement hooks (called from sim_core) ----------------------------------------------------------------------------
-  function onRetire(w, p) { const H = ensure(w); try { return makePlayerCard(w, p, w.season, 0); } catch (e) { return null; } }
+  function onRetire(w, p) { const H = ensure(w); try { acadRetire(w, p); return makePlayerCard(w, p, w.season, 0); } catch (e) { return null; } }
   function onCoachRetire(w, co) { const H = ensure(w); co.ret_s = w.season; closeStint(w, co); co.card = null; try { return makeCoachCard(w, co, w.season, 0); } catch (e) { return null; } }
   // coaches keep a list of stints: one per spell at a club or with a nation
   function openStint(w, co, kind, team) {
@@ -172,6 +172,7 @@ $mods["hof"] = (function () {
     const L = co.stints; if (!L || !L.length) return;
     const st = L[L.length - 1]; if (st.u !== null && st.u !== undefined) return;
     if (kind && st.k !== kind) return;
+    if (st.k === "acad") { Object.assign(st, { s: Math.max(0, w.season - st.f + 1), ti: 0, cu: 0, cwc: 0, w: 0, d: 0, l: 0, u: Math.max(st.f, w.season) }); return; }
     const n = stintNums(w, co, st); Object.assign(st, { s: n.s, ti: n.ti, cu: n.cu, cwc: n.cwc, w: n.w, d: n.d, l: n.l, u: Math.max(st.f, st.k === "nat" ? w.season - 1 : w.season) });
     if (st.k === "nat") { const t = natTitles(w, st.t, st.f, st.u); st.wc = t.wc; st.ct = t.ct; st.nl = t.nl; }
   }
@@ -229,7 +230,7 @@ $mods["hof"] = (function () {
     const chosen = new Set(eligible.slice(0, slots).map((c) => c.id)), keep = waiting.slice();
     for (const card of cands) {
       const st = card.st[key];
-      if (chosen.has(card.id)) { st.status = "in"; st.yr = Y; res.ind.push(entry(card, key, st)); continue; }
+      if (chosen.has(card.id)) { st.status = "in"; st.yr = Y; res.ind.push(entry(card, key, st)); acadCredit(H, card, key); continue; }
       st.low = st.pct < CFG.floor ? st.low + 1 : 0;
       const why = st.low >= 2 ? "support" : st.n >= CFG.window ? "time" : null;
       if (why) { st.status = "off"; res.off.push(entry(card, key, st, { why })); }
@@ -266,6 +267,7 @@ $mods["hof"] = (function () {
   const natRecordPoor = (card) => { const r = dataOf(card).nat_rec || { seasons: 0, g: 0, a: 0, world: 0, contin: 0, nl: 0 }; return r.seasons < CFG.veto_nat && !(r.world || r.contin); };
   function vetoText(card) { const r = dataOf(card).nat_rec; return card.nat + " did not honour " + card.name + ". Federation veto: " + r.seasons + " national-team " + (r.seasons === 1 ? "season" : "seasons") + ", " + (r.g + r.a) + " goals and assists, no tournament honours."; }
   function setIn(H, card, key, Y, via) {
+    acadCredit(H, card, key);
     const st = card.st[key], lk = (card.k === "c" ? "c" : "") + key;
     st.status = "in"; st.yr = Y; st.via = via || null; st.pct = st.pct || 1;
     if (H.bal[lk]) { H.bal[lk] = H.bal[lk].filter((x) => x !== card.id); if (!H.bal[lk].length) delete H.bal[lk]; }
@@ -285,7 +287,7 @@ $mods["hof"] = (function () {
         const key = cKey(card.nat), cs = card.st[key];
         if (cs && cs.status === "in") continue;
         if (natRecordPoor(card)) { card.vetoed = { yr: Y, text: vetoText(card) }; vetoes.push({ id: card.id, name: card.name, nat: card.nat, text: card.vetoed.text }); continue; }
-        if (!cs) { card.st[key] = { first: Y, n: 0, low: 0, status: "in", pct: 1, yr: Y, via: "world" }; } else setIn(H, card, key, Y, "world");
+        if (!cs) { card.st[key] = { first: Y, n: 0, low: 0, status: "in", pct: 1, yr: Y, via: "world" }; acadCredit(H, card, key); } else setIn(H, card, key, Y, "world");
       }
     }
     if (vetoes.length) H.res["VETO|" + Y] = vetoes;
@@ -317,6 +319,91 @@ $mods["hof"] = (function () {
       delete H.cards[id];
     }
   }
+
+  // ---- academies: prestige earned from graduates, and the academy manager --------------------------------------------------------
+  // A graduate (a player whose academy is p.trn) earns his academy points for how good he became, what he won, and every hall he enters.
+  const HALL_PTS = { W: 25, C: 12, L: 8, K: 4 };
+  function gradPts(p) {
+    let hp = 0; for (const h of (p.honours || [])) hp += h[1] === "award" ? (HP[h[2]] || 1) : (HP[h[1]] || 1);
+    return Math.pow(Math.max(0, p.peak - 65), 1.3) * 0.12 + hp * 0.25;
+  }
+  function acadOf(H, club) { return H.acad[club] || (H.acad[club] = { n: 0, pros: 0, stars: 0, pts: 0, halls: 0, best: [], hist: [], prestige: 0 }); }
+  function acadRetire(w, p) {
+    if (!p.trn || !w.clubs.has(p.trn)) return;
+    const A = acadOf(ensure(w), p.trn);
+    A.n++; if (p.career.length >= 5) A.pros++; if (p.peak >= 80) A.stars++;
+    A.pts += gradPts(p);
+    A.best.push([p.name, p.nat, p.peak, p.uid || null, w.season]); A.best.sort((a, b) => b[2] - a[2]); A.best = A.best.slice(0, 6);
+  }
+  function acadCredit(H, card, key) {
+    if (card.k !== "p" || !card.trn) return;
+    const A = H.acad[card.trn]; if (!A) return;
+    A.halls += HALL_PTS[scopeKind(key)] || 0;
+  }
+  // recompute every academy's prestige from retired graduates (kept totals) plus the graduates still playing
+  function acadTick(w, mk) {
+    const H = ensure(w), live = {};
+    for (const p of w.players) if (p.trn) { const x = live[p.trn] || (live[p.trn] = { pts: 0, n: 0, stars: 0, pros: 0 }); x.pts += gradPts(p); x.n++; if (p.peak >= 80) x.stars++; if (p.career.length >= 5) x.pros++; }
+    for (const club of w.clubs.keysArr()) {
+      const A = acadOf(H, club), l = live[club] || { pts: 0, n: 0, stars: 0, pros: 0 };
+      const raw = A.pts + l.pts + A.halls;
+      A.live = l.n; A.stars_live = l.stars; A.pros_live = l.pros; A.raw = Math.round(raw * 10) / 10;
+      A.prestige = Math.round(100 * (1 - Math.exp(-raw / 300)) * 10) / 10;
+      A.hist.push([w.season, A.prestige]); if (A.hist.length > 8) A.hist.shift();
+    }
+    if (mk) acadManagers(w, mk, true);
+  }
+  // odds for a fresh academy manager: [strong, average, weak]; prestige and how big the academy is both count
+  function mgrOdds(w, club) {
+    const A = ensure(w).acad[club], lvl = cget(w, club, "acad", 3), q = clamp(0.6 * ((A ? A.prestige : 0) / 100) * 2 + 0.4 * (lvl / 10), 0, 1);
+    const strong = 0.12 + 0.34 * q, weak = 0.43 - 0.29 * q;
+    return [strong, 1 - strong - weak, weak];
+  }
+  function drawGrade(w, club, season, tag) { const o = mgrOdds(w, club), r = rnd(w.seed + "|" + season + "|" + club + "|mgr|" + (tag || "")); return r < o[0] ? 1 : r < o[0] + o[1] ? 0 : -1; }
+  function acadManagers(w, mk, grow) {
+    const H = ensure(w);
+    for (const club of w.clubs.keysArr()) {
+      const c = w.clubs.get_(club); let m = c.get("acad_mgr");
+      if (m && grow) { m.age += 1; m.prestige = Math.min(40, m.prestige + 1); if (m.age >= 62) { closeStint(w, m); m = null; } }
+      if (!m) {
+        const g = drawGrade(w, club, w.season), nat = rnd(w.seed + "|" + w.season + "|" + club + "|mnat") < 0.75 ? c.get_("country") : natPick(w, club);
+        m = mk(club, g, nat, 36 + Math.floor(rnd(w.seed + "|" + w.season + "|" + club + "|mage") * 14));
+        openStint(w, m, "acad", club);
+        c.set("acad_mgr", m);
+        H.mgrlog = H.mgrlog || {}; (H.mgrlog[club] = H.mgrlog[club] || []).push([w.season, m.name, g]); if (H.mgrlog[club].length > 6) H.mgrlog[club].shift();
+      }
+    }
+  }
+  function acadInit(w, mk) { acadManagers(w, mk, false); }
+  function natPick(w, club) { const names = w.nat_names, i = Math.floor(rnd(w.seed + "|" + w.season + "|" + club + "|mn2") * names.length); return names[i]; }
+  // the manager was promoted to the first team: the academy draws a fresh one next tick
+  function mgrPromoted(w, co, club) { co.acad_from = club; }
+  const mgrGrade = (w, club) => { const m = w.clubs.get_(club).get("acad_mgr"); return m ? m.grade : 0; };
+  function acadView(w, club) {
+    const H = ensure(w), A = acadOf(H, club), c = w.clubs.get_(club), m = c.get("acad_mgr"), odds = mgrOdds(w, club);
+    const ranks = w.clubs.keysArr().map((n) => [n, (H.acad[n] || { prestige: 0 }).prestige]).sort((a, b) => b[1] - a[1]);
+    const rank = ranks.findIndex((x) => x[0] === club) + 1;
+    const live = w.players.filter((p) => p.trn === club).sort((a, b) => b.peak - a.peak).slice(0, 5).map((p) => ({ name: p.name, nat: p.nat, peak: p.peak, uid: p.uid || null, active: true, club: p.club, age: p.age }));
+    const best = A.best.map((b) => ({ name: b[0], nat: b[1], peak: b[2], uid: b[3], active: false })).concat(live).sort((a, b) => b.peak - a.peak).slice(0, 6);
+    const inHalls = []; for (const id of Object.keys(H.cards)) { const k = H.cards[id]; if (k.k === "p" && k.trn === club && Object.values(k.st).some((x) => x.status === "in")) inHalls.push(id); }
+    const d5 = A.hist.length > 5 ? A.prestige - A.hist[A.hist.length - 6][1] : A.hist.length > 1 ? A.prestige - A.hist[0][1] : 0;
+    return { club, prestige: A.prestige, rank, of: ranks.length, graduates: A.n + (A.live || 0), pros: A.pros + (A.pros_live || 0), stars: A.stars + (A.stars_live || 0), halls: A.halls, rising: Math.round(d5 * 10) / 10,
+      best, in_halls: inHalls, odds: { strong: odds[0], average: odds[1], weak: odds[2] },
+      manager: m ? { name: m.name, nat: m.nat, age: m.age, grade: m.grade, since: m.acad_since || null } : null, past: (H.mgrlog && H.mgrlog[club]) || [], level: cget(w, club, "acad", 3) };
+  }
+  function acadRanking(w, scope, name) {
+    const H = ensure(w), rows = [];
+    for (const club of w.clubs.keysArr()) {
+      const c = w.clubs.get_(club), A = H.acad[club] || { prestige: 0, hist: [] }, lg = c.get_("league"), cf = c.get_("confed");
+      if (scope === "league" && lg !== name) continue; if (scope === "continent" && cf !== name) continue;
+      const d5 = A.hist && A.hist.length > 1 ? A.prestige - A.hist[Math.max(0, A.hist.length - 6)][1] : 0;
+      rows.push({ club, league: lg, confed: cf, prestige: A.prestige, level: Math.round(cget(w, club, "acad", 3) * 10) / 10, rising: Math.round(d5 * 10) / 10, graduates: (A.n || 0) + (A.live || 0), stars: (A.stars || 0) + (A.stars_live || 0), halls: A.halls || 0, mgr: mgrGrade(w, club) });
+    }
+    rows.sort((a, b) => b.prestige - a.prestige || (a.club < b.club ? -1 : 1)); rows.forEach((r, i) => (r.rank = i + 1));
+    const lv = rows.map((r) => r.level).sort((a, b) => b - a), top = lv[Math.floor(lv.length / 4)] || 0, med = rows.map((r) => r.prestige).sort((a, b) => a - b)[Math.floor(rows.length / 2)] || 0;
+    for (const r of rows) r.under = r.level >= top && r.prestige <= med;
+    return rows;
+  }
   // ---- the rollover hook and migration -----------------------------------------------------------------------------------------
   function rollover(w, Y) { ensure(w); foundOnce(w); return runYearDay(w, Y); }
   // a save from before v16 has no cards: the retired stars and retired coaches become a founding class, voted on from now
@@ -338,5 +425,5 @@ $mods["hof"] = (function () {
   // a fresh World starts founded: nothing to found
   function init(w) { const H = ensure(w); H.founded = true; return H; }
   return { CFG, HP, ensure, init, pscores, cscores, makePlayerCard, makeCoachCard, onRetire, onCoachRetire, coachHired, coachLeft, natCoachSet, closeStint, openStint,
-    stretch, isChaser, borderline, runScope, dataOf, cKey, runLeagueDay, runYearDay, rollover, foundOnce, prune, scoreOf, pctFor, rnd, nrm, leagueOf, stintsOf, stintNums, rkey, scopeName, scopeKind, quality, natRecordPoor };
+    acadTick, acadInit, acadView, acadRanking, mgrPromoted, mgrGrade, mgrOdds, drawGrade, stretch, isChaser, borderline, runScope, dataOf, cKey, runLeagueDay, runYearDay, rollover, foundOnce, prune, scoreOf, pctFor, rnd, nrm, leagueOf, stintsOf, stintNums, rkey, scopeName, scopeKind, quality, natRecordPoor };
 })();

@@ -264,6 +264,7 @@ class World {
     self.money_update($kw({"initial": true}));
     self.start_season();
     $mods.hof.init(self);
+    $mods.hof.acadInit(self, (c, g, nat, age) => self._mk_mgr(c, g, nat, age));
   }
   _load_data() {
     const self = this;
@@ -333,6 +334,14 @@ class World {
   _name() {
     const self = this;
     return ($str(self.rng.choice(FIRST_NAMES)) + " " + $str(self.rng.choice(LAST_NAMES)));
+  }
+  // an academy manager: a coach in the making. grade 1 strong, 0 average, -1 weak; he can be promoted to the first team
+  _mk_mgr(club, grade, nat, age) {
+    const self = this, H = $mods.hof, k = self.seed + "|" + self.season + "|" + club + "|mname";
+    const name = FIRST_NAMES[Math.floor(H.rnd(k + "f") * FIRST_NAMES.length)] + " " + LAST_NAMES[Math.floor(H.rnd(k + "l") * LAST_NAMES.length)];
+    const co = $new(Coach, [$kw({"name": name, "age": age, "personality": "loyal", "skill": grade > 0 ? "scout" : "none", "prestige": [5, 12, 22][grade + 1], "nat": nat, "contract": 3})]);
+    co.grade = grade; co.acad_since = self.season;
+    return co;
   }
   _contract() {
     const self = this;
@@ -742,6 +751,7 @@ class World {
     }
     for (const nm of self.nations.keysArr()) $mods.fed.init($idx(self.nations, nm));
     $mods.hof.ensure(self); $mods.hof.foundOnce(self);
+    $mods.hof.acadInit(self, (c, g, nat, age) => self._mk_mgr(c, g, nat, age));
     return true;
   }
   renegotiate_tv() {
@@ -1036,6 +1046,7 @@ class World {
     self.coach_offseason();
     self.season_end(rec);
     $mods.hof.rollover(self, self.season);
+    $mods.hof.acadTick(self, (c, g, nat, age) => self._mk_mgr(c, g, nat, age));
     self.nations_offseason(rec, wc);
     tr = (() => { const $r = []; let t; for (const $c0 of $iter(self.transfers)) { t = $c0; if (!($eq($idx(t, "season"), self.season))) continue; $r.push(t); } return $r; })();
     net = (() => { const $r = new $Dict(); let ln; for (const $c0 of $iter(self.leagues)) { ln = $c0; $r.set(ln, 0.0); } return $r; })();
@@ -1381,13 +1392,16 @@ class World {
       n = $f68;
       attr = self.attr(n);
       cands = (() => { const $r = []; let co; for (const $c0 of $iter(self.coach_pool)) { co = $c0; if (!((!$eq(co.last_club, n)) && ((co.personality === "loyal") || (co.prev_attr === 0) || $ge(attr, $mul(co.prev_attr, $max(0.2, (0.85 - (0.2 * co.unemployed_years)))))))) continue; $r.push(co); } return $r; })();
+      const am = $idx(self.clubs, n).get("acad_mgr");                     // v16: the academy manager is a candidate, and the same person gets promoted
+      if (am && am.age >= 34 && am.age < 62 && (am.grade >= 0 || !$len(cands))) cands = $list(cands).concat([am]);
       if ((!$T(cands))) {
         fresh = self._new_coach(rng.uniform(5, 25), rng.randint(38, 50));
         $M.append(self.coach_pool, fresh);
         cands = [fresh];
       }
       pick = $max(cands, $kw({"key": ((x) => $add(x.prestige, rng.uniform((-5), 5)))}));
-      $M.remove(self.coach_pool, pick);
+      if (pick === am) { $idx(self.clubs, n).set("acad_mgr", null); $mods.hof.mgrPromoted(self, am, n); }
+      else $M.remove(self.coach_pool, pick);
       self._hire(n, pick);
     }
   }
@@ -1794,7 +1808,7 @@ class World {
       if (gradClub) { nm = $mods.acad.nation(self, gradClub, nm, rng, used); if (!$in(nm, gaps)) $setidx(gaps, nm, 0.0); n = $idx(self.nations, nm); }
       qb = $int($round(fclamp($mul(cfg.anchor_gain, $idx(gaps, nm)), (-10), 8)));
       qn = $int($round($div($sub($idx(n, "dev"), dev_mean), cfg.nat_quality_div) + $mods.fed.lift(self, nm) / 8));
-      if (gradClub) qb += Math.round(($idx($idx(self.clubs, gradClub), "acad") - 6) * 1.2);
+      if (gradClub) qb += Math.round(($idx($idx(self.clubs, gradClub), "acad") - 6) * 1.2) + 2 * $mods.hof.mgrGrade(self, gradClub);
       ovr = clamp($add($add(rng.randint(42, 56), Math.floor(qb / 2)), Math.floor(qn / 2)));
       q = $add($add(qb, cfg.pot_shift), qn);
       ceiling = fclamp((92 + q), 70, 99);

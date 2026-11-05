@@ -31,3 +31,7 @@ console.log(" world coach inductees:", co.slice(0, 8).join("; "));
 { const ser = vm.runInThisContext("$ser"); const sz = (o) => Math.round(JSON.stringify(ser(o)).length / 1024);
   let ind = 0, bal = 0, off = 0; for (const v of Object.values(h.res)) { if (!v.ind) continue; ind += v.ind.length; bal += v.bal.length; off += v.off.length; }
   console.log(" sizes KB: cards", sz(h.cards), " res", sz(h.res), " bal idx", sz(h.bal), " fell", sz(h.fell), " | res entries ind/bal/off:", ind, bal, off, "keys", Object.keys(h.res).length); }
+{ const ps = Object.values(h.acad).map((a) => a.prestige).sort((a, b) => a - b); const q = (f) => ps[Math.min(ps.length - 1, Math.floor(f * ps.length))];
+  const gr = { "-1": 0, 0: 0, 1: 0 }; for (const c of w.clubs.valuesArr()) { const m = c.get("acad_mgr"); if (m) gr[m.grade]++; }
+  let promoted = 0; for (const c of w.clubs.valuesArr()) { const co = c.get("coach"); if (co && co.acad_from) promoted++; }
+  console.log(" academy prestige pctiles 10/50/90/99/max:", [0.1, 0.5, 0.9, 0.99, 1].map((f) => q(f)).join(" / "), " managers weak/avg/strong:", gr[-1], gr[0], gr[1], " first-team coaches promoted from an academy:", promoted); }

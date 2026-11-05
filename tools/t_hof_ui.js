@@ -38,6 +38,11 @@ const URL='http://localhost:8791/test_artifact.html';
  // league page tabs
  await go('#/league/Premier%20League',1500); ok((await p.$$('#lg-tabs [data-lt]')).length===6,'league has 6 tabs');
  await p.click('#lg-tabs [data-lt="halls"]'); await p.waitForTimeout(900); await ox('league halls tab'); await shot('league_halls');
+ // academies
+ await go('#/academies',1200); await ox('academies'); await shot('academies'); ok((await p.$$('#view .hr')).length>=10,'academy rows');
+ for(const k of ['rising','under','prestige']){ await p.click(`[data-acsort="${k}"]`); await p.waitForTimeout(500); await ox('academies '+k); }
+ await p.click('[data-acs="league"]'); await p.waitForTimeout(900); await ox('academies league'); ok(await p.$('#ac-sel')!==null,'league select');
+ await go('#/club/Chelsea',1500); await p.click('#ct-tabs [data-ct="acad"]'); await p.waitForTimeout(1200); await ox('club academy'); await shot('club_academy'); ok(/Academy manager/i.test(await p.innerText('#acad-hof')),'academy manager card');
  // awards page card
  await go('#/ceremony/'+S); await ox('awards'); ok(await p.$('.hofcta')!==null,'induction day card on the awards page');
  ok(errs.length===0,'console errors: '+errs.slice(0,3).join(' | '));
