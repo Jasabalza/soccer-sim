@@ -126,6 +126,7 @@ $mods.shim = (function () {
     const ST = A.ST;
     ST.world = $deser(loaded.pk);
     loaded = null;
+    if (ST.world && ST.world.migrate_v15) ST.world.migrate_v15();
     const ss = ST.world.stops_state;
     const stops = $new($mods.stops.Stops, []);
     if (ss) { stops.on = ss[0]; stops.n = ss[1]; stops.leagues = ss[2]; }

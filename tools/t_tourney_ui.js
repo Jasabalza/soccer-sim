@@ -7,7 +7,7 @@ const URL='http://localhost:8791/test_artifact.html';
  p.on('pageerror',e=>errs.push('PE '+e.message)); p.on('console',m=>{if(m.type()==='error')errs.push(m.text().slice(0,200))});
  const idle=async()=>{await p.waitForFunction(()=>document.querySelector('#busy').hidden,null,{timeout:180000});await p.waitForTimeout(300);};
  const OUT=process.argv[2]||'.';
- await p.goto(URL); await p.waitForTimeout(800); await p.click('#go-new'); await p.waitForSelector('#nav a'); await p.waitForTimeout(500);
+ await p.goto(URL); await p.waitForTimeout(800); await p.click('#go-new'); await p.waitForSelector('#nav a'); await p.waitForTimeout(500); if(await p.$('#fp-cancel')){ await p.click('#fp-cancel'); await p.waitForTimeout(300); }
  // sim 3 years (so qualifying is done and the World Cup year starts), then walk to the Champions League round of 16
  // Champions League page
  await p.evaluate(()=>location.hash='#/world'); await p.waitForTimeout(500);

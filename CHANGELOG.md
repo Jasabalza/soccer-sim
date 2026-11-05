@@ -1,5 +1,17 @@
 # Changelog
 
+## v15.0: The Business Update
+- **Real club finances.** Every club has a yearly income (TV, gate, sponsors, prizes, owner) and pays wages, running costs, academy and stadium costs and interest. Wages are capped against income. The old "Budget" is now "Yearly income". Each club keeps a ledger and a health read-out; the World money page shows the whole economy (sources, uses, growth, cash piles).
+- **Surplus auto-invests.** Clubs with spare cash grow their academy and stadium (multi-year projects, honeymoon crowds) before the rest goes to the transfer budget.
+- **Academies and youth.** Every club has an academy level that shapes the quality of its graduates. Big clubs recruit from further afield (scouting reach per region, pipelines); exported youngsters keep their nationality.
+- **Demand-driven transfer market.** Bidding contests with a rival premium, player traits (money, loyalty, ambition, trophies), training compensation to the club that developed a player (30% of it to that club's federation) and a small solidarity payment. Transfers page shows how each big fee was set.
+- **Federations.** Each nation has a football culture score (stages Exporter, Developing, Self-sufficient, Powerhouse) fed by prize money, compensation and solidarity, achievements (cup MVPs, Ballon d'Or, World Cup runs, professionals in top leagues). The score lifts the quality and number of young players and can produce golden generations. New federation cards on every nation page.
+- **Rivalries reworked.** Each rivalry has History (real football) and Heat (what your world adds); new rivalries are earned, limited per season and softly capped. Sort by History, Heat or Rising. A league's derby index nudges its TV money and gate.
+- **Club World Cup with 32 clubs.** Eight groups of four, then a knockout. Qualification: continental champions guaranteed, the rest by a four-season ranking (14 UEFA, 6 each CONMEBOL, CONCACAF, AFC). Prize pool paid every fourth season, with a World champions badge. The normal World Cup and the Club World Cup now share the group tabs and bracket screens.
+- **Club page tabs:** Finance, Academy, Stadium.
+- **Saves from v14.x load and keep playing:** new settings are filled in, clubs and nations get their v15 fields, and an unfinished old Club World Cup is replaced by the new format.
+- Tests: `t_finance`, `t_cwc`, `t_fed`, `t_rivals_v15`, `t_market_v15`, `t_migrate_v15` (old save into the new engine), Playwright `t_club_ui`, `t_pages_ui`, `t_cwc_ui`. Golden files re-recorded.
+
 ## v14.1: club logo importer
 - Settings → Club logos and the start page's "Storage, logos and importing": import a JSON logo file, stored in IndexedDB next to saves. See docs/LOGOS.md.
 - `tools/make_logo_json.js` builds that file from a folder of images.

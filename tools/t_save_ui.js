@@ -7,7 +7,7 @@ async function ctxWith(b, init){const c=await b.newContext({...devices['Pixel 7'
  const hook=(p)=>{p.on('pageerror',e=>errs.push('PE '+e.message));p.on('console',m=>{if(m.type()==='error')errs.push(m.text().slice(0,200))});};
  // A: normal IndexedDB
  let c=await ctxWith(b); let p=await c.newPage(); hook(p);
- await p.goto(URL); await p.waitForTimeout(800); await p.click('#go-new'); await p.waitForSelector('#nav a'); await p.waitForTimeout(400);
+ await p.goto(URL); await p.waitForTimeout(800); await p.click('#go-new'); await p.waitForSelector('#nav a'); await p.waitForTimeout(400); if(await p.$('#fp-cancel')){ await p.click('#fp-cancel'); await p.waitForTimeout(300); }
  await p.click('#sb-years'); await idle(p); await p.evaluate(()=>closeModal());
  await p.click('#sb-save'); await p.waitForSelector('#save-name'); await p.waitForTimeout(300);
  console.log('A note:', (await p.innerText('#store-note')).replace(/\n/g,' ').slice(0,120));
@@ -22,7 +22,7 @@ async function ctxWith(b, init){const c=await b.newContext({...devices['Pixel 7'
  await c.close();
  // B: new browser profile imports the text, then loads it
  c=await ctxWith(b); p=await c.newPage(); hook(p); await p.goto(URL); await p.waitForTimeout(800);
- await p.evaluate(t=>{document.querySelector('#imp-text').value=t;},text); await p.evaluate(()=>{document.querySelector('details').open=true});
+ await p.evaluate(t=>{document.querySelector('#imp-text').value=t;},text); await p.evaluate(()=>{document.querySelectorAll('details').forEach(d=>d.open=true)});
  await p.fill('#imp-name','fromtext'); await p.click('#imp-go'); await p.waitForTimeout(2000);
  console.log('B rows:', await p.$$eval('#save-list .row',a=>a.map(x=>x.innerText.replace(/\n/g,' ').slice(0,60))));
  await p.click('[data-load="fromtext"]'); await p.waitForSelector('#nav a',{timeout:30000}); await p.waitForTimeout(500);
@@ -34,14 +34,14 @@ async function ctxWith(b, init){const c=await b.newContext({...devices['Pixel 7'
  await c.close();
  // C: IndexedDB removed -> localStorage fallback
  c=await ctxWith(b,()=>{try{Object.defineProperty(window,'indexedDB',{value:undefined})}catch(e){}}); p=await c.newPage(); hook(p); await p.goto(URL); await p.waitForTimeout(800);
- await p.click('#go-new'); await p.waitForSelector('#nav a'); await p.waitForTimeout(400);
+ await p.click('#go-new'); await p.waitForSelector('#nav a'); await p.waitForTimeout(400); if(await p.$('#fp-cancel')){ await p.click('#fp-cancel'); await p.waitForTimeout(300); }
  await p.click('#sb-save'); await p.waitForSelector('#save-name'); await p.waitForTimeout(300); console.log('C note:', (await p.innerText('#store-note')).replace(/\n/g,' ').slice(0,110));
  await p.fill('#save-name','small'); await p.click('#save-go'); await p.waitForTimeout(1200); console.log('C toast:',await p.textContent('#toast'));
  await p.reload(); await p.waitForTimeout(1000); console.log('C after reload rows:', await p.$$eval('#save-list .row',a=>a.map(x=>x.innerText.replace(/\n/g,' ').slice(0,50))));
  await c.close();
  // D: nothing available -> memory only, clear warning
  c=await ctxWith(b,()=>{try{Object.defineProperty(window,'indexedDB',{value:undefined});Object.defineProperty(window,'localStorage',{get(){throw new Error('blocked')}})}catch(e){}}); p=await c.newPage(); hook(p); await p.goto(URL); await p.waitForTimeout(800);
- await p.click('#go-new'); await p.waitForSelector('#nav a'); await p.waitForTimeout(400);
+ await p.click('#go-new'); await p.waitForSelector('#nav a'); await p.waitForTimeout(400); if(await p.$('#fp-cancel')){ await p.click('#fp-cancel'); await p.waitForTimeout(300); }
  await p.click('#sb-save'); await p.waitForSelector('#save-name'); await p.waitForTimeout(300); console.log('D note:', (await p.innerText('#store-note')).replace(/\n/g,' ').slice(0,200));
  console.log('errors:',errs); await b.close();
 })();

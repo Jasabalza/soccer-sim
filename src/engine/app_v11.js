@@ -290,7 +290,7 @@ function v_club(name) {
     }
   }
   top11 = $div($sum((() => { const $r = []; let p; for (const $c0 of $iter($slice(sq, null, 11, null))) { p = $c0; $r.push(p.ovr); } return $r; })()), $max(1, $len($slice(sq, null, 11, null))));
-  return $dict($kw({"name": name, "league": $idx(c, "league"), "confed": $idx(c, "confed"), "ovr": $idx(c, "ovr"), "eff": r1($idx(c, "eff")), "base": $idx(c, "base"), "stature": r1($idx(c, "stature")), "prestige_pts": r1($idx(c, "cp")), "budget": mx($idx(c, "budget")), "income": mx($idx(c, "income")), "prize_prev": mx($idx(c, "prize_prev")), "funds": mx($idx(c, "funds")), "sold": mx($idx(c, "sales_prev")), "bought": mx($idx(c, "spent_prev")), "last_finish": $idx(c, "last_finish"), "coach": $dict(coach_row(co), $kw({"stint": $idx(c, "stint"), "hot": $ge(co.hot, (w.cfg.hot_tolerance - 3))})), "squad": (() => { const $r = []; let p; for (const $c0 of $iter(sq)) { p = $c0; $r.push(player_row(w, p)); } return $r; })(), "squad_size": $len(sq), "top11": r1(top11), "transfers": (() => { const $r = []; let t; for (const $c0 of $iter(recent)) { t = $c0; $r.push($dict($kw({"season": $idx(t, "season"), "dir": (($eq($idx(t, "to"), name)) ? "IN" : "OUT"), "player": $idx(t, "player"), "ovr": $idx(t, "ovr"), "age": $idx(t, "age"), "other": (($eq($idx(t, "to"), name)) ? $idx(t, "frm") : $idx(t, "to")), "fee": mx($idx(t, "fee")), "kind": $idx(t, "kind")}))); } return $r; })(), "titles": titles, "cups": cups, "cwc": cwc, "finishes": $slice($slice(fin, (-20), null, null), null, null, (-1)), "trophies": T.club_trophies(w, name), "league_emblem": T.spec_league($idx(c, "league"))}));
+  return $dict($kw({"name": name, "league": $idx(c, "league"), "confed": $idx(c, "confed"), "ovr": $idx(c, "ovr"), "eff": r1($idx(c, "eff")), "base": $idx(c, "base"), "stature": r1($idx(c, "stature")), "prestige_pts": r1($idx(c, "cp")), "budget": mx($idx(c, "budget")), "income": mx($idx(c, "income")), "prize_prev": mx($idx(c, "prize_prev")), "funds": mx($idx(c, "funds")), "sold": mx($idx(c, "sales_prev")), "bought": mx($idx(c, "spent_prev")), "last_finish": $idx(c, "last_finish"), "coach": $dict(coach_row(co), $kw({"stint": $idx(c, "stint"), "hot": $ge(co.hot, (w.cfg.hot_tolerance - 3))})), "squad": (() => { const $r = []; let p; for (const $c0 of $iter(sq)) { p = $c0; $r.push(player_row(w, p)); } return $r; })(), "squad_size": $len(sq), "top11": r1(top11), "transfers": (() => { const $r = []; let t; for (const $c0 of $iter(recent)) { t = $c0; $r.push($dict($kw({"season": $idx(t, "season"), "dir": (($eq($idx(t, "to"), name)) ? "IN" : "OUT"), "player": $idx(t, "player"), "ovr": $idx(t, "ovr"), "age": $idx(t, "age"), "other": (($eq($idx(t, "to"), name)) ? $idx(t, "frm") : $idx(t, "to")), "fee": mx($idx(t, "fee")), "kind": $idx(t, "kind")}))); } return $r; })(), "titles": titles, "cups": cups, "cwc": cwc, "finishes": $slice($slice(fin, (-20), null, null), null, null, (-1)), "trophies": T.club_trophies(w, name), "league_emblem": T.spec_league($idx(c, "league")), "finance": club_finance(w, c, name)}));
 }
 function v_player(uid) {
   let cups, cur, p, retired, seasons, tot, w;
@@ -404,7 +404,7 @@ function bracket_upcoming(w, x) {
     return [];
   }
   ev = $idx(x.events, x.ptr);
-  if (($in(x.kind, ["cup", "cwc"]))) {
+  if ((x.kind === "cup")) {
     cur = x.current;
     if (($M.get(ev, "leg") === 2)) {
       return (() => { const $r = []; let a, b; for (const $c0 of $iter(x.pairs)) { [a, b] = $iter($c0); if (!($in([a, b], x.leg1))) continue; $r.push($dict($kw({"a": a, "b": b, "legs": [$list($idx(x.leg1, [a, b]))], "name": round_name_($len(cur))}))); } return $r; })();
@@ -416,7 +416,7 @@ function bracket_upcoming(w, x) {
     pairs = (($M.get(ev, "phase") === "sf") ? x.sf : (($len(x.ko_current) > 1) ? [[$idx(x.ko_current, 0), $idx(x.ko_current, 1)]] : []));
     return (() => { const $r = []; let a, b; for (const $c0 of $iter(pairs)) { [a, b] = $iter($c0); $r.push($dict($kw({"a": a, "b": b, "legs": [], "name": round_name_((($M.get(ev, "phase") === "sf") ? 4 : 2))}))); } return $r; })();
   }
-  if ($T(($T($t2 = ($in(x.kind, ["wc", "ct"]))) ? ($T($t3 = ($M.get(ev, "phase") === "ko")) ? x.ko_current : $t3) : $t2))) {
+  if ($T(($T($t2 = ($in(x.kind, ["wc", "ct", "cwc"]))) ? ($T($t3 = ($M.get(ev, "phase") === "ko")) ? x.ko_current : $t3) : $t2))) {
     cur = x.ko_current;
     n = $len(cur);
     return (() => { const $r = []; let i; for (const $c0 of $iter($range(Math.floor(n / 2)))) { i = $c0; $r.push($dict($kw({"a": $idx(cur, i), "b": $idx(cur, $sub((n - 1), i)), "legs": [], "name": round_name_(n)}))); } return $r; })();
@@ -439,7 +439,7 @@ function v_comp(cid) {
   out = $dict($kw({"id": cid, "title": x.title, "kind": x.kind, "header": header(w), "progress": comp_progress(w, x)}));
   $setidx(out, "emblem", ((x.kind === "cup") ? T.spec_cup(x.confed) : ((x.kind === "cwc") ? T.SPEC_CWC : ((x.kind === "wc") ? T.SPEC_WC : ((x.kind === "ct") ? T.spec_ct(x.confed) : ((x.kind === "nl") ? T.spec_nl(x.confed) : $dict($kw({"kind": "cup_eared", "color": $M.get(T.CONF_COLOR, $getattr(x, "confed", "WORLD"), "#cfd8dc")}))))))));
   $setidx(out, "past_finals", $slice((() => { const $r = []; let f; for (const $c0 of $iter($getattr(w, "finals", []))) { f = $c0; if (!($eq($idx(f, "title"), x.title))) continue; $r.push(f); } return $r; })(), null, null, (-1)));
-  if (($in(x.kind, ["cup", "cwc"]))) {
+  if ((x.kind === "cup")) {
     $setidx(out, "field", (() => { const $r = []; let n; for (const $c0 of $iter(x.field)) { n = $c0; $r.push($dict($kw({"club": n, "ovr": $idx($idx(w.clubs, n), "ovr"), "league": $idx($idx(w.clubs, n), "league"), "reached": $M.get(x.reached, n, 0)}))); } return $r; })());
     $setidx(out, "ties", (() => { const $r = []; let t; for (const $c0 of $iter(x.ties)) { t = $c0; $r.push($dict($kw({"round": $idx(t, 0), "a": $idx(t, 1), "b": $idx(t, 2), "text": $idx(t, 3), "winner": $idx(t, 4)}))); } return $r; })());
     ($t1 = $iter([x.winner, x.runner_up]), $setidx(out, "winner", $t1[0]), $setidx(out, "runner_up", $t1[1]));
@@ -453,8 +453,13 @@ function v_comp(cid) {
     $setidx(out, "qualified", $list(x.qualified));
     $setidx(out, "spots", x.spots);
     $setidx(out, "field", $list(x.field));
-  } else if (($in(x.kind, ["wc", "ct", "nl"]))) {
+  } else if (($in(x.kind, ["wc", "ct", "nl", "cwc"]))) {
     $setidx(out, "host", $getattr(x, "host", null));
+    if ((x.kind === "cwc")) {
+      $setidx(out, "clubs", true);
+      $setidx(out, "format", $dict($kw({"clubs": $len(x.field), "groups": $len(x.groups), "pool": x.w.cfg.cwc_pool * x.w.cfg.cup_prize_scale * x.w.cfg.money_x, "slots": (() => { const $r = new $Dict(); for (const [cf, cup] of $M.items(x.w.cups)) $r.set(cf, $M.get(cup, "cwc_slots", 0)); return $r; })()})));
+      $setidx(out, "qual", (() => { const $r = new $Dict(); for (const [n, h] of $M.items(x.qual)) $r.set(n, h); return $r; })());
+    }
     if ((x.kind === "nl")) {
       $setidx(out, "has_finals", x.has_finals);
     }
@@ -493,12 +498,64 @@ function v_nation(name) {
     throw $new(ApiError, ["unknown nation", 404]);
   }
   top = $slice($sorted((() => { const $r = []; let p; for (const $c0 of $iter(w.players)) { p = $c0; if (!($eq(p.nat, name))) continue; $r.push(p); } return $r; })(), $kw({"key": ((p) => (-p.ovr))})), null, 23, null);
-  return $dict($kw({"name": name, "confed": $idx(n, "confed"), "rating": r1($idx(n, "eff")), "talent": r1($idx(n, "dev")), "base": $idx(n, "base"), "pros": $idx(w.nat_pros, name), "titles": $idx(n, "wc_titles"), "apps": $idx(n, "wc_apps"), "coach": coach_row($idx(n, "coach")), "players": (() => { const $r = []; let p; for (const $c0 of $iter(top)) { p = $c0; $r.push(player_row(w, p)); } return $r; })(), "trophies": T.nation_trophies(w, name)}));
+  return $dict($kw({"name": name, "confed": $idx(n, "confed"), "rating": r1($idx(n, "eff")), "talent": r1($idx(n, "dev")), "base": $idx(n, "base"), "pros": $idx(w.nat_pros, name), "titles": $idx(n, "wc_titles"), "apps": $idx(n, "wc_apps"), "coach": coach_row($idx(n, "coach")), "players": (() => { const $r = []; let p; for (const $c0 of $iter(top)) { p = $c0; $r.push(player_row(w, p)); } return $r; })(), "trophies": T.nation_trophies(w, name), "federation": $mods.fed.info(w, name)}));
 }
 function v_news() {
   let w;
   w = need_world();
   return $dict($kw({"items": (() => { const $r = []; let k, s, t, wk; for (const $c0 of $iter($slice($slice(w.news_log, (-80), null, null), null, null, (-1)))) { [s, wk, k, t] = $iter($c0); $r.push($dict($kw({"season": s, "week": wk, "kind": k, "text": t, "date": ((wk <= 60) ? cal.pack(w.date_of(s, wk)) : null)}))); } return $r; })()}));
+}
+// ---- v15: finances ----
+const LEDGER_KEYS = ["tv", "gate", "sponsor", "prize", "sales", "owner", "income", "wages", "running", "interest", "transfers", "academy", "stadium", "payout", "profit", "cash", "debt"];
+function ledger_rows(c) {
+  const out = [];
+  for (const e of $M.get(c, "ledger", [])) { const row = {"season": $idx(e, "season")}; for (const k of LEDGER_KEYS) row[k] = mx($idx(e, k)); row.acad = $M.get(e, "acad", null); row.cap = $M.get(e, "cap", null); row.fans = $M.get(e, "fans", null); out.push($dict($kw(row))); }
+  return out;
+}
+function payroll_of(w, name) { let t = 0; for (const p of w.players) if (p.club === name) t += p.wage; return t; }
+function club_finance(w, c, name) {
+  const pay = payroll_of(w, name), bud = $idx(c, "budget"), cap = w.cfg.wage_cap * bud;
+  return $dict($kw({"payroll": mx(pay), "wage_ratio": $round(pay / Math.max(1e-9, bud), 3), "wage_cap": w.cfg.wage_cap, "wage_room": mx(Math.max(0, cap - pay)),
+    "debt": mx($M.get(c, "debt", 0.0)), "comfort": mx(w.cfg.comfort * $idx(c, "income")), "ledger": ledger_rows(c),
+    "academy": academy_info(w, c), "stadium": stadium_info(w, c)}));
+}
+function academy_info(w, c) {
+  const acad = $M.get(c, "acad", 3.0), pri = $M.get(c, "acad_pri", 1.0), target = Math.min(10, 2.5 + 0.045 * $idx(c, "stature") * pri * 1.6), nat = new Map();
+  const grads = []; for (const p of $M.get(c, "grads", [])) { grads.push($dict($kw({"name": p.name, "age": p.age, "pos": p.pos, "ovr": p.ovr, "pot": p.pot, "nat": p.nat, "club": p.club || ""})));
+    nat.set(p.nat, (nat.get(p.nat) || 0) + 1); }
+  const total = grads.length, origins = [...nat.entries()].sort((a, b) => b[1] - a[1]).map(([k, v]) => $dict($kw({"nat": k, "n": v, "share": $round(v / Math.max(1, total), 3)})));
+  return $dict($kw({"level": $round(acad, 1), "target": $round(target, 1), "cost": mx(w.cfg.acad_cost * Math.pow(acad, 1.5)), "graduates": grads.slice(-8).reverse(), "origins": origins, "out_this_year": $M.get(c, "acad_out", 0), "scouting": $mods.acad.info(w, c)}));
+}
+function stadium_info(w, c) {
+  const cap = $M.get(c, "cap", 0), fans = $M.get(c, "fans", 0), proj = $M.get(c, "proj", null);
+  return $dict($kw({"capacity": $round(cap * 1000, 0), "demand": $round(fans * 1000, 0), "fill": $round(Math.min(cap, fans) / Math.max(1e-9, fans), 3), "turned_away": $round(Math.max(0, fans - cap) * 1000, 0),
+    "project": $T(proj) ? $dict($kw({"add": $round($idx(proj, "add") * 1000, 0), "years": $idx(proj, "years"), "left": $idx(proj, "left"), "cost": mx($idx(proj, "cost")), "big": $idx(proj, "big")})) : null,
+    "honeymoon": $M.get(c, "honey", 0) > 0, "fans": $round(fans * 1000, 0)}));
+}
+function v_worldmoney() {
+  const w = need_world(), by = new Map(), lg = new Map();
+  for (const [n, c] of $M.items(w.clubs)) {
+    for (const e of $M.get(c, "ledger", [])) {
+      const s = $idx(e, "season"); if (!by.has(s)) by.set(s, {season: s, n: 0}); const t = by.get(s); t.n++;
+      for (const k of LEDGER_KEYS) t[k] = (t[k] || 0) + $idx(e, k);
+      const L = $idx(c, "league"), key = s + "|" + L; if (!lg.has(key)) lg.set(key, {league: L, season: s, rev: 0}); lg.get(key).rev += $idx(e, "tv") + $idx(e, "gate") + $idx(e, "sponsor") + $idx(e, "prize") + $idx(e, "owner");
+    }
+  }
+  const seasons = [...by.values()].sort((a, b) => a.season - b.season).slice(-12), rev = (t) => t.tv + t.gate + t.sponsor + t.prize + t.owner;
+  const out = seasons.map((t, i) => { const prev = i ? rev(seasons[i - 1]) : 0; const row = {"season": t.season, "revenue": mx(rev(t)), "growth": prev ? $round(rev(t) / prev - 1, 4) : null}; for (const k of LEDGER_KEYS) row[k] = mx(t[k]); return $dict($kw(row)); });
+  const last = seasons.length ? seasons[seasons.length - 1] : null, ls = last ? last.season : null, leagues = [];
+  let top = 0; for (const [k, v] of lg) if (v.season === ls) top = Math.max(top, v.rev);
+  for (const [k, v] of lg) { if (v.season !== ls) continue; const pv = lg.get((ls - 1) + "|" + v.league); leagues.push($dict($kw({"league": v.league, "revenue": mx(v.rev), "growth": pv ? $round(v.rev / pv.rev - 1, 4) : null, "share": $round(v.rev / Math.max(1e-9, top), 3)}))); }
+  leagues.sort((a, b) => $idx(b, "revenue") - $idx(a, "revenue"));
+  const piles = []; let over = 0;
+  for (const [n, c] of $M.items(w.clubs)) { const r = $idx(c, "funds") / Math.max(1e-9, $idx(c, "income")); if (r > 2.0) over++; piles.push([n, r, $idx(c, "funds")]); }
+  piles.sort((a, b) => b[1] - a[1]);
+  const growth = out.length ? out[out.length - 1].get_("growth") : null;
+  const health = growth == null ? "no data yet" : (growth < -0.02 ? "Shrinking" : growth < 0.02 ? "Stable" : growth <= 0.05 ? "Growing" : "Overheating");
+  return $dict($kw({"season": ls, "seasons": out, "leagues": leagues, "health": health, "growth": growth, "money_x": w.cfg.money_x,
+    "cash": mx($sum((() => { const r = []; for (const [n, c] of $M.items(w.clubs)) r.push($idx(c, "funds")); return r; })())),
+    "debt": mx($sum((() => { const r = []; for (const [n, c] of $M.items(w.clubs)) r.push($M.get(c, "debt", 0.0)); return r; })())),
+    "piles": piles.slice(0, 5).map((x) => $dict($kw({"club": x[0], "ratio": $round(x[1], 2), "funds": mx(x[2])}))), "over2x": over, "clubs": $len(w.clubs)}));
 }
 function v_money() {
   let L, avg, bud, last, ln, rows, w;
@@ -514,15 +571,26 @@ function v_money() {
   $M.sort(rows, $kw({"key": ((r) => (-$idx(r, "avg")))}));
   return $dict($kw({"rows": rows}));
 }
-function v_ledger(season = null) {
-  let s, t, w, $t1, $t2;
-  w = need_world();
-  if ((!$T(w.hist))) {
-    return $dict($kw({"season": null}));
+function v_ledger(season = null, league = null, all = false) {
+  const w = need_world();
+  if (!$T(w.hist)) return $dict($kw({"season": null}));
+  const leagues = [...w.leagues.keysArr()].sort((a, b) => ($idx(w.leagues.get_(b), "prestige") - $idx(w.leagues.get_(a), "prestige")) || (a < b ? -1 : 1)), lg = (league && w.leagues.has(league)) ? league : null;
+  const recs = all ? w.hist.slice() : [w.hist[(season && season >= 1 && season <= $len(w.hist) ? season : $len(w.hist)) - 1]];
+  const s = all ? "all" : $idx(recs[0], "season"), pool = [], net = new Map(); let n = 0, abroad = 0, total = 0, paid = 0, recv = 0, any = false;
+  for (const r of recs) {
+    const t = $M.get(r, "transfers"); if (!t) continue; any = true;
+    const tl = $M.get(t, "top_lg"), st = lg ? $M.get($M.get(t, "lg_stat", new $Dict()), lg, null) : null;
+    const rows = lg ? (tl && tl.has(lg) ? tl.get_(lg) : $M.get(t, "top", []).filter((x) => $idx(x, "frm_league") === lg || $idx(x, "to_league") === lg)) : $M.get(t, "top", []);
+    for (const x of rows) pool.push(x);
+    if (lg && st) { n += $idx(st, "n"); abroad += $idx(st, "abroad"); paid += $idx(st, "paid"); recv += $idx(st, "recv"); total += $idx(st, "paid"); }
+    else if (!lg) { n += $idx(t, "n"); abroad += $idx(t, "abroad"); total += $idx(t, "total"); }
+    for (const [ln, v] of $M.items($idx(t, "net_by_league"))) net.set(ln, (net.get(ln) || 0) + v);
   }
-  s = ($T(($T($t1 = season) ? ((1 <= season) && $le(season, ($t2 = $len(w.hist)))) : $t1)) ? season : $len(w.hist));
-  t = $idx($idx(w.hist, (s - 1)), "transfers");
-  return $dict($kw({"season": s, "seasons": $len(w.hist), "n": $idx(t, "n"), "abroad": $idx(t, "abroad"), "total": mx($idx(t, "total")), "top": (() => { const $r = []; let x; for (const $c0 of $iter($idx(t, "top"))) { x = $c0; $r.push($dict(x, $kw({"fee": mx($idx(x, "fee"))}))); } return $r; })(), "net": (() => { const $r = []; let ln, v; for (const $c0 of $iter($sorted($M.items($idx(t, "net_by_league")), $kw({"key": ((kv) => (-$idx(kv, 1)))})))) { [ln, v] = $iter($c0); $r.push($dict($kw({"league": ln, "net": mx(v)}))); } return $r; })()}));
+  pool.sort((a, b) => $idx(b, "fee") - $idx(a, "fee"));
+  const top = pool.slice(0, all ? 25 : (lg ? 15 : 10)).map((x) => $dict(x, $kw({"fee": mx($idx(x, "fee"))})));
+  return $dict($kw({"season": s, "seasons": $len(w.hist), "league": lg, "leagues": leagues, "n": n, "abroad": abroad, "total": mx(total), "top": top,
+    "stat": lg ? $dict($kw({"paid": mx(paid), "recv": mx(recv), "net": mx(recv - paid), "n": n, "abroad": abroad})) : null,
+    "net": [...net.entries()].sort((a, b) => b[1] - a[1]).map(([ln, v]) => $dict($kw({"league": ln, "net": mx(v)})))}));
 }
 function v_records() {
   let w;
@@ -785,7 +853,7 @@ function v_qualstats(cid) {
 }
 GET = $lit_dict([["/api/status", ((q) => v_status())],
 ["/api/favs", ((q) => v_favs())],
-["/api/qualstats", ((q) => v_qualstats($idx(q, "id")))], ["/api/world", ((q) => v_world())], ["/api/continent", ((q) => v_continent($idx(q, "code")))], ["/api/map", ((q) => v_map())], ["/api/league", ((q) => v_league($idx(q, "name")))], ["/api/league_season", ((q) => v_league_season($idx(q, "name"), $int($idx(q, "season"))))], ["/api/club", ((q) => v_club($idx(q, "name")))], ["/api/player", ((q) => v_player($idx(q, "uid")))], ["/api/players", ((q) => v_players(q))], ["/api/compstats", ((q) => v_compsum($idx(q, "id"), ($T($M.get(q, "season")) ? $int($idx(q, "season")) : null)))], ["/api/settings", ((q) => $dict($kw({"god": ST.god, "money_x": ($T(ST.world) ? ST.world.cfg.money_x : 3.5), "clubs": ($T(ST.world) ? $sorted(ST.world.clubs) : [])})))], ["/api/comp", ((q) => v_comp($idx(q, "id")))], ["/api/nations", ((q) => v_nations($M.get(q, "confed")))], ["/api/nation", ((q) => v_nation($idx(q, "name")))], ["/api/news", ((q) => v_news())], ["/api/money", ((q) => v_money())], ["/api/ledger", ((q) => v_ledger(($T($M.get(q, "season")) ? $int($idx(q, "season")) : null)))], ["/api/records", ((q) => v_records())], ["/api/review", ((q) => $dict($kw({"review": ST.last_review})))], ["/api/awards", ((q) => v_awards(($T($M.get(q, "season")) ? $int($idx(q, "season")) : null)))], ["/api/trophies", ((q) => $dict($kw({"options": T.options(need_world()), "selected": ($T($M.get(q, "key")) ? T.winners(need_world(), $idx(q, "key")) : null)})))], ["/api/edits", ((q) => v_edits())], ["/api/charts", ((q) => v_charts())], ["/api/halloffame", ((q) => T.halloffame(need_world()))]]);
+["/api/qualstats", ((q) => v_qualstats($idx(q, "id")))], ["/api/world", ((q) => v_world())], ["/api/worldmoney", ((q) => v_worldmoney())], ["/api/continent", ((q) => v_continent($idx(q, "code")))], ["/api/map", ((q) => v_map())], ["/api/league", ((q) => v_league($idx(q, "name")))], ["/api/league_season", ((q) => v_league_season($idx(q, "name"), $int($idx(q, "season"))))], ["/api/club", ((q) => v_club($idx(q, "name")))], ["/api/player", ((q) => v_player($idx(q, "uid")))], ["/api/players", ((q) => v_players(q))], ["/api/compstats", ((q) => v_compsum($idx(q, "id"), ($T($M.get(q, "season")) ? $int($idx(q, "season")) : null)))], ["/api/settings", ((q) => $dict($kw({"god": ST.god, "money_x": ($T(ST.world) ? ST.world.cfg.money_x : 3.5), "clubs": ($T(ST.world) ? $sorted(ST.world.clubs) : [])})))], ["/api/comp", ((q) => v_comp($idx(q, "id")))], ["/api/nations", ((q) => v_nations($M.get(q, "confed")))], ["/api/nation", ((q) => v_nation($idx(q, "name")))], ["/api/news", ((q) => v_news())], ["/api/money", ((q) => v_money())], ["/api/ledger", ((q) => v_ledger(($T($M.get(q, "season")) && $idx(q, "season") !== "all" ? $int($idx(q, "season")) : null), ($T($M.get(q, "league")) ? $idx(q, "league") : null), $M.get(q, "season") === "all"))], ["/api/records", ((q) => v_records())], ["/api/review", ((q) => $dict($kw({"review": ST.last_review})))], ["/api/awards", ((q) => v_awards(($T($M.get(q, "season")) ? $int($idx(q, "season")) : null)))], ["/api/trophies", ((q) => $dict($kw({"options": T.options(need_world()), "selected": ($T($M.get(q, "key")) ? T.winners(need_world(), $idx(q, "key")) : null)})))], ["/api/edits", ((q) => v_edits())], ["/api/charts", ((q) => v_charts())], ["/api/halloffame", ((q) => T.halloffame(need_world()))]]);
 POST = $lit_dict([["/api/favs", a_favs],
 ["/api/settings_set", a_settings], ["/api/export", a_export], ["/api/edit", a_edit], ["/api/new", a_new], ["/api/sim", a_sim], ["/api/years", a_year], ["/api/rollover", a_rollover], ["/api/stops", a_stops], ["/api/save", a_save], ["/api/load", a_load], ["/api/delete", a_delete], ["/api/beat", a_beat], ["/api/quit", a_quit]]);
 return {ApiError: ApiError, BaseHTTPRequestHandler: BaseHTTPRequestHandler, C: C, CONF_ORDER: CONF_ORDER, G: G, GEO: GEO, GET: GET, Handler: Handler, POST: POST, PRESETS: PRESETS, S: S, ST: ST, STOP_ITEMS: STOP_ITEMS, State: State, Stops: Stops, T: T, ThreadingHTTPServer: ThreadingHTTPServer, _LS: _LS, _a_sim: _a_sim, _done_set: _done_set, a_beat: a_beat, a_delete: a_delete, a_edit: a_edit, a_export: a_export, a_load: a_load, a_new: a_new, a_quit: a_quit, a_rollover: a_rollover, a_save: a_save, a_settings: a_settings, a_sim: a_sim, a_stops: a_stops, a_year: a_year, argparse: argparse, awards_brief: awards_brief, bracket_upcoming: bracket_upcoming, cal: cal, coach_row: coach_row, comp_emblem: comp_emblem, comp_progress: comp_progress, compstats: compstats, cur_stats: cur_stats, ev_date: ev_date, find_browser: find_browser, header: header, json: json, list_saves: list_saves, live_stats: live_stats, main: main, mimetypes: mimetypes, mx: mx, need_world: need_world, os: os, parse_qs: parse_qs, player_row: player_row, r1: r1, re: re, review: review, round_name_: round_name_, rule_defaults: rule_defaults, safe_slot: safe_slot, shim: shim, shutil: shutil, stops_view: stops_view, subprocess: subprocess, sys: sys, threading: threading, time: time, traceback: traceback, urlparse: urlparse, v_awards: v_awards, v_charts: v_charts, v_club: v_club, v_comp: v_comp, v_compsum: v_compsum, v_continent: v_continent, v_edits: v_edits, v_league: v_league, v_league_season: v_league_season, v_ledger: v_ledger, v_map: v_map, v_money: v_money, v_nation: v_nation, v_nations: v_nations, v_news: v_news, v_player: v_player, v_players: v_players, v_records: v_records, v_status: v_status, v_world: v_world, watchdog: watchdog};

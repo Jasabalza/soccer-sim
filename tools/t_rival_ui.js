@@ -4,7 +4,7 @@ const URL='http://localhost:8791/test_artifact.html';
  const b=await chromium.launch(); const c=await b.newContext({...devices['Pixel 7'],deviceScaleFactor:1}); const p=await c.newPage();
  const errs=[]; p.on('pageerror',e=>errs.push('PE '+e.message)); p.on('console',m=>{if(m.type()==='error')errs.push(m.text().slice(0,250))});
  const idle=async()=>{await p.waitForFunction(()=>document.querySelector('#busy').hidden,null,{timeout:120000});await p.waitForTimeout(400);};
- await p.goto(URL); await p.waitForTimeout(800); await p.click('#go-new'); await p.waitForSelector('#nav a'); await p.waitForTimeout(400);
+ await p.goto(URL); await p.waitForTimeout(800); await p.click('#go-new'); await p.waitForSelector('#nav a'); await p.waitForTimeout(400); if(await p.$('#fp-cancel')){ await p.click('#fp-cancel'); await p.waitForTimeout(300); }
  await p.evaluate(()=>location.hash='#/league/La%20Liga'); await p.waitForSelector('[data-fx]'); 
  console.log('fixtures:', await p.$$eval('.fix2',a=>a.length), 'derbies:', await p.$$eval('.fx-m .tag',a=>a.map(x=>x.textContent)));
  // find the El Clasico row (or any) and open preview

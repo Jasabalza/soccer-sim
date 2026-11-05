@@ -71,5 +71,6 @@ $mods["market"] = (function () {
     return true;
   }
   const take_why = () => { const x = why; why = null; return x; };
-  return { allow, take_why, eliteSet, underperforming };
+  const setWhy = (t) => { why = t; };
+  return { allow, take_why, setWhy, eliteSet, underperforming };
 })();

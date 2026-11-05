@@ -39,6 +39,7 @@ $mods["tourney"] = (function () {
     return res.sa + "-" + res.sb + how;
   }
   function stakes(c, g) {
+    if (g.phase === "grp") return 1.0;
     const left = g.left || g.n || 0;
     if (c.kind === "cup" || c.kind === "cwc") return left <= 2 ? 1.7 : left <= 4 ? 1.45 : left <= 8 ? 1.3 : 1.2;
     return 1.0;

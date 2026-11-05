@@ -150,25 +150,25 @@
    "name": "UEFA Champions League",
    "size": 16,
    "weight": 1.0,
-   "cwc_slots": 8
+   "cwc_slots": 14
   },
   "CONMEBOL": {
    "name": "Copa Libertadores",
    "size": 16,
    "weight": 0.8,
-   "cwc_slots": 4
+   "cwc_slots": 6
   },
   "CONCACAF": {
    "name": "CONCACAF Champions Cup",
    "size": 16,
    "weight": 0.7,
-   "cwc_slots": 2
+   "cwc_slots": 6
   },
   "AFC": {
    "name": "AFC Champions League Elite",
    "size": 16,
    "weight": 0.7,
-   "cwc_slots": 2
+   "cwc_slots": 6
   }
  }
 }

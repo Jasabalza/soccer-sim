@@ -14,6 +14,7 @@ On Android or desktop, open the link in Chrome/Edge and use **Install** or just 
 
 ## What's in it
 
+- **The Business Update (v15):** real club finances (yearly income, wages, ledger), academies with worldwide recruiting, a demand-driven transfer market, national federations with football culture and golden generations, rivalries with History and Heat, and a 32-club Club World Cup with groups.
 - **Favorites (v14):** star the leagues, cups, Nations Leagues and qualifiers you care about; the world screen, simming and winner popups follow them. Summer tournaments appear only after every league is done, in the years they run.
 - Full league seasons, continental cups, Nations Leagues, qualifiers, Club World Cup and World Cup, with a four-year cycle.
 - Saves (compressed, autosave each season), Copy/Paste as text, deterministic seeds.
@@ -33,7 +34,7 @@ node tools/build.js --site     # also rebuilds docs/ (the GitHub Pages site)
 bash tools/check_all.sh        # engine regression suite, must end with ALL CHECKS PASSED
 ```
 
-`check_all.sh` compares the JavaScript engine's state digests (seeds 1 to 3) and a 640-call API crawl against the golden files in `golden/`, then checks order independence and the tournament games API. An intentional behaviour change needs new golden files (`tools/make_golden.sh`).
+`check_all.sh` compares the JavaScript engine's state digests (seeds 1 to 3) and a 640-call API crawl against the golden files in `golden/`, then checks order independence, the tournament games API and the v15 module tests. Set `OLD_BUNDLE=/path/to/old/dist/bundle_engine.js` (built from an older release) to also load an old save into the current engine (`tools/t_migrate_v15.js`). An intentional behaviour change needs new golden files (`tools/make_golden.sh`).
 
 ## Project layout
 
