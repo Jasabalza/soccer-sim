@@ -56,7 +56,14 @@ $mods["bids"] = (function () {
       w._log_transfer(p, seller, win.b, fee, "bid");
       const tl = w.transfers[w.transfers.length - 1];
       let comp = 0, trainer = null;      // training compensation to the club that developed him
-      if (p.trn && p.trn !== seller && p.trn !== win.b && p.age <= 23 && w.clubs.has(p.trn)) { comp = Math.round(0.1 * fee * 10) / 10; trainer = p.trn; w._pay(win.b, p.trn, comp); }
+      if (p.trn && p.trn !== seller && p.trn !== win.b && p.age <= 23 && w.clubs.has(p.trn)) {
+        comp = Math.round(0.1 * fee * 10) / 10; trainer = p.trn;
+        const fedPart = Math.round(0.3 * comp * 10) / 10, T0 = w.clubs.get_(p.trn);      // 30% of it goes to the trainer's federation
+        w._pay(win.b, p.trn, comp - fedPart);
+        win.B.set("funds", win.B.get_("funds") - fedPart); win.B.set("spent", win.B.get_("spent") + fedPart);
+        $mods.fed.credit(w, T0.get_("country"), "comp", fedPart);
+      }
+      if (fee >= 5 && p.nat !== win.B.get_("country")) { const sol = Math.round(0.01 * fee * 100) / 100; win.B.set("funds", win.B.get_("funds") - sol); $mods.fed.credit(w, p.nat, "soli", sol); }
       const X = cfg.money_x, e1 = (x) => Math.round(x * X * 10) / 10;
       tl.set("detail", $dict($kw({ "base": e1(ask0), "asking": e1(ask0 * demand * win.prem), "demand": Math.round(demand * 100) / 100, "premium": win.prem, "traits": $dict($kw({ "money": T.money, "loyal": T.loyal, "ambition": T.ambition, "trophies": T.trophies })),
         "bids": bidders.map((c) => $dict($kw({ "club": c.b, "bid": e1(c.bid), "wage": e1(c.wage), "score": Math.round(c.score * 100) / 100, "rival": c.R > 0 }))), "comp": e1(comp), "trainer": trainer })));

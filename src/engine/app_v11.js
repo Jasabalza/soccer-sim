@@ -498,7 +498,7 @@ function v_nation(name) {
     throw $new(ApiError, ["unknown nation", 404]);
   }
   top = $slice($sorted((() => { const $r = []; let p; for (const $c0 of $iter(w.players)) { p = $c0; if (!($eq(p.nat, name))) continue; $r.push(p); } return $r; })(), $kw({"key": ((p) => (-p.ovr))})), null, 23, null);
-  return $dict($kw({"name": name, "confed": $idx(n, "confed"), "rating": r1($idx(n, "eff")), "talent": r1($idx(n, "dev")), "base": $idx(n, "base"), "pros": $idx(w.nat_pros, name), "titles": $idx(n, "wc_titles"), "apps": $idx(n, "wc_apps"), "coach": coach_row($idx(n, "coach")), "players": (() => { const $r = []; let p; for (const $c0 of $iter(top)) { p = $c0; $r.push(player_row(w, p)); } return $r; })(), "trophies": T.nation_trophies(w, name)}));
+  return $dict($kw({"name": name, "confed": $idx(n, "confed"), "rating": r1($idx(n, "eff")), "talent": r1($idx(n, "dev")), "base": $idx(n, "base"), "pros": $idx(w.nat_pros, name), "titles": $idx(n, "wc_titles"), "apps": $idx(n, "wc_apps"), "coach": coach_row($idx(n, "coach")), "players": (() => { const $r = []; let p; for (const $c0 of $iter(top)) { p = $c0; $r.push(player_row(w, p)); } return $r; })(), "trophies": T.nation_trophies(w, name), "federation": $mods.fed.info(w, name)}));
 }
 function v_news() {
   let w;
@@ -524,7 +524,7 @@ function academy_info(w, c) {
   const grads = []; for (const p of $M.get(c, "grads", [])) { grads.push($dict($kw({"name": p.name, "age": p.age, "pos": p.pos, "ovr": p.ovr, "pot": p.pot, "nat": p.nat, "club": p.club || ""})));
     nat.set(p.nat, (nat.get(p.nat) || 0) + 1); }
   const total = grads.length, origins = [...nat.entries()].sort((a, b) => b[1] - a[1]).map(([k, v]) => $dict($kw({"nat": k, "n": v, "share": $round(v / Math.max(1, total), 3)})));
-  return $dict($kw({"level": $round(acad, 1), "target": $round(target, 1), "cost": mx(w.cfg.acad_cost * Math.pow(acad, 1.5)), "graduates": grads.slice(-8).reverse(), "origins": origins, "out_this_year": $M.get(c, "acad_out", 0)}));
+  return $dict($kw({"level": $round(acad, 1), "target": $round(target, 1), "cost": mx(w.cfg.acad_cost * Math.pow(acad, 1.5)), "graduates": grads.slice(-8).reverse(), "origins": origins, "out_this_year": $M.get(c, "acad_out", 0), "scouting": $mods.acad.info(w, c)}));
 }
 function stadium_info(w, c) {
   const cap = $M.get(c, "cap", 0), fans = $M.get(c, "fans", 0), proj = $M.get(c, "proj", null);
