@@ -6056,9 +6056,12 @@ class World {
   migrate_v15() {
     const self = this, base = $new(Settings, []), cfg = self.cfg;
     for (const k of Object.keys(base)) if (cfg[k] === undefined) cfg[k] = base[k];
+    // saves made before v15 keep the old 16-club Club World Cup slots (8/4/2/2): bring them to the 32-club format
+    const SLOTS = {UEFA: 14, CONMEBOL: 6, CONCACAF: 6, AFC: 6};
+    for (const [cf, n] of Object.entries(SLOTS)) if ($in(cf, self.cups)) $setidx($idx(self.cups, cf), "cwc_slots", n);
     for (const [id, c] of [...$M.items(self.comps)]) {
-      if (c && c.kind === "cwc" && c.qual === undefined && !c.winner) {
-        const fresh = $new(C.ClubWorldCup, [self]);
+      if (c && c.kind === "cwc" && !c.winner && (c.qual === undefined || ($len(c.field) > 0 && $len(c.field) < 32 && c.ptr === 0 && $len(c.glog) === 0 && $len(c.ties) === 0))) {
+        const fresh = $new(C.ClubWorldCup, [self]);       // an unplayed draw made with the old slots is redrawn when next opened
         $setidx(self.comps, id, fresh);
       }
     }
@@ -7386,10 +7389,10 @@ function alltime(w, key) {
   for (const b of boots) { const t = P.get(b.uid); if (t) { t.golden += 1; t.golden_seasons.push(b.season); } }
   for (const [nm, n] of coach_titles) { let c = coaches.get(nm); if (!c) { c = {name: nm, nat: null, team: null, awards: 0, titles: 0, seasons: []}; coaches.set(nm, c); } c.titles = n; }
   const all = [...P.values()].map((t) => Object.assign(t, {teams: t.teams.slice(-4)}));
-  const list = (field, min, lim) => all.filter((t) => t[field] >= min).sort((a, b) => b[field] - a[field] || b.assists - a.assists || a.name.localeCompare(b.name)).slice(0, lim);
+  const list = (field, min, lim) => all.filter((t) => t[field] >= min).sort((a, b) => b[field] - a[field] || b.assists - a.assists || a.name.localeCompare(b.name)).slice(0, lim).map((t) => Object.assign({}, t));
   const best = (arr) => { arr = arr.filter((x) => x.v > 0); if (!arr.length) return null; const m = Math.max(...arr.map((x) => x.v)); return {v: m, who: arr.filter((x) => x.v === m).slice(0, 3)}; };
   const goals = rank_ties(list("goals", 1, 40), (t) => t.goals), assists = rank_ties(list("assists", 1, 40), (t) => t.assists), cs = rank_ties(list("cs", 1, 40), (t) => t.cs);
-  const golden = rank_ties(all.filter((t) => t.golden > 0).sort((a, b) => b.golden - a.golden || b.goals - a.goals).slice(0, 40), (t) => t.golden);
+  const golden = rank_ties(all.filter((t) => t.golden > 0).sort((a, b) => b.golden - a.golden || b.goals - a.goals).slice(0, 40).map((t) => Object.assign({}, t)), (t) => t.golden);
   const coach_list = rank_ties([...coaches.values()].filter((c) => c.titles + c.awards > 0).sort((a, b) => b.titles - a.titles || b.awards - a.awards || a.name.localeCompare(b.name)).slice(0, 40), (c) => c.titles * 100 + c.awards);
   return deep({key, emblem: emb, title: title_of(w, key), editions: editions.length, seasons: editions, goals, assists, cs, golden, coaches: coach_list,
     records: {goals: best(rec.goals), assists: best(rec.assists), cs: best(rec.cs)}, boots: boots.reverse(), top: goals.length ? goals[0] : null,
@@ -9832,7 +9835,7 @@ async function viewComp(id) {
     const wdl = (g, n, gi) => { let w = 0, d = 0, l = 0; const src = gall ? gall.filter((m) => m.done && m.gr === gi).map((m) => { const [sa, sb] = m.text.split("-").map(Number); return { a: m.a, b: m.b, sa, sb }; }) : g.matches; for (const m of src) { if (m.a !== n && m.b !== n) continue; const f = m.a === n ? m.sa - m.sb : m.sb - m.sa; if (f > 0) w++; else if (f < 0) l++; else d++; } return [w, d, l]; };
     const gtable = (g, gi) => `<table class="gt"><thead><tr><th class="l">${unit}</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GD</th><th>Pts</th></tr></thead><tbody>${g.teams.map((r, k) => { const [w, d, l] = wdl(g, r.nation, gi); const gd = r.gf - r.ga; return `<tr class="${k < 2 && r.p ? "champ" : ""}"><td class="l">${lk(r.nation)}</td><td>${r.p}</td><td>${w}</td><td>${d}</td><td>${l}</td><td>${gd > 0 ? "+" + gd : gd}</td><td class="pts">${r.pts}</td></tr>`; }).join("")}</tbody></table>`;
     const gres = (g) => (g.matches.length ? `<details class="gres"><summary class="meta">Results (${g.matches.length})</summary><div class="meta">${g.matches.map((m) => `<a href="#/matchup/${enc(id)}/${enc(m.a)}/${enc(m.b)}">${esc(m.a)} ${m.sa}-${m.sb} ${esc(m.b)}</a>`).join(" &middot; ")}</div></details>` : "");
-    const many = x.groups.length > 4;
+    const many = x.groups.length > 1;
     const ggames = (g, i) => {
       if (!gall) return "";
       const gs = gall.filter((m) => m.gr === i), left = gs.filter((m) => !m.done).length;

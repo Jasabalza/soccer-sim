@@ -873,7 +873,7 @@ async function viewComp(id) {
     const wdl = (g, n, gi) => { let w = 0, d = 0, l = 0; const src = gall ? gall.filter((m) => m.done && m.gr === gi).map((m) => { const [sa, sb] = m.text.split("-").map(Number); return { a: m.a, b: m.b, sa, sb }; }) : g.matches; for (const m of src) { if (m.a !== n && m.b !== n) continue; const f = m.a === n ? m.sa - m.sb : m.sb - m.sa; if (f > 0) w++; else if (f < 0) l++; else d++; } return [w, d, l]; };
     const gtable = (g, gi) => `<table class="gt"><thead><tr><th class="l">${unit}</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GD</th><th>Pts</th></tr></thead><tbody>${g.teams.map((r, k) => { const [w, d, l] = wdl(g, r.nation, gi); const gd = r.gf - r.ga; return `<tr class="${k < 2 && r.p ? "champ" : ""}"><td class="l">${lk(r.nation)}</td><td>${r.p}</td><td>${w}</td><td>${d}</td><td>${l}</td><td>${gd > 0 ? "+" + gd : gd}</td><td class="pts">${r.pts}</td></tr>`; }).join("")}</tbody></table>`;
     const gres = (g) => (g.matches.length ? `<details class="gres"><summary class="meta">Results (${g.matches.length})</summary><div class="meta">${g.matches.map((m) => `<a href="#/matchup/${enc(id)}/${enc(m.a)}/${enc(m.b)}">${esc(m.a)} ${m.sa}-${m.sb} ${esc(m.b)}</a>`).join(" &middot; ")}</div></details>` : "");
-    const many = x.groups.length > 4;
+    const many = x.groups.length > 1;
     const ggames = (g, i) => {
       if (!gall) return "";
       const gs = gall.filter((m) => m.gr === i), left = gs.filter((m) => !m.done).length;
