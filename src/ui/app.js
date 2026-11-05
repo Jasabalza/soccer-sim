@@ -1223,7 +1223,7 @@ async function viewRivals() {
       <select id="rv-scope" title="Where to look">${scopeOpts}</select>
       <select id="rv-sort" title="Rank by">${Object.entries(sortName).map(([k, v]) => `<option value="${k}" ${d.sort === k ? "selected" : ""}>Rank by: ${v}</option>`).join("")}</select>
       <input id="rv-q" placeholder="Search a team or rivalry" value="${esc(RVS.q)}"></div>
-    <div class="rvbar"><div class="tabs">${["history", "heat", "rising"].map((k) => `<button data-so="${k}" class="${d.sort === k ? "on" : ""}">${sortName[k]}</button>`).join("")}</div><span class="meta">History is where it started. Heat is what this world has added. Rising shows who gained most this season.</span></div>
+    <div class="meta" style="margin:6px 0">History is where a rivalry started. Heat is what this world has added. Rising shows who gained most this season.</div>
     <div class="rvbar"><button data-st="all" class="${d.status === "all" ? "pri" : ""}">All</button><button data-st="real" class="${d.status === "real" ? "pri" : ""}">Real</button><button data-st="rising" class="${d.status === "rising" ? "pri" : ""}">Earned</button>
       <span class="meta">${d.status === "real" ? "Real: long-standing rivalries from real football." : d.status === "rising" ? "Earned: new rivalries your world has built from matches, titles, finals and transfers." : "Real rivalries from real football, plus new ones your world has built."}</span></div>
     ${d.rows.length ? `<div class="rvlist">${d.rows.map(rowHTML).join("")}</div>
@@ -1234,7 +1234,6 @@ async function viewRivals() {
   document.querySelectorAll("[data-st]").forEach((b) => b.onclick = () => redo({ status: b.dataset.st }));
   $("#rv-scope").onchange = (e) => redo({ scope: e.target.value });
   $("#rv-sort").onchange = (e) => redo({ sort: e.target.value });
-  document.querySelectorAll("[data-so]").forEach((b) => b.onclick = () => redo({ sort: b.dataset.so }));
   let tm = null; $("#rv-q").oninput = (e) => { clearTimeout(tm); tm = setTimeout(() => { Object.assign(RVS, { q: e.target.value, limit: 25 }); route().then(() => { const i = $("#rv-q"); if (i) { i.focus(); i.setSelectionRange(i.value.length, i.value.length); } }); }, 350); };
   if ($("#rv-more")) $("#rv-more").onclick = () => { RVS.limit = d.offset + d.rows.length + 25; RVS.offset = 0; route(); };
 }

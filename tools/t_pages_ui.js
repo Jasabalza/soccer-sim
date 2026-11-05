@@ -17,7 +17,7 @@ const URL='http://localhost:8791/test_artifact.html';
  }
  const nb=await p.$$('.bidd'); console.log('bid details',nb.length); if(nb.length){ await nb[0].evaluate(e=>e.open=true); await p.screenshot({path:OUT+'/pg_bid.png',fullPage:true}); }
  await p.evaluate(()=>location.hash='#/rivals'); await p.waitForTimeout(800);
- for(const so of ['history','rising']){ const bt=await p.$(`[data-so="${so}"]`); if(bt){ await bt.click(); await p.waitForTimeout(800); console.log('sort',so,(await p.$$('.rvrow')).length,'rows'); } else console.log('no sort button',so); }
+ for(const so of ['history','rising']){ await p.selectOption('#rv-sort',so); await p.waitForTimeout(800); console.log('sort',so,(await p.$$('.rvrow')).length,'rows'); }
  console.log('errors:',errs.slice(0,6));
  await b.close();
 })();
