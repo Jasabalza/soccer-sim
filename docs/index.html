@@ -15,7 +15,7 @@ a:hover { text-decoration: underline; }
   background: #0a120d; border-bottom: 1px solid var(--line); }
 .brand { font-weight: 800; letter-spacing: 2px; color: var(--accent); cursor: pointer; }
 #nav { display: flex; gap: 4px; flex: 1; }
-#nav a { color: var(--dim); padding: 6px 12px; border-radius: 6px; }
+#nav a { color: var(--dim); padding: 6px 12px; border-radius: 6px; white-space: nowrap; }
 #nav a:hover, #nav a.on { color: var(--text); background: var(--panel2); text-decoration: none; }
 #season-info { color: var(--dim); font-size: 13px; text-align: right; }
 #season-info b { color: var(--text); }
@@ -680,6 +680,72 @@ button.wide { width: 100%; min-height: 44px; margin-top: 10px; }
 .v2 .fix { display: flex; align-items: center; gap: 8px; padding: 6px 0; font-size: 13px; } .v2 .fix .h { flex: 1; text-align: right; } .v2 .fix .s { flex: none; min-width: 38px; text-align: center; font-weight: 800; } .v2 .fix span:last-child { flex: 1; }
 .v2 .fix2 { border-bottom: 1px solid #223629; } .v2 .fix2:last-child { border-bottom: 0; } .v2 .fx-m { display: flex; gap: 10px; align-items: center; justify-content: center; padding: 0 0 6px; font-size: 12px; }
 .v2 .hd .btn { flex: none; }
+
+/* ---- v16 Hall of Fame ---- */
+.hb { display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; border: 2px solid var(--hc, #8fa8b8); background: #1d2b25; flex: none; overflow: hidden; }
+.hb.W { background: #2a2410; } .hb.L { border-radius: 9px; background: #13283d; } .hb.K { border-radius: 8px 8px 15px 15px; }
+.hb-s { display: block; width: 8px; height: 8px; border: 2px solid var(--hc, #8fa8b8); border-radius: 50%; }
+.hb .emb, .hb svg { display: block; }
+.hlist { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.hr { padding: 8px 12px; min-height: 52px; border-bottom: 1px solid #1d2b25; display: block; color: inherit; text-decoration: none; }
+.hr:last-child { border-bottom: 0; } .hr-link:hover { background: var(--panel2); text-decoration: none; }
+.hr-a { display: flex; align-items: center; gap: 10px; min-height: 36px; }
+.hr-m { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.hr-m b, .hr-m span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hr-r { font-weight: 700; font-size: 13px; white-space: nowrap; color: var(--text); }
+.hbar { position: relative; height: 6px; border-radius: 3px; background: #1d2b25; margin: 6px 0 2px; }
+.hbar i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 3px; background: var(--accent); } .hbar i.g { background: var(--accent2); }
+.hbar u { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--text); }
+.hbar.big { height: 10px; margin: 8px 0 6px; }
+.hof-ctl { display: flex; gap: 8px; align-items: center; margin: 10px 0 0; } .hof-ctl select { flex: 1; min-width: 0; min-height: 40px; }
+.hof-sc { margin: 10px 2px 2px; font-weight: 700; }
+.hof-tabs { margin: 8px 0 10px; display: flex; gap: 6px; overflow-x: auto; }
+.hof-tabs button { flex: none; min-height: 38px; padding: 0 14px; border-radius: 99px; border: 1px solid var(--line); background: var(--panel); color: var(--dim); }
+.hof-tabs button.on { background: var(--accent); color: #06210f; border-color: var(--accent); font-weight: 700; }
+.hof2 > .seg { margin-top: 10px; } .hof2 .seg button { flex: 1; }
+.hcls { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; margin-bottom: 8px; overflow: hidden; }
+.hcls > summary { display: flex; justify-content: space-between; align-items: center; padding: 12px; min-height: 48px; cursor: pointer; list-style: none; }
+.hcls[open] > summary { border-bottom: 1px solid #1d2b25; }
+.hchain { display: grid; gap: 6px; } .hch { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 10px; border: 1px solid #1d2b25; } .hch.in { border-color: #6b5a1c; background: #17190f; }
+.hch-m { display: flex; flex-direction: column; min-width: 0; } .gold { color: var(--accent2); }
+.hveto { margin: 8px 0 0; padding: 10px 12px; border-radius: 10px; background: #2a1a1a; color: #ffc2c2; font-size: 12px; }
+.hhon { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.hstep .hs { display: flex; gap: 10px; padding: 6px 0; } .hstep .hs i { width: 10px; height: 10px; margin-top: 5px; border-radius: 50%; background: var(--accent); flex: none; }
+.stp { display: flex; gap: 6px; margin: 10px 0 0; } .stp span { flex: 1; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; border: 1px solid var(--line); color: var(--dim); font-size: 12px; }
+.stp span.on { background: #1f3a2c; border-color: var(--accent); color: var(--accent); font-weight: 700; }
+.hrv { margin-top: 12px; padding: 16px 14px; border-radius: 16px; border: 1px solid #6b5a1c; background: #17190f; }
+.hrv-n { display: flex; align-items: center; gap: 12px; margin: 6px 0 10px; } .hrv-name { font-size: 22px; font-weight: 800; line-height: 1.2; }
+.hrv-p { display: flex; justify-content: space-between; align-items: baseline; } .hrv-p b { font-size: 26px; color: var(--accent2); }
+.hswipe { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 4px 2px 12px; margin: 0 -2px; }
+.hsw { flex: 0 0 86%; scroll-snap-align: center; padding: 14px; border-radius: 16px; border: 1px solid var(--line); background: var(--panel); }
+.hday .foot, .hofcta-b { display: grid; grid-template-columns: 1fr 1.6fr; gap: 10px; margin-top: 14px; } .hofcta-b { grid-template-columns: 1.4fr 1fr; }
+.hday .foot .btn, .hofcta-b .btn { display: flex; align-items: center; justify-content: center; min-height: 48px; }
+.chev { width: 8px; height: 8px; border-right: 2px solid var(--dim); border-bottom: 2px solid var(--dim); transform: rotate(-45deg); margin-right: 4px; flex: none; }
+.ce-hof { margin-top: 14px; border: 1px solid #6b5a1c; background: #17190f; border-radius: 14px; padding: 12px; text-align: left; display: flex; align-items: center; gap: 12px; }
+.ce-hof .hb { border-radius: 50%; }
+
+/* v16 Off-season moves */
+.mtabs { margin-top: 10px; } .mtabs button { flex: 1; padding: 0 4px; font-size: 13px; min-height: 40px; }
+.mchips { display: flex; flex-wrap: wrap; gap: 6px; } .mchips button { min-height: 36px; padding: 0 12px; border-radius: 99px; border: 1px solid var(--line); background: var(--panel); font-size: 13px; }
+.mchips button.on { background: #1f3a2c; color: var(--accent); border-color: #2c7a4d; font-weight: 700; }
+.mtiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+.mtiles a { display: flex; flex-direction: column; padding: 12px; min-height: 64px; border-radius: 14px; background: var(--panel); border: 1px solid var(--line); color: inherit; text-decoration: none; }
+.mtiles a b { font-size: 24px; line-height: 1.1; } .mtiles a span { font-size: 12px; color: var(--dim, #8aa095); }
+.mvgo { display: flex !important; flex-direction: column; align-items: center; justify-content: center; min-height: 56px; margin: 14px 0 4px; text-decoration: none; }
+.mvgo small { font-weight: 500; opacity: .75; font-size: 12px; }
+.mvr .hr-r.mvR { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+.mvb { width: 30px; display: flex; justify-content: center; flex: none; }
+.mvhot { margin-left: 4px; font-size: 12px; }
+.mvmore { width: 100%; margin-top: 10px; min-height: 46px; }
+.mvprog { height: 4px; border-radius: 2px; background: #1d2b25; margin: 6px 0 12px; } .mvprog i { display: block; height: 100%; border-radius: 2px; background: var(--accent); }
+.mvft { display: flex; align-items: center; justify-content: center; gap: 14px; margin: 12px 0 4px; } .mvft span { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; min-width: 0; text-align: center; } .mvft i { font-style: normal; font-size: 12px; color: var(--dim, #8aa095); }
+.mvar { font-size: 24px; flex: none !important; color: var(--accent); }
+.mvbig { text-align: center; font-size: 34px; font-weight: 800; margin: 6px 0; color: var(--accent2); } .mvbig small { font-size: 14px; font-weight: 500; }
+.mvstory { font-size: 15px; line-height: 1.45; margin: 10px 0; }
+.mvtags { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.mvheat { display: flex; align-items: center; gap: 10px; margin-top: 6px; } .mvheat .hbar { flex: 1; margin: 0; }
+.linkbtn { background: none; border: 0; color: #7cc0ff; font-size: 14px; min-height: 44px; padding: 0 14px; }
+.stp span[data-c] { cursor: pointer; }
 
 </style>
 
@@ -5594,6 +5660,8 @@ class World {
     self.compute_cup_fields(null);
     self.money_update($kw({"initial": true}));
     self.start_season();
+    $mods.hof.init(self);
+    $mods.hof.acadInit(self, (c, g, nat, age) => self._mk_mgr(c, g, nat, age));
   }
   _load_data() {
     const self = this;
@@ -5663,6 +5731,14 @@ class World {
   _name() {
     const self = this;
     return ($str(self.rng.choice(FIRST_NAMES)) + " " + $str(self.rng.choice(LAST_NAMES)));
+  }
+  // an academy manager: a coach in the making. grade 1 strong, 0 average, -1 weak; he can be promoted to the first team
+  _mk_mgr(club, grade, nat, age) {
+    const self = this, H = $mods.hof, k = self.seed + "|" + self.season + "|" + club + "|mname";
+    const name = FIRST_NAMES[Math.floor(H.rnd(k + "f") * FIRST_NAMES.length)] + " " + LAST_NAMES[Math.floor(H.rnd(k + "l") * LAST_NAMES.length)];
+    const co = $new(Coach, [$kw({"name": name, "age": age, "personality": "loyal", "skill": grade > 0 ? "scout" : "none", "prestige": [5, 12, 22][grade + 1], "nat": nat, "contract": 3})]);
+    co.grade = grade; co.acad_since = self.season;
+    return co;
   }
   _contract() {
     const self = this;
@@ -6050,6 +6126,7 @@ class World {
   _log_transfer(p, seller, buyer, fee, kind) {
     const self = this;
     $M.append(self.transfers, $dict($kw({"season": self.season, "player": p.name, "nat": p.nat, "age": p.age, "ovr": p.ovr, "pot": p.pot, "frm": seller, "to": buyer, "fee": fee, "kind": kind, "frm_league": $idx($idx(self.clubs, seller), "league"), "to_league": $idx($idx(self.clubs, buyer), "league"), "why": $mods.market.take_why()})));
+    $mods.moves.transfer(self, p, seller, buyer, fee, kind, $mods.rivals.intensity(self, seller, buyer) > 0);
     if (p.ovr >= 80 || $mods.rivals.intensity(self, seller, buyer) > 0) $mods.rivals.transfer_heat(self, seller, buyer, p.ovr >= 80 ? 2.5 : 1.5);
   }
   // bring a save made before v15 up to date (new settings, an unfinished old-style Club World Cup)
@@ -6071,6 +6148,8 @@ class World {
       if (!$in("acad", c)) self._init_v15(c, n, L);
     }
     for (const nm of self.nations.keysArr()) $mods.fed.init($idx(self.nations, nm));
+    $mods.hof.ensure(self); $mods.hof.foundOnce(self);
+    $mods.hof.acadInit(self, (c, g, nat, age) => self._mk_mgr(c, g, nat, age));
     return true;
   }
   renegotiate_tv() {
@@ -6272,6 +6351,7 @@ class World {
       throw $new(RuntimeError, [("Season not finished: " + $M.join(", ", left))]);
     }
     $mods.rivals.update_season(self);
+    $mods.moves.begin(self);
     rec = $lit_dict([["season", self.season], ["retired", 0], ["youth", 0], ["outflow", 0], ["down", 0], ["up", 0]]);
     [tables, recs] = $iter([new $Dict(), new $Dict()]);
     for (const $f35 of $iter(self.leagues)) {
@@ -6364,6 +6444,8 @@ class World {
     self.apply_results(rec, recs, tables, finish, expected, cwc, wc);
     self.coach_offseason();
     self.season_end(rec);
+    $mods.hof.rollover(self, self.season);
+    $mods.hof.acadTick(self, (c, g, nat, age) => self._mk_mgr(c, g, nat, age));
     self.nations_offseason(rec, wc);
     tr = (() => { const $r = []; let t; for (const $c0 of $iter(self.transfers)) { t = $c0; if (!($eq($idx(t, "season"), self.season))) continue; $r.push(t); } return $r; })();
     net = (() => { const $r = new $Dict(); let ln; for (const $c0 of $iter(self.leagues)) { ln = $c0; $r.set(ln, 0.0); } return $r; })();
@@ -6415,6 +6497,7 @@ class World {
         self.comps_nat_refresh(nm);
       }
     }
+    $mods.moves.finish(self, $idx(rec, "season"));
     return rec;
   }
   comps_nat_refresh(nm) {
@@ -6598,6 +6681,8 @@ class World {
     c = $idx(self.clubs, n);
     co = $idx(c, "coach");
     $setidx(c, "cp", fclamp($sub($idx(c, "cp"), $mul(co.prestige, cfg.transfer_share)), 0, 1000));
+    $mods.moves.coachOut(self, co, n, reason);
+    $mods.hof.coachLeft(self, co);
     co.club = null;
     co.last_club = n;
     co.prev_attr = self.attr(n);
@@ -6608,6 +6693,7 @@ class World {
       $t1 = self.stats, $setidx($t1, "coach_retire", $idx($t1, "coach_retire") + 1);
       $M.append(self.retired_coaches, co);
       $M.append(self.retired_all, co);
+      $mods.hof.onCoachRetire(self, co);
       if (((co.prestige >= 60) || (co.titles >= 3))) {
         self.news("coach", ("Coach " + $str(co.name) + " retires after " + $str(co.seasons) + " seasons (" + $str(co.titles) + " league titles, " + $str(co.cups) + " continental cups)"));
       }
@@ -6629,6 +6715,7 @@ class World {
     cfg = self.cfg;
     c = $idx(self.clubs, n);
     $setidx(c, "cp", fclamp($add($idx(c, "cp"), $mul(co.prestige, cfg.transfer_share)), 0, 1000));
+    $mods.moves.coachIn(self, co, n);
     co.club = n;
     co.contract = self._contract();
     co.hot = 0;
@@ -6636,6 +6723,7 @@ class World {
     $M.append(co.clubs, n);
     $setidx(c, "coach", co);
     $setidx(c, "stint", 0);
+    $mods.hof.coachHired(self, co, n);
     $t1 = self.stats, $setidx($t1, "hires", $idx($t1, "hires") + 1);
     if (((co.last_club != null) && (!$eq(co.last_club, n)))) {
       $t2 = self.stats, $setidx($t2, "moves", $idx($t2, "moves") + 1);
@@ -6657,6 +6745,7 @@ class World {
       if (((co.age >= 70) || (co.unemployed_years > 6))) {
         $M.append(self.retired_coaches, co);
         $M.append(self.retired_all, co);
+        $mods.hof.onCoachRetire(self, co);
         $t1 = self.stats, $setidx($t1, "coach_retire", $idx($t1, "coach_retire") + 1);
       } else {
         $M.append(keep, co);
@@ -6705,13 +6794,16 @@ class World {
       n = $f68;
       attr = self.attr(n);
       cands = (() => { const $r = []; let co; for (const $c0 of $iter(self.coach_pool)) { co = $c0; if (!((!$eq(co.last_club, n)) && ((co.personality === "loyal") || (co.prev_attr === 0) || $ge(attr, $mul(co.prev_attr, $max(0.2, (0.85 - (0.2 * co.unemployed_years)))))))) continue; $r.push(co); } return $r; })();
+      const am = $idx(self.clubs, n).get("acad_mgr");                     // v16: the academy manager is a candidate, and the same person gets promoted
+      if (am && am.age >= 34 && am.age < 62 && (am.grade >= 0 || !$len(cands))) cands = $list(cands).concat([am]);
       if ((!$T(cands))) {
         fresh = self._new_coach(rng.uniform(5, 25), rng.randint(38, 50));
         $M.append(self.coach_pool, fresh);
         cands = [fresh];
       }
       pick = $max(cands, $kw({"key": ((x) => $add(x.prestige, rng.uniform((-5), 5)))}));
-      $M.remove(self.coach_pool, pick);
+      if (pick === am) { $idx(self.clubs, n).set("acad_mgr", null); $mods.hof.mgrPromoted(self, am, n); }
+      else $M.remove(self.coach_pool, pick);
       self._hire(n, pick);
     }
   }
@@ -6736,12 +6828,14 @@ class World {
     const self = this;
     let best, bs, co, floor, n, nm, old, order, pool, rng, s;
     rng = self.rng;
+    const natBefore = {}; for (const k of self.nations.keysArr()) natBefore[k] = $idx($idx(self.nations, k), "coach") || null;
     pool = (() => { const $r = []; let co; for (const $c0 of $iter(self.retired_coaches)) { co = $c0; if (!(co.intl == null)) continue; $r.push(co); } return $r; })();
     for (const $f71 of $iter($M.items(self.nations))) {
       [nm, n] = $iter($f71);
       old = $idx(n, "coach");
       if ((old != null)) {
         old.intl = null;
+        $mods.hof.natCoachSet(self, old, null);
         if ((old.age <= 74)) {
           $M.append(pool, old);
         }
@@ -6771,9 +6865,11 @@ class World {
         $setidx(n, "coach", self._new_coach(fclamp($add((8 + (($idx(n, "base") - 40) * 0.4)), rng.uniform((-5), 5)), 3, 60), $kw({"age": rng.randint(45, 66), "nat": nm})));
       }
       $idx(n, "coach").intl = nm;
+      $mods.hof.natCoachSet(self, $idx(n, "coach"), nm);
       $idx(n, "coach").contract = self.cfg.nat_coach_years;
     }
     self.retired_coaches = (() => { const $r = []; let co; for (const $c0 of $iter(pool)) { co = $c0; if (!((co.intl == null) && (co.age <= 75))) continue; $r.push(co); } return $r; })();
+    { const natAfter = {}; for (const k of self.nations.keysArr()) natAfter[k] = $idx($idx(self.nations, k), "coach") || null; $mods.moves.natCycle(self, natBefore, natAfter); }
   }
   _develop(p) {
     const self = this;
@@ -6803,6 +6899,9 @@ class World {
   }
   _should_retire(p) {
     const self = this;
+    if ($mods.hof.stretch(self, p)) {
+      return false;
+    }
     if ((p.age >= 39)) {
       return true;
     }
@@ -7013,6 +7112,7 @@ class World {
       p = $f85;
       if ($T(self._should_retire(p))) {
         $setidx(rec, "retired", $idx(rec, "retired") + 1);
+        $mods.hof.onRetire(self, p);
         if ((p.peak >= 86)) {
           $M.append(self.retired_players, p);
         }
@@ -7032,6 +7132,7 @@ class World {
             p.wage = wage_for(p.ovr, p.age);
             p.prot = 0;
           } else {
+            $mods.moves.released(self, p, p.club);
             p.club = null;
           }
         }
@@ -7053,6 +7154,7 @@ class World {
       if ($gt($len(members), SQUAD_MAX)) {
         for (const $f90 of $iter($slice($sorted(members, $kw({"key": ((x) => x.ovr)})), null, $sub($len(members), SQUAD_MAX), null))) {
           p = $f90;
+          $mods.moves.released(self, p, p.club);
           p.club = null;
         }
       }
@@ -7064,7 +7166,7 @@ class World {
     keep = [];
     for (const $f91 of $iter(self.players)) {
       p = $f91;
-      if (((p.club == null) && $lt(rng.random(), self._outflow_chance(p.age)))) {
+      if (((p.club == null) && $lt(rng.random(), self._outflow_chance(p.age)) && !(p.age <= 40 && p.career.length >= 8 && $mods.hof.isChaser(p)))) {
         $setidx(rec, "outflow", $idx(rec, "outflow") + 1);
         gone = gone + 1;
       } else {
@@ -7112,7 +7214,7 @@ class World {
       if (gradClub) { nm = $mods.acad.nation(self, gradClub, nm, rng, used); if (!$in(nm, gaps)) $setidx(gaps, nm, 0.0); n = $idx(self.nations, nm); }
       qb = $int($round(fclamp($mul(cfg.anchor_gain, $idx(gaps, nm)), (-10), 8)));
       qn = $int($round($div($sub($idx(n, "dev"), dev_mean), cfg.nat_quality_div) + $mods.fed.lift(self, nm) / 8));
-      if (gradClub) qb += Math.round(($idx($idx(self.clubs, gradClub), "acad") - 6) * 1.2);
+      if (gradClub) qb += Math.round(($idx($idx(self.clubs, gradClub), "acad") - 6) * 1.2) + 2 * $mods.hof.mgrGrade(self, gradClub);
       ovr = clamp($add($add(rng.randint(42, 56), Math.floor(qb / 2)), Math.floor(qn / 2)));
       q = $add($add(qb, cfg.pot_shift), qn);
       ceiling = fclamp((92 + q), 70, 99);
@@ -7175,6 +7277,7 @@ class World {
           }
         }
         [p.club, p.league, p.wage] = $iter([cname, $idx(c, "league"), ask]);
+        $mods.moves.signed(self, p, cname, ask, first);
         if ($T(first)) {
           [p.contract, p.prot] = $iter([self.cfg.first_contract, self.cfg.first_contract]);
         } else {
@@ -7230,6 +7333,824 @@ function digest(world) {
   return $slice(h.hexdigest(), null, 16, null);
 }
 return {C: C, CONTINENT: CONTINENT, Coach: Coach, Counter: Counter, DATA_DIR: DATA_DIR, FIRST_NAMES: FIRST_NAMES, HERE: HERE, LAST_NAMES: LAST_NAMES, Locked: Locked, MAX_OVR: MAX_OVR, MIN_OVR: MIN_OVR, PLAN: PLAN, Player: Player, SQUAD_MAX: SQUAD_MAX, Settings: Settings, World: World, XI: XI, awards: awards, cal: cal, clamp: clamp, dataclass: dataclass, defaultdict: defaultdict, digest: digest, eur: eur, fclamp: fclamp, field: field, gzip: gzip, json: json, math: math, natcomps: natcomps, os: os, parse_clubs: parse_clubs, pickle: pickle, random: random, replace: replace, shim: shim, statistics: statistics, wage_for: wage_for};
+})();
+
+// v16 Hall of Fame. Players and coaches are voted into four halls: a club's, a league's, a country's and the world's.
+// A vote is a vote by people: points only set the odds. Eligible five years after retirement, up to ten years on a ballot,
+// under 5% two years running and you come off, 75% to get in, and a limited number of places each year.
+// Everything here is deterministic from the cards and a hash of (seed, season, scope): it never touches the simulation's own random stream,
+// so a league's Hall of Fame day can be run lazily (when its season finishes) and the result is the same however it is reached.
+// Plain JS (not generated).
+$mods["hof"] = (function () {
+  // ---- tuning (calibrated by tools/t_hof_calib.js) -------------------------------------------------------------
+  const CFG = {
+    wait: 5, window: 10, pass: 0.75, floor: 0.05,
+    // per scope kind: gate = lowest score that gets on a ballot, mid = score with a 50% base vote, scale = how fast the vote rises
+    W: { gate: 45, mid: 92, scale: 12, slots: 3 },
+    C: { gate: 12, mid: 28, scale: 5, slots: 2 },
+    L: { gate: 12, mid: 28, scale: 6, slots: 2 },
+    K: { gate: 22, mid: 44, scale: 8, slots: 1 },
+    cw: { gate: 60, mid: 92, scale: 12, slots: 3 },     // coaches: world
+    cc: { gate: 14, mid: 34, scale: 9, slots: 1 },      // country (needs a spell coaching that nation)
+    cl: { gate: 30, mid: 54, scale: 9, slots: 1 },
+    ck: { gate: 24, mid: 38, scale: 6, slots: 1 },
+    noise: 0.05, ramp: 0.012, chaser: 0.3, veto_nat: 5,
+  };
+  const HP = { "Ballon d'Or": 15, "Golden Boot": 5, "Team of the Year": 4, "Young Player of the Year": 2, "league": 2, "cup": 3, "world": 5, "contin": 3, "nl": 1.5, "compaward": 1.5 };
+  // ---- hashing: a seeded stream that never touches w.rng -----------------------------------------------------------
+  function h32(s) { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
+  function rnd(s) { let a = (h32(s) + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }
+  const nrm = (s) => (rnd(s + "a") + rnd(s + "b") + rnd(s + "c") - 1.5) * 2;
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  const cget = (w, n, k, d) => { if (!w.clubs.has(n)) return d; const v = w.clubs.get_(n).get(k); return v === null || v === undefined ? d : v; };
+  const leagueOf = (w, club) => cget(w, club, "league", null);
+  const rd1 = (x) => Math.round(x * 10) / 10;
+  // ---- the store -------------------------------------------------------------------------------------------------
+  function ensure(w) {
+    if (!w.hof) w.hof = { v: 1, next: 1, cards: {}, bal: {}, ran: {}, res: {}, fell: [], acad: {}, founded: false };
+    return w.hof;
+  }
+  const scopeKind = (key) => key[0] === "W" ? "W" : key[0] === "C" ? "C" : key[0] === "L" ? "L" : "K";
+  const scopeName = (key) => key.length > 2 ? key.slice(2) : null;
+  const kindOf = (card, key) => (card.k === "c" ? "c" + scopeKind(key).toLowerCase() : scopeKind(key));
+  // ---- player scoring ----------------------------------------------------------------------------------------------
+  const quality = (ovr) => clamp((ovr - 72) / 3, -4, 8);                 // a poor late season is below zero: chasing can backfire
+  function awardPts(title, kind) { return kind === "compaward" ? HP.compaward : (HP[title] || 1); }
+  function pscores(w, p) {
+    const sc2c = {}, per = {};
+    for (const [s, c] of p.career) sc2c[s] = c;
+    const slot = (c) => per[c] || (per[c] = { n: 0, q: 0, ti: 0, cu: 0, cwc: 0, aw: 0, g: 0, a: 0, cs: 0, lg: leagueOf(w, c) });
+    for (const [s, c, ovr] of p.career) { if (!c || !w.clubs.has(c)) continue; const x = slot(c); x.n++; x.q += quality(ovr); }
+    for (const r of (p.stats || [])) { const x = r[1] && per[r[1]]; if (x) { x.g += r[2]; x.a += r[3]; x.cs += (r[4] || 0); } }
+    let wpts = 0, natHon = { world: 0, contin: 0, nl: 0 };
+    for (const [s, kind, title] of p.honours) {
+      const c = sc2c[s], x = c && per[c];
+      if (kind === "award" || kind === "compaward") { const v = awardPts(title, kind); wpts += v; if (x) x.aw += v; }
+      else if (kind === "league") { wpts += HP.league; if (x) x.ti++; }
+      else if (kind === "cup") { wpts += HP.cup; if (x) { if (title === "Club World Cup") x.cwc++; else x.cu++; } }
+      else if (kind === "world" || kind === "contin" || kind === "nl") { wpts += HP[kind]; natHon[kind]++; }
+    }
+    const nr = { seasons: 0, g: 0, a: 0 }, sn = new Set();
+    for (const r of (p.cstats || [])) if (r[2] === p.nat && w.nations.has(r[2])) { sn.add(r[0]); nr.g += r[3]; nr.a += r[4]; }
+    nr.seasons = sn.size;
+    const out = { W: 0, C: 0, L: {}, K: {}, nat: Object.assign(nr, natHon), clubs: per };
+    let totq = 0, ga = 0, seasons = 0;
+    const clubsUsed = Object.keys(per);
+    for (const c of clubsUsed) {
+      const x = per[c]; totq += Math.max(0, x.q); ga += x.g + x.a; seasons += x.n;
+      let sK = x.n * 1.2 + x.q + 7 * x.ti + 9 * x.cu + 12 * x.cwc + 0.9 * x.aw + 0.12 * (x.g + x.a) + 0.06 * x.cs;
+      if (clubsUsed.length === 1 && x.n >= 8) sK *= 1.15;
+      if (p.trn === c && x.n >= 6) sK += 4;
+      out.K[c] = rd1(Math.max(0, sK));
+      const lg = x.lg; if (lg) out.L[lg] = (out.L[lg] || 0) + x.n * 0.5 + 0.55 * x.q + 4 * x.ti + 4.5 * (x.cu + x.cwc) + 0.5 * x.aw + 0.07 * (x.g + x.a);
+    }
+    for (const k of Object.keys(out.L)) out.L[k] = rd1(Math.max(0, out.L[k]));
+    out.W = rd1(wpts + Math.max(0, p.peak - 80) * 2.2 + 0.5 * totq + 0.04 * ga);
+    out.C = rd1(0.45 * out.W + 2 * nr.seasons + 0.2 * (nr.g + nr.a) + 10 * natHon.world + 5 * natHon.contin + 2 * natHon.nl);
+    out.seasons = seasons;
+    return out;
+  }
+  // ---- coach scoring (from the Coach object itself, so a coach hired again keeps one record) ----------------------------
+  function stintsOf(co) {
+    if (co.stints && co.stints.length) return co.stints;
+    // older saves only know the clubs a coach worked at: spread his record over them
+    const cl = co.clubs || [], n = Math.max(1, cl.length), out = [];
+    cl.forEach((c, i) => out.push({ k: "club", t: c, f: 0, u: 0, s: co.seasons / n, ti: co.titles / n, cu: co.cups / n, cwc: co.cwc / n, w: co.w / n, d: co.d / n, l: co.l / n, est: true }));
+    return out;
+  }
+  function stintNums(w, co, st) {
+    if (st.est) return st;
+    const open = st.u === null || st.u === undefined;
+    if (!open) return st;
+    if (st.k === "nat") return Object.assign({}, st, { s: Math.max(0, w.season - st.f + 1), ti: 0, cu: 0, cwc: 0, w: 0, d: 0, l: 0 }, natTitles(w, st.t, st.f, w.season));
+    return Object.assign({}, st, { s: co.seasons - st.s0, ti: co.titles - st.t0, cu: co.cups - st.c0, cwc: co.cwc - st.x0, w: co.w - st.w0, d: co.d - st.d0, l: co.l - st.l0 });
+  }
+  function stintScore(st) {
+    const g = st.w + st.d + st.l, wp = g ? (st.w + 0.5 * st.d) / g : 0.5;
+    return st.s * 1.2 + 9 * st.ti + 14 * st.cu + 12 * st.cwc + (wp - 0.5) * 30 * Math.min(1, st.s / 5);
+  }
+  function cscores(w, co) {
+    const out = { W: 0, C: {}, L: {}, K: {}, nat: {} };
+    let tot = 0, aw = 0;
+    for (const h of (co.honours || [])) if (h[1] === "award") aw += (h[2] === "Coach of the Year" ? 8 : 3); else if (h[1] === "compaward") aw += 1.5;
+    for (const raw of stintsOf(co)) {
+      const st = stintNums(w, co, raw);
+      if (st.k === "club") {
+        const sc = stintScore(st); tot += sc;
+        out.K[st.t] = (out.K[st.t] || 0) + sc + 0.6 * (st.s || 0);
+        const lg = leagueOf(w, st.t); if (lg) out.L[lg] = (out.L[lg] || 0) + 0.8 * sc;
+      } else if (st.k === "nat") {
+        const sc = st.s * 2.5 + 25 * (st.wc || 0) + 12 * (st.ct || 0) + 5 * (st.nl || 0); tot += 0.7 * sc;
+        out.C[st.t] = (out.C[st.t] || 0) + sc; out.nat[st.t] = st;
+      }
+    }
+    out.W = rd1(tot + aw + (co.prestige || 0) * 0.15);
+    for (const o of [out.C, out.L, out.K]) for (const k of Object.keys(o)) o[k] = rd1(o[k] + aw * 0.3);
+    return out;
+  }
+  // ---- cards -------------------------------------------------------------------------------------------------------------
+  function newState(first, key) { return { first, n: 0, low: 0, status: "ballot", pct: 0, yr: null, via: null }; }
+  function gateOf(kind, s) { return s >= CFG[kind].gate; }
+  // a card keeps its bulky parts (career rows, honours, scores) as one JSON string, which keeps saves small; PARSED caches the parse
+  const PARSED = new WeakMap();
+  function dataOf(card) {
+    let d = PARSED.get(card);
+    if (!d) { d = card.d ? JSON.parse(card.d) : { cr: [], hon: [], sc: { W: 0, C: 0, L: {}, K: {} }, nat_rec: null }; PARSED.set(card, d); }
+    return d;
+  }
+  function listOn(H, key) { return H.bal[key] || (H.bal[key] = []); }
+  function put(H, card, key, state) { card.st[key] = state; listOn(H, (card.k === "c" ? "c" : "") + key).push(card.id); }
+  const cKey = (nat) => "C:" + nat;
+  function makePlayerCard(w, p, ret, firstMin) {
+    const H = ensure(w), sc = pscores(w, p), want = [];
+    const first = Math.max(ret + CFG.wait, firstMin || 0);
+    if (gateOf("W", sc.W)) want.push("W");
+    if (gateOf("C", sc.C)) want.push(cKey(p.nat));
+    for (const [lg, s] of Object.entries(sc.L)) if (gateOf("L", s)) want.push("L:" + lg);
+    for (const [c, s] of Object.entries(sc.K)) if (gateOf("K", s)) want.push("K:" + c);
+    if (!want.length) return null;
+    const id = "p" + (H.next++);
+    const card = { id, k: "p", uid: p.uid || null, name: p.name, nat: p.nat, pos: p.pos, peak: p.peak, ret, trn: p.trn || null, st: {}, vetoed: null, home: null,
+      d: JSON.stringify({ cr: p.career.map((r) => [r[0], r[1], r[2]]), hon: p.honours.map((h) => [h[0], h[1], h[2]]), sc: { W: sc.W, C: sc.C, L: sc.L, K: sc.K }, nat_rec: sc.nat }) };
+    card.home = bestHome(dataOf(card).sc.K);
+    H.cards[id] = card;
+    for (const key of want) put(H, card, key, newState(first));
+    return card;
+  }
+  function bestHome(K) { let b = null, bs = -1; for (const [c, s] of Object.entries(K)) if (s > bs) { b = c; bs = s; } return b; }
+  function makeCoachCard(w, co, ret, firstMin) {
+    const H = ensure(w), sc = cscores(w, co), want = [];
+    const first = Math.max(ret + CFG.wait, firstMin || 0);
+    if (gateOf("cw", sc.W)) want.push("W");
+    for (const [n, s] of Object.entries(sc.C)) if (gateOf("cc", s)) want.push("C:" + n);
+    for (const [lg, s] of Object.entries(sc.L)) if (gateOf("cl", s)) want.push("L:" + lg);
+    for (const [c, s] of Object.entries(sc.K)) if (gateOf("ck", s)) want.push("K:" + c);
+    if (!want.length) return null;
+    const id = "c" + (H.next++);
+    const card = { id, k: "c", co, name: co.name, nat: co.nat, ret, st: {}, vetoed: null };
+    H.cards[id] = card;
+    for (const key of want) put(H, card, key, newState(first));
+    return card;
+  }
+  // ---- retirement hooks (called from sim_core) ----------------------------------------------------------------------------
+  function onRetire(w, p) { const H = ensure(w); let card = null; try { acadRetire(w, p); card = makePlayerCard(w, p, w.season, 0); } catch (e) { card = null; } try { $mods.moves.retired(w, p, card); } catch (e) { } return card; }
+  function onCoachRetire(w, co) { const H = ensure(w); co.ret_s = w.season; closeStint(w, co); co.card = null; let card = null; try { card = makeCoachCard(w, co, w.season, 0); } catch (e) { card = null; } try { $mods.moves.coachRetired(w, co, card); } catch (e) { } return card; }
+  // coaches keep a list of stints: one per spell at a club or with a nation
+  function openStint(w, co, kind, team) {
+    const f0 = kind === "nat" ? w.season : w.season + 1;
+    if (!co.stints) {
+      co.stints = [];
+      const prior = kind === "club" ? (co.clubs || []).slice(0, -1) : (co.clubs || []), n = Math.max(1, prior.length);
+      if (co.seasons > 0) for (const c of prior) co.stints.push({ k: "club", t: c, f: 0, u: 0, s: co.seasons / n, ti: co.titles / n, cu: co.cups / n, cwc: co.cwc / n, w: co.w / n, d: co.d / n, l: co.l / n, est: true });
+    }
+    co.stints.push({ k: kind, t: team, f: f0, u: null, s0: co.seasons, t0: co.titles, c0: co.cups, x0: co.cwc, w0: co.w, d0: co.d, l0: co.l, wc0: 0 });
+  }
+  function closeStint(w, co, kind) {
+    const L = co.stints; if (!L || !L.length) return;
+    const st = L[L.length - 1]; if (st.u !== null && st.u !== undefined) return;
+    if (kind && st.k !== kind) return;
+    if (st.k === "acad") { Object.assign(st, { s: Math.max(0, w.season - st.f + 1), ti: 0, cu: 0, cwc: 0, w: 0, d: 0, l: 0, u: Math.max(st.f, w.season) }); return; }
+    const n = stintNums(w, co, st); Object.assign(st, { s: n.s, ti: n.ti, cu: n.cu, cwc: n.cwc, w: n.w, d: n.d, l: n.l, u: Math.max(st.f, st.k === "nat" ? w.season - 1 : w.season) });
+    if (st.k === "nat") { const t = natTitles(w, st.t, st.f, st.u); st.wc = t.wc; st.ct = t.ct; st.nl = t.nl; }
+  }
+  function natTitles(w, nation, f, u) {
+    let wc = 0, ct = 0, nl = 0;
+    for (const r of w.hist) { const s = r.get_("season"); if (s < f || s > u) continue; const a = r.get("wc"); if (a && a[0] === nation) wc++; const c = r.get("ct"); if (c) for (const v of c.valuesArr()) if (v[0] === nation) ct++; const n = r.get("nl"); if (n) for (const v of n.valuesArr()) if (v[0] === nation) nl++; }
+    return { wc, ct, nl };
+  }
+  function coachHired(w, co, club) { closeStint(w, co); openStint(w, co, "club", club); }
+  function coachLeft(w, co) { closeStint(w, co, "club"); }
+  function natCoachSet(w, co, nation) { closeStint(w, co, "nat"); if (nation) openStint(w, co, "nat", nation); }
+  // ---- chasers: a borderline player with the trait plays on, hoping the late seasons tip the vote -------------------------
+  const isChaser = (p) => rnd("chase|" + p.name + "|" + p.nat + "|" + (p.career.length ? p.career[0][0] : 0)) < CFG.chaser;
+  function borderline(w, p) {
+    const sc = pscores(w, p), t = (kind, s) => s < CFG[kind].mid + 1.1 * CFG[kind].scale && s >= CFG[kind].mid - 0.9 * CFG[kind].scale;
+    if (t("W", sc.W) || t("C", sc.C)) return true;
+    for (const s of Object.values(sc.L)) if (t("L", s)) return true;
+    for (const s of Object.values(sc.K)) if (t("K", s)) return true;
+    return false;
+  }
+  function stretch(w, p) {
+    if (p.age < 33 || p.age > 41 || p.career.length < 8 || !isChaser(p)) return false;
+    if (rnd("str|" + p.name + "|" + p.nat + "|" + p.age) > 0.75) return false;
+    return borderline(w, p);
+  }
+  // ---- voting ----------------------------------------------------------------------------------------------------------------
+  const scoreOf = (w, card, key) => {
+    if (card.k === "p") { const s = dataOf(card).sc; return key === "W" ? s.W : key[0] === "C" ? s.C : key[0] === "L" ? (s.L[scopeName(key)] || 0) : (s.K[scopeName(key)] || 0); }
+    const s = SC.get(card) || (SC.set(card, cscores(w, card.co)), SC.get(card)); return key === "W" ? s.W : key[0] === "C" ? (s.C[scopeName(key)] || 0) : key[0] === "L" ? (s.L[scopeName(key)] || 0) : (s.K[scopeName(key)] || 0);
+  };
+  const SC = new WeakMap();
+  const working = (card) => card.k === "c" && (card.co.club != null || card.co.intl != null);
+  function pctFor(w, card, key, Y) {
+    const kind = kindOf(card, key), C = CFG[kind], st = card.st[key], n = st.n;
+    const s = scoreOf(w, card, key);
+    const base = 1 / (1 + Math.exp(-(s - C.mid) / C.scale));
+    return clamp(base + nrm(w.seed + "|" + Y + "|" + key + "|" + card.id) * CFG.noise + CFG.ramp * (n - 1), 0, 0.99);
+  }
+  const entry = (card, key, st, extra) => Object.assign({ id: card.id, name: card.name, nat: card.nat, pos: card.pos || null, k: card.k, pct: Math.round(st.pct * 1000) / 1000, n: st.n, left: Math.max(0, CFG.window - st.n), ret: card.ret }, extra || {});
+  // one vote for one scope in one year. kindK is "p" (players) or "c" (coaches). Returns {ind, bal, off}
+  function runScope(w, key, Y, kindK, slotsOverride) {
+    const H = ensure(w), res = { ind: [], bal: [], off: [] }, lk = (kindK === "c" ? "c" : "") + key, ids = H.bal[lk] || [];
+    const cands = [], waiting = [];
+    for (const id of ids) {
+      const card = H.cards[id]; if (!card) continue;
+      const st = card.st[key];
+      if (!st || st.status !== "ballot") continue;
+      if (st.first > Y || working(card)) { waiting.push(id); continue; }
+      cands.push(card);
+    }
+    cands.sort((a, b) => (a.id < b.id ? -1 : 1));
+    const kind = kindK === "c" ? "c" + scopeKind(key).toLowerCase() : scopeKind(key), C = CFG[kind], slots = slotsOverride || C.slots;
+    for (const card of cands) { const st = card.st[key]; st.n += 1; st.pct = pctFor(w, card, key, Y); SC.delete(card); }
+    const eligible = cands.filter((c) => c.st[key].pct >= CFG.pass).sort((a, b) => b.st[key].pct - a.st[key].pct || (a.id < b.id ? -1 : 1));
+    const chosen = new Set(eligible.slice(0, slots).map((c) => c.id)), keep = waiting.slice();
+    for (const card of cands) {
+      const st = card.st[key];
+      if (chosen.has(card.id)) { st.status = "in"; st.yr = Y; res.ind.push(entry(card, key, st)); acadCredit(H, card, key); continue; }
+      st.low = st.pct < CFG.floor ? st.low + 1 : 0;
+      const why = st.low >= 2 ? "support" : st.n >= CFG.window ? "time" : null;
+      if (why) { st.status = "off"; res.off.push(entry(card, key, st, { why })); }
+      else { res.bal.push(entry(card, key, st, { waiting: st.pct >= CFG.pass })); keep.push(card.id); }
+    }
+    if (keep.length) H.bal[lk] = keep; else delete H.bal[lk];
+    res.bal.sort((a, b) => b.pct - a.pct);
+    return res;
+  }
+  const rkey = (key, Y) => key + "|" + Y;
+  function store(w, key, Y, res) {
+    const H = ensure(w);
+    if (res.ind.length || res.bal.length || res.off.length) H.res[rkey(key, Y)] = res;
+  }
+  function news(w, text) { w.news("hof", text); }
+  // a league's Hall of Fame day: the league board votes on the league's hall, each club's directors on theirs
+  function runLeagueDay(w, ln, Y) {
+    const H = ensure(w), g = "LD|" + ln + "|" + Y;
+    if (H.ran[g]) return false;
+    H.ran[g] = true;
+    for (const kk of ["p", "c"]) {
+      const r = runScope(w, "L:" + ln, Y, kk); store(w, (kk === "c" ? "c" : "") + "L:" + ln, Y, r);
+      for (const e of r.ind) news(w, e.name + " is inducted into the " + ln + " Hall of Fame");
+    }
+    for (const club of w.leagues.get_(ln).get_("clubs")) {
+      for (const kk of ["p", "c"]) {
+        if (!H.bal[(kk === "c" ? "c" : "") + "K:" + club]) continue;
+        const r = runScope(w, "K:" + club, Y, kk); store(w, (kk === "c" ? "c" : "") + "K:" + club, Y, r);
+        for (const e of r.ind) news(w, e.name + " enters the " + club + " Hall of Fame");
+      }
+    }
+    return true;
+  }
+  const natRecordPoor = (card) => { const r = dataOf(card).nat_rec || { seasons: 0, g: 0, a: 0, world: 0, contin: 0, nl: 0 }; return r.seasons < CFG.veto_nat && !(r.world || r.contin); };
+  function vetoText(card) { const r = dataOf(card).nat_rec; return card.nat + " did not honour " + card.name + ". Federation veto: " + r.seasons + " national-team " + (r.seasons === 1 ? "season" : "seasons") + ", " + (r.g + r.a) + " goals and assists, no tournament honours."; }
+  function setIn(H, card, key, Y, via) {
+    acadCredit(H, card, key);
+    const st = card.st[key], lk = (card.k === "c" ? "c" : "") + key;
+    st.status = "in"; st.yr = Y; st.via = via || null; st.pct = st.pct || 1;
+    if (H.bal[lk]) { H.bal[lk] = H.bal[lk].filter((x) => x !== card.id); if (!H.bal[lk].length) delete H.bal[lk]; }
+  }
+  // the end-of-year day: the world votes first, then each federation (it honours a world inductee unless his national record is poor)
+  function runYearDay(w, Y) {
+    const H = ensure(w), g = "YD|" + Y;
+    if (H.ran[g]) return false;
+    for (const ln of w.leagues.keysArr()) runLeagueDay(w, ln, Y);
+    H.ran[g] = true;
+    const vetoes = [];
+    for (const kk of ["p", "c"]) {
+      const r = runScope(w, "W", Y, kk); store(w, (kk === "c" ? "c" : "") + "W", Y, r);
+      for (const e of r.ind) {
+        const card = H.cards[e.id]; news(w, e.name + " is inducted into the World Hall of Fame");
+        if (kk !== "p") continue;
+        const key = cKey(card.nat), cs = card.st[key];
+        if (cs && cs.status === "in") continue;
+        if (natRecordPoor(card)) { card.vetoed = { yr: Y, text: vetoText(card) }; vetoes.push({ id: card.id, name: card.name, nat: card.nat, text: card.vetoed.text }); continue; }
+        if (!cs) { card.st[key] = { first: Y, n: 0, low: 0, status: "in", pct: 1, yr: Y, via: "world" }; acadCredit(H, card, key); } else setIn(H, card, key, Y, "world");
+      }
+    }
+    if (vetoes.length) H.res["VETO|" + Y] = vetoes;
+    for (const lk of Object.keys(H.bal).filter((k) => /^c?C:/.test(k)).sort()) {
+      const kk = lk[0] === "c" ? "c" : "p", key = kk === "c" ? lk.slice(1) : lk;
+      const r = runScope(w, key, Y, kk); store(w, lk, Y, r);
+      for (const e of r.ind) news(w, e.name + " is inducted into the " + scopeName(key) + " Hall of Fame" + (kk === "c" ? " as a coach" : ""));
+    }
+    prune(w, Y);
+    trimRes(H, Y);
+    return true;
+  }
+  // old ballots are dropped after three years and old drop-offs after ten: the inductees list is the lasting record
+  function trimRes(H, Y) {
+    for (const k of Object.keys(H.res)) {
+      const v = H.res[k]; if (!v.bal) continue;
+      const y = +k.slice(k.lastIndexOf("|") + 1);
+      if (y < Y - 2 && v.bal.length) v.bal = [];
+      if (y < Y - 10 && v.off.length) v.off = [];
+      if (!v.ind.length && !v.bal.length && !v.off.length) delete H.res[k];
+    }
+  }
+  function prune(w, Y) {
+    const H = ensure(w);
+    for (const id of Object.keys(H.cards)) {
+      const c = H.cards[id], keys = Object.keys(c.st);
+      if (keys.some((k) => c.st[k].status !== "off")) continue;
+      if (c.k === "p" && (c.st.W || c.st[cKey(c.nat)])) { const d = dataOf(c); H.fell.push({ id: c.id, name: c.name, nat: c.nat, pos: c.pos, peak: c.peak, ret: c.ret, y: Y, W: d.sc.W, C: d.sc.C }); if (H.fell.length > 300) H.fell.shift(); }
+      delete H.cards[id];
+    }
+  }
+
+  // ---- academies: prestige earned from graduates, and the academy manager --------------------------------------------------------
+  // A graduate (a player whose academy is p.trn) earns his academy points for how good he became, what he won, and every hall he enters.
+  const HALL_PTS = { W: 25, C: 12, L: 8, K: 4 };
+  function gradPts(p) {
+    let hp = 0; for (const h of (p.honours || [])) hp += h[1] === "award" ? (HP[h[2]] || 1) : (HP[h[1]] || 1);
+    return Math.pow(Math.max(0, p.peak - 65), 1.3) * 0.12 + hp * 0.25;
+  }
+  function acadOf(H, club) { return H.acad[club] || (H.acad[club] = { n: 0, pros: 0, stars: 0, pts: 0, halls: 0, best: [], hist: [], prestige: 0 }); }
+  function acadRetire(w, p) {
+    if (!p.trn || !w.clubs.has(p.trn)) return;
+    const A = acadOf(ensure(w), p.trn);
+    A.n++; if (p.career.length >= 5) A.pros++; if (p.peak >= 80) A.stars++;
+    A.pts += gradPts(p);
+    A.best.push([p.name, p.nat, p.peak, p.uid || null, w.season]); A.best.sort((a, b) => b[2] - a[2]); A.best = A.best.slice(0, 6);
+  }
+  function acadCredit(H, card, key) {
+    if (card.k !== "p" || !card.trn) return;
+    const A = H.acad[card.trn]; if (!A) return;
+    A.halls += HALL_PTS[scopeKind(key)] || 0;
+  }
+  // recompute every academy's prestige from retired graduates (kept totals) plus the graduates still playing
+  function acadTick(w, mk) {
+    const H = ensure(w), live = {};
+    for (const p of w.players) if (p.trn) { const x = live[p.trn] || (live[p.trn] = { pts: 0, n: 0, stars: 0, pros: 0 }); x.pts += gradPts(p); x.n++; if (p.peak >= 80) x.stars++; if (p.career.length >= 5) x.pros++; }
+    for (const club of w.clubs.keysArr()) {
+      const A = acadOf(H, club), l = live[club] || { pts: 0, n: 0, stars: 0, pros: 0 };
+      const raw = A.pts + l.pts + A.halls;
+      A.live = l.n; A.stars_live = l.stars; A.pros_live = l.pros; A.raw = Math.round(raw * 10) / 10;
+      A.prestige = Math.round(100 * (1 - Math.exp(-raw / 300)) * 10) / 10;
+      A.hist.push([w.season, A.prestige]); if (A.hist.length > 8) A.hist.shift();
+    }
+    if (mk) acadManagers(w, mk, true);
+  }
+  // odds for a fresh academy manager: [strong, average, weak]; prestige and how big the academy is both count
+  function mgrOdds(w, club) {
+    const A = ensure(w).acad[club], lvl = cget(w, club, "acad", 3), q = clamp(0.6 * ((A ? A.prestige : 0) / 100) * 2 + 0.4 * (lvl / 10), 0, 1);
+    const strong = 0.12 + 0.34 * q, weak = 0.43 - 0.29 * q;
+    return [strong, 1 - strong - weak, weak];
+  }
+  function drawGrade(w, club, season, tag) { const o = mgrOdds(w, club), r = rnd(w.seed + "|" + season + "|" + club + "|mgr|" + (tag || "")); return r < o[0] ? 1 : r < o[0] + o[1] ? 0 : -1; }
+  function acadManagers(w, mk, grow) {
+    const H = ensure(w);
+    for (const club of w.clubs.keysArr()) {
+      const c = w.clubs.get_(club); let m = c.get("acad_mgr");
+      if (m && grow) { m.age += 1; m.prestige = Math.min(40, m.prestige + 1); if (m.age >= 62) { closeStint(w, m); m = null; } }
+      if (!m) {
+        const g = drawGrade(w, club, w.season), nat = rnd(w.seed + "|" + w.season + "|" + club + "|mnat") < 0.75 ? c.get_("country") : natPick(w, club);
+        m = mk(club, g, nat, 36 + Math.floor(rnd(w.seed + "|" + w.season + "|" + club + "|mage") * 14));
+        openStint(w, m, "acad", club);
+        c.set("acad_mgr", m);
+        H.mgrlog = H.mgrlog || {}; (H.mgrlog[club] = H.mgrlog[club] || []).push([w.season, m.name, g]); if (H.mgrlog[club].length > 6) H.mgrlog[club].shift();
+      }
+    }
+  }
+  function acadInit(w, mk) { acadManagers(w, mk, false); }
+  function natPick(w, club) { const names = w.nat_names, i = Math.floor(rnd(w.seed + "|" + w.season + "|" + club + "|mn2") * names.length); return names[i]; }
+  // the manager was promoted to the first team: the academy draws a fresh one next tick
+  function mgrPromoted(w, co, club) { co.acad_from = club; }
+  const mgrGrade = (w, club) => { const m = w.clubs.get_(club).get("acad_mgr"); return m ? m.grade : 0; };
+  function acadView(w, club) {
+    const H = ensure(w), A = acadOf(H, club), c = w.clubs.get_(club), m = c.get("acad_mgr"), odds = mgrOdds(w, club);
+    const ranks = w.clubs.keysArr().map((n) => [n, (H.acad[n] || { prestige: 0 }).prestige]).sort((a, b) => b[1] - a[1]);
+    const rank = ranks.findIndex((x) => x[0] === club) + 1;
+    const live = w.players.filter((p) => p.trn === club).sort((a, b) => b.peak - a.peak).slice(0, 5).map((p) => ({ name: p.name, nat: p.nat, peak: p.peak, uid: p.uid || null, active: true, club: p.club, age: p.age }));
+    const best = A.best.map((b) => ({ name: b[0], nat: b[1], peak: b[2], uid: b[3], active: false })).concat(live).sort((a, b) => b.peak - a.peak).slice(0, 6);
+    const inHalls = []; for (const id of Object.keys(H.cards)) { const k = H.cards[id]; if (k.k === "p" && k.trn === club && Object.values(k.st).some((x) => x.status === "in")) inHalls.push(id); }
+    const d5 = A.hist.length > 5 ? A.prestige - A.hist[A.hist.length - 6][1] : A.hist.length > 1 ? A.prestige - A.hist[0][1] : 0;
+    return { club, prestige: A.prestige, rank, of: ranks.length, graduates: A.n + (A.live || 0), pros: A.pros + (A.pros_live || 0), stars: A.stars + (A.stars_live || 0), halls: A.halls, rising: Math.round(d5 * 10) / 10,
+      best, in_halls: inHalls, odds: { strong: odds[0], average: odds[1], weak: odds[2] },
+      manager: m ? { name: m.name, nat: m.nat, age: m.age, grade: m.grade, since: m.acad_since || null } : null, past: (H.mgrlog && H.mgrlog[club]) || [], level: cget(w, club, "acad", 3) };
+  }
+  function acadRanking(w, scope, name) {
+    const H = ensure(w), rows = [];
+    for (const club of w.clubs.keysArr()) {
+      const c = w.clubs.get_(club), A = H.acad[club] || { prestige: 0, hist: [] }, lg = c.get_("league"), cf = c.get_("confed");
+      if (scope === "league" && lg !== name) continue; if (scope === "continent" && cf !== name) continue;
+      const d5 = A.hist && A.hist.length > 1 ? A.prestige - A.hist[Math.max(0, A.hist.length - 6)][1] : 0;
+      rows.push({ club, league: lg, confed: cf, prestige: A.prestige, level: Math.round(cget(w, club, "acad", 3) * 10) / 10, rising: Math.round(d5 * 10) / 10, graduates: (A.n || 0) + (A.live || 0), stars: (A.stars || 0) + (A.stars_live || 0), halls: A.halls || 0, mgr: mgrGrade(w, club) });
+    }
+    rows.sort((a, b) => b.prestige - a.prestige || (a.club < b.club ? -1 : 1)); rows.forEach((r, i) => (r.rank = i + 1));
+    const lv = rows.map((r) => r.level).sort((a, b) => b - a), top = lv[Math.floor(lv.length / 4)] || 0, med = rows.map((r) => r.prestige).sort((a, b) => a - b)[Math.floor(rows.length / 2)] || 0;
+    for (const r of rows) r.under = r.level >= top && r.prestige <= med;
+    return rows;
+  }
+  // ---- the rollover hook and migration -----------------------------------------------------------------------------------------
+  function rollover(w, Y) { ensure(w); foundOnce(w); return runYearDay(w, Y); }
+  // a save from before v16 has no cards: the retired stars and retired coaches become a founding class, voted on from now
+  function foundOnce(w) {
+    const H = ensure(w);
+    if (H.founded) return false;
+    H.founded = true;
+    for (const p of w.retired_players) {
+      const ret = p.career.length ? p.career[p.career.length - 1][0] : w.season - 1;
+      try { makePlayerCard(w, p, ret, w.season); } catch (e) { /* skip */ }
+    }
+    for (const co of (w.retired_all || [])) {
+      if (co.seasons < 6 || co.club != null || co.intl != null) continue;
+      if (co.ret_s === undefined) co.ret_s = w.season - 1;
+      try { makeCoachCard(w, co, co.ret_s, w.season); } catch (e) { /* skip */ }
+    }
+    return true;
+  }
+  // a fresh World starts founded: nothing to found
+  function init(w) { const H = ensure(w); H.founded = true; return H; }
+  return { CFG, HP, ensure, init, pscores, cscores, makePlayerCard, makeCoachCard, onRetire, onCoachRetire, coachHired, coachLeft, natCoachSet, closeStint, openStint,
+    acadTick, acadInit, acadView, acadRanking, mgrPromoted, mgrGrade, mgrOdds, drawGrade, stretch, isChaser, borderline, runScope, dataOf, cKey, runLeagueDay, runYearDay, rollover, foundOnce, prune, scoreOf, pctFor, rnd, nrm, leagueOf, stintsOf, stintNums, rkey, scopeName, scopeKind, quality, natRecordPoor };
+})();
+
+// v16 Off-season moves: one compact log of everything that changes hands between two seasons (transfers, free agents signed,
+// coaches hired / fired / retired, academy managers promoted, national coaches, player retirements) so the Off-season page can show,
+// sort and walk through them. Nothing here changes the simulation: the hooks only write down what already happened.
+// While a rollover runs, events sit in a module variable (never saved); at the end of it they are cut down and stored as ONE JSON string per season in w.mv.s.
+// Plain JS (not generated).
+$mods["moves"] = (function () {
+  const KEEP = 10;                                           // seasons of detail kept
+  const CAP = { t: 320, f: 160, p: 160, c: 200 };
+  let CUR = null;                                            // { w, buf, rel: Map(player -> club it was released by) }
+  const ensure = (w) => w.mv || (w.mv = { v: 1, s: {} });
+  const att = (w, n) => { try { return n && w.clubs.has(n) ? Math.round(w.attr(n) * 10) / 10 : null; } catch (e) { return null; } };
+  const on = (w) => CUR && CUR.w === w;
+  const lg = (w, n) => { try { return w.clubs.get_(n).get_("league"); } catch (e) { return null; } };
+  const r1 = (x) => Math.round(x * 10) / 10;
+  const base = (w, p) => ({ n: p.name, u: 0, nat: p.nat, pos: p.pos, age: p.age, ovr: p.ovr, pot: p.pot, p: p });
+
+  function begin(w) { ensure(w); try { w.ensure_uids(); } catch (e) { } CUR = { w, buf: [], rel: new Map() }; }
+  function transfer(w, p, seller, buyer, fee, kind, rival) {
+    if (!on(w)) return;
+    const a0 = att(w, seller), a1 = att(w, buyer);
+    CUR.buf.push(Object.assign(base(w, p), { k: "t", f: seller, t: buyer, fl: lg(w, seller), tl: lg(w, buyer), fee: r1(fee), kd: kind, a: a0 == null || a1 == null ? null : r1(a1 - a0), rv: rival ? 1 : 0, wg: r1(p.wage || 0) }));
+  }
+  function released(w, p, club) { if (on(w) && club) CUR.rel.set(p, club); }
+  function signed(w, p, club, wage, first) {
+    if (!on(w)) return;
+    const from = CUR.rel.get(p) || null, a0 = from ? att(w, from) : null, a1 = att(w, club);
+    CUR.rel.delete(p);
+    CUR.buf.push(Object.assign(base(w, p), { k: "f", f: from, t: club, fl: from ? lg(w, from) : null, tl: lg(w, club), wg: r1(wage || 0), a: a0 == null || a1 == null ? null : r1(a1 - a0), first: first ? 1 : 0 }));
+  }
+  function retired(w, p, card) {
+    if (!on(w)) return;
+    let pr = 0; try { const sc = $mods.hof.pscores(w, p); pr = Math.round(sc.W); } catch (e) { }
+    CUR.buf.push(Object.assign(base(w, p), { k: "p", pk: p.peak, c: p.club || null, cl: p.club ? lg(w, p.club) : null, pr, hid: card ? card.id : null, ss: (p.career || []).length, tn: (p.honours || []).length }));
+  }
+  const cbase = (co) => ({ n: co.name, nat: co.nat, age: co.age, pr: r1(co.prestige), ss: co.seasons, ti: co.titles, cu: co.cups, cwc: co.cwc });
+  function coachOut(w, co, club, reason) {
+    if (!on(w)) return;
+    CUR.buf.push(Object.assign(cbase(co), { k: reason === "fired" ? "x" : "q", f: club, fl: lg(w, club) }));
+  }
+  function coachRetired(w, co, card) {
+    if (!on(w)) return;
+    const club = co.last_club || null;
+    CUR.buf.push(Object.assign(cbase(co), { k: "cr", f: club, fl: club ? lg(w, club) : null, hid: card ? card.id : null }));
+  }
+  function coachIn(w, co, club) {
+    if (!on(w)) { co.acad_from = null; return; }
+    const prevA = co.prev_attr || 0, a1 = att(w, club);
+    const acadFrom = co.acad_from || null; co.acad_from = null;
+    const src = acadFrom ? "acad" : (co.seasons === 0 && !co.last_club && !(co.clubs && co.clubs.length > 1)) ? "new" : co.last_club ? "club" : "pool";
+    CUR.buf.push(Object.assign(cbase(co), { k: "h", t: club, tl: lg(w, club), f: acadFrom || co.last_club || null, src, a: prevA > 0 && a1 != null && src !== "acad" ? r1(a1 - prevA) : null, ua: co.unemployed_years || 0 }));
+  }
+  function natCycle(w, before, after) {
+    if (!on(w)) return;
+    for (const nm of Object.keys(after)) {
+      const nc = after[nm], oc = before[nm] || null;
+      if (nc === oc) continue;
+      CUR.buf.push(Object.assign(cbase(nc), { k: "n", t: nm, prev: oc ? oc.name : null, prevPr: oc ? r1(oc.prestige) : null, home: nc.nat === nm ? 1 : 0, src: nc.seasons === 0 && !(nc.clubs && nc.clubs.length) ? "new" : "pool" }));
+    }
+  }
+  // end of the rollover: drop what is not interesting, store the rest as one string
+  function finish(w, season) {
+    if (!on(w)) return;
+    const M = ensure(w), buf = CUR.buf, rel = CUR.rel; CUR = null;
+    try { w.ensure_uids(); } catch (e) { }
+    const fa = new Set(buf.filter((e) => e.k === "f").map((e) => e.p));
+    for (const [p, club] of rel) if (!fa.has(p) && p.club == null && p.ovr >= 66) buf.push(Object.assign(base(w, p), { k: "r", f: club, fl: lg(w, club), wg: r1(p.wage || 0), a: null }));
+    for (const e of buf) { if (e.p) { e.u = e.p.uid || 0; delete e.p; } }
+    const out = [];
+    const keep = (kinds, cap, score) => { const L = buf.filter((e) => kinds.includes(e.k)).sort((a, b) => score(b) - score(a)); for (const e of L.slice(0, cap)) out.push(e); return L.length; };
+    const cnt = {};
+    cnt.t = keep(["t"], CAP.t, (e) => e.fee + e.ovr);
+    cnt.f = keep(["f", "r"], CAP.f, (e) => e.ovr * 2 + e.pot * (e.age <= 21 ? 1 : 0.3));
+    cnt.p = keep(["p"], CAP.p, (e) => e.pr + e.pk * 3);
+    cnt.c = keep(["h", "x", "q", "cr", "n"], CAP.c, (e) => e.pr);
+    cnt.h = buf.filter((e) => e.k === "h").length; cnt.x = buf.filter((e) => e.k === "x").length; cnt.q = buf.filter((e) => e.k === "q").length; cnt.cr = buf.filter((e) => e.k === "cr").length; cnt.n = buf.filter((e) => e.k === "n").length;
+    cnt.fa = buf.filter((e) => e.k === "f" && !e.first).length; cnt.first = buf.filter((e) => e.k === "f" && e.first).length; cnt.rel = buf.filter((e) => e.k === "r").length; cnt.ac = buf.filter((e) => e.k === "h" && e.src === "acad").length;
+    M.s[season] = JSON.stringify({ ev: out, cnt });
+    for (const k of Object.keys(M.s)) if (+k <= season - KEEP) delete M.s[k];
+  }
+  const PARSED = new WeakMap();
+  function dataOf(w, season) {
+    const M = ensure(w), s = M.s[season]; if (!s) return null;
+    const hit = PARSED.get(M); if (hit && hit.s === s && hit.season === season) return hit.d;
+    const d = JSON.parse(s); PARSED.set(M, { s, season, d }); return d;
+  }
+  return { ensure, begin, transfer, released, signed, retired, coachOut, coachRetired, coachIn, natCycle, finish, dataOf, KEEP };
+})();
+
+// v16 Hall of Fame pages: plain reads over the cards and results in w.hof. Nothing here changes the simulation
+// (apart from running a league's Hall of Fame day a little early, which gives the same result as the rollover would).
+// Plain JS (not generated).
+$mods["hofpages"] = (function () {
+  const H = $mods.hof;
+  const TIERS = ["W", "C", "L", "K"], TIER_NAME = { W: "World", C: "Country", L: "League", K: "Club" };
+  const label = (w, y) => $mods.cal.season_label(w.cfg.start_year, y);
+  const st = (w) => H.ensure(w);
+  const cardOf = (w, id) => st(w).cards[id] || null;
+  const kindOfKey = (key) => key[0];
+  // which scope does a card's state key belong to
+  const tierOf = (key) => key === "W" ? "W" : key[0];
+  const nameOf = (key) => (key.length > 2 ? key.slice(2) : null);
+  // the highest tier a card is in, with the scope behind it (for the one badge on a row)
+  function badge(card) {
+    let best = null;
+    for (const [key, s] of Object.entries(card.st)) {
+      if (s.status !== "in") continue;
+      const t = tierOf(key), rank = TIERS.indexOf(t);
+      if (!best || rank < best.rank || (rank === best.rank && s.yr < best.yr)) best = { tier: t, scope: nameOf(key), yr: s.yr, rank };
+    }
+    if (!best) return null;
+    return { tier: best.tier, scope: best.scope, yr: best.yr };
+  }
+  // one line of career for a row
+  function line(w, card) {
+    if (card.k === "c") {
+      const co = card.co, bits = [co.seasons + " seasons"];
+      if (co.titles) bits.push(co.titles + (co.titles === 1 ? " league title" : " league titles"));
+      if (co.cups) bits.push(co.cups + (co.cups === 1 ? " continental cup" : " continental cups"));
+      if (co.cwc) bits.push(co.cwc + " Club World Cup");
+      return bits.join(", ");
+    }
+    const d = H.dataOf(card), c = {}; for (const h of d.hon) { const k = h[1] === "award" ? h[2] : h[1]; c[k] = (c[k] || 0) + 1; }
+    const bits = [d.cr.length + " seasons"];
+    if (c.league) bits.push(c.league + (c.league === 1 ? " league title" : " league titles"));
+    if (c.cup) bits.push(c.cup + (c.cup === 1 ? " continental cup" : " continental cups"));
+    if (c.world) bits.push(c.world + " World Cup" + (c.world === 1 ? "" : "s"));
+    if (c["Ballon d'Or"]) bits.push(c["Ballon d'Or"] + " Ballon d'Or");
+    return bits.join(", ");
+  }
+  function row(w, card, extra) {
+    const b = badge(card);
+    return Object.assign({ id: card.id, k: card.k, name: card.name, nat: card.nat, pos: card.k === "p" ? card.pos : null, ret: card.ret, retired: label(w, card.ret),
+      years: card.k === "p" ? yearsOf(card) : null, badge: b, line: line(w, card), home: card.k === "p" ? card.home : null }, extra || {});
+  }
+  const yearsOf = (card) => { const cr = H.dataOf(card).cr; return cr.length ? [cr[0][0], cr[cr.length - 1][0]] : null; };
+  const entryRow = (w, e, key) => {
+    const card = cardOf(w, e.id);
+    return Object.assign({}, e, { retired: label(w, e.ret), badge: card ? badge(card) : null, line: card ? line(w, card) : "", home: card && card.k === "p" ? card.home : null,
+      years: card && card.k === "p" ? yearsOf(card) : null, still: !!card });
+  };
+  // ---- the chain: where a person stands in each of the four halls ----------------------------------------------
+  const STATUS_RANK = { in: 0, ballot: 1, off: 2 };
+  function chain(w, card) {
+    const out = { W: null, C: null, L: null, K: null, all: [], veto: card.vetoed || null };
+    for (const [key, s] of Object.entries(card.st)) {
+      const t = tierOf(key), scope = nameOf(key);
+      const item = { tier: t, scope, status: s.status, yr: s.yr, label: s.yr ? label(w, s.yr) : null, n: s.n, pct: s.pct, first: s.first, left: Math.max(0, H.CFG.window - s.n), via: s.via };
+      if (s.status === "in") out.all.push(item);
+      const cur = out[t];
+      if (!cur || STATUS_RANK[s.status] < STATUS_RANK[cur.status] || (STATUS_RANK[s.status] === STATUS_RANK[cur.status] && (s.yr || 0) > (cur.yr || 0) && s.status === "in" && false)) out[t] = item;
+    }
+    out.all.sort((a, b) => TIERS.indexOf(a.tier) - TIERS.indexOf(b.tier) || a.yr - b.yr);
+    return out;
+  }
+  // ---- the world day (end of year): final-year watch, the vote, who fell off -----------------------------------
+  function v_day(w, Y) {
+    const h = st(w), fav = favourites(w, Y);
+    const res = (key) => h.res[key + "|" + Y] || { ind: [], bal: [], off: [] };
+    const wp = res("W"), wc = res("cW");
+    const prev = h.res["W|" + (Y - 1)] || { bal: [] }, prevMap = {}; for (const e of prev.bal) prevMap[e.id] = e.pct;
+    const all = wp.ind.concat(wp.bal, wp.off);
+    const watch = all.filter((e) => e.left <= 2).sort((a, b) => (b.pct) - (a.pct)).slice(0, 8).map((e) => {
+      const r = entryRow(w, e, "W"); r.last = prevMap[e.id] === undefined ? null : prevMap[e.id]; delete r.pct; return r;
+    });
+    const inducted = wp.ind.map((e) => entryRow(w, e, "W")), missed = wp.bal.filter((e) => e.pct >= 0.4 || e.left <= 1).slice(0, 8).map((e) => entryRow(w, e, "W"));
+    const fell = wp.off.map((e) => entryRow(w, e, "W"));
+    const vetoes = (h.res["VETO|" + Y] || []);
+    return { season: Y, label: label(w, Y), watch, inducted, missed, fell, vetoes, coaches: { inducted: wc.ind.map((e) => entryRow(w, e, "cW")), missed: wc.bal.slice(0, 5).map((e) => entryRow(w, e, "cW")), fell: wc.off.map((e) => entryRow(w, e, "cW")) },
+      favs: fav, cfg: { window: H.CFG.window, pass: H.CFG.pass, floor: H.CFG.floor, wait: H.CFG.wait } };
+  }
+  // what the followed leagues and nations did this year
+  function favourites(w, Y) {
+    const h = st(w), out = [];
+    for (const f of (w.favs || [])) {
+      const ln = f.startsWith("L:") ? f.slice(2) : null, nat = f.startsWith("nation:") ? f.slice(7) : null;
+      if (ln && w.leagues.has(ln)) { const r = h.res["L:" + ln + "|" + Y]; if (r) out.push({ kind: "league", name: ln, inducted: r.ind.map((e) => e.name) }); else out.push({ kind: "league", name: ln, inducted: [] }); }
+      else if (nat && w.nations.has(nat)) { const r = h.res["C:" + nat + "|" + Y]; out.push({ kind: "nation", name: nat, inducted: r ? r.ind.map((e) => e.name) : [] }); }
+    }
+    return out;
+  }
+  // ---- a league's Hall of Fame day ---------------------------------------------------------------------------------
+  function leagueDone(w, ln) { const lc = w.comps.get(("L:" + ln)); return !!lc && !w.missing(lc).length; }
+  function v_leagueday(w, ln, Y) {
+    if (!w.leagues.has(ln)) throw new Error("unknown league");
+    Y = Y || w.season;
+    const h = st(w), ready = Y < w.season || leagueDone(w, ln);
+    if (ready) H.runLeagueDay(w, ln, Y);
+    const res = (key) => h.res[key + "|" + Y] || { ind: [], bal: [], off: [] };
+    const lp = res("L:" + ln), lcoach = res("cL:" + ln);
+    const clubs = w.leagues.get_(ln).get_("clubs").map((c) => {
+      const p = res("K:" + c), co = res("cK:" + c);
+      return { club: c, inducted: p.ind.map((e) => entryRow(w, e, "K")).concat(co.ind.map((e) => entryRow(w, e, "cK"))), ballot: p.bal.length + co.bal.length };
+    });
+    clubs.sort((a, b) => b.inducted.length - a.inducted.length || (a.club < b.club ? -1 : 1));
+    const nL = lp.ind.length + lcoach.ind.length, nK = clubs.reduce((a, c) => a + c.inducted.length, 0);
+    return { ready, league: ln, season: Y, label: label(w, Y), nLeague: nL, nClubs: nK,
+      league_ind: lp.ind.map((e) => entryRow(w, e, "L")).concat(lcoach.ind.map((e) => entryRow(w, e, "cL"))), ballot: lp.bal.slice(0, 12).map((e) => entryRow(w, e, "L")), clubs,
+      off: lp.off.map((e) => entryRow(w, e, "L")) };
+  }
+  // ---- the Hall of Fame tab: one hall (world, a country, a league or a club), players or coaches ----------------------
+  function key_of(tier, name) { return tier === "W" ? "W" : tier + ":" + name; }
+  function v_hof(w, q) {
+    const h = st(w), tier = q.tier || "W", name = q.name || null, kind = q.kind === "c" ? "c" : "p", key = key_of(tier, name), rk = (kind === "c" ? "c" : "") + key;
+    const members = [], onBallot = [];
+    for (const id of Object.keys(h.cards)) {
+      const c = h.cards[id]; if (c.k !== kind) continue;
+      const s = c.st[key]; if (!s) continue;
+      if (s.status === "in") members.push({ c, s });
+    }
+    members.sort((a, b) => b.s.yr - a.s.yr || (a.c.name < b.c.name ? -1 : 1));
+    const classes = []; for (const m of members) { let cl = classes[classes.length - 1]; if (!cl || cl.y !== m.s.yr) { cl = { y: m.s.yr, label: label(w, m.s.yr), rows: [] }; classes.push(cl); } cl.rows.push(row(w, m.c, { yr: m.s.yr, pct: Math.round(m.s.pct * 100) / 100, n: m.s.n, via: m.s.via })); }
+    // latest vote's ballot
+    let by = null; for (let y = w.season; y > w.season - 4; y--) if (h.res[rk + "|" + y]) { by = y; break; }
+    const last = by ? h.res[rk + "|" + by] : null;
+    const ballot = last ? last.bal.slice(0, 20).map((e) => entryRow(w, e, key)) : [];
+    const watch = last ? last.bal.filter((e) => e.left <= 2).slice(0, 10).map((e) => entryRow(w, e, key)) : [];
+    const snubs = []; if (tier === "W" || tier === "C") {
+      if (kind === "p") for (const f of h.fell) if (tier === "W" ? f.W >= H.CFG.W.gate : f.nat === name) snubs.push(Object.assign({ retired: label(w, f.ret) }, f));
+    }
+    const offs = []; for (let y = w.season; y > w.season - 10; y--) { const r = h.res[rk + "|" + y]; if (r) for (const e of r.off) offs.push(Object.assign(entryRow(w, e, key), { y, ylabel: label(w, y) })); }
+    const recs = records(w, members);
+    return { tier, name, kind, label: TIER_NAME[tier] + (name ? " · " + name : ""), total: members.length, classes: classes.slice(0, 40), ballot, ballot_year: by, ballot_label: by ? label(w, by) : null, watch, snubs: snubs.slice(-40).reverse(), dropped: offs.slice(0, 40), records: recs,
+      options: options(w), cfg: { window: H.CFG.window, pass: H.CFG.pass, wait: H.CFG.wait } };
+  }
+  function records(w, members) {
+    if (!members.length) return [];
+    const out = [], by = (f) => members.slice().sort((a, b) => f(b) - f(a))[0];
+    const first = members.filter((m) => m.s.n === 1); if (first.length) out.push({ label: "First-ballot inductees", value: first.length + " of " + members.length });
+    const long = by((m) => m.s.n); out.push({ label: "Longest wait", value: long.c.name + " (year " + long.s.n + ")", id: long.c.id });
+    const top = by((m) => m.s.pct); out.push({ label: "Highest vote", value: top.c.name + " (" + Math.round(top.s.pct * 100) + "%)", id: top.c.id });
+    const nats = {}; for (const m of members) nats[m.c.nat] = (nats[m.c.nat] || 0) + 1; const bn = Object.entries(nats).sort((a, b) => b[1] - a[1])[0]; if (bn) out.push({ label: "Most inductees from one nation", value: bn[0] + " (" + bn[1] + ")" });
+    return out;
+  }
+  function options(w) {
+    const nations = new Set(), leagues = w.leagues.keysArr(), clubs = new Set();
+    for (const id of Object.keys(st(w).cards)) { const c = st(w).cards[id]; for (const k of Object.keys(c.st)) if (c.st[k].status === "in") { if (k[0] === "C") nations.add(k.slice(2)); else if (k[0] === "K") clubs.add(k.slice(2)); } }
+    return { leagues, nations: [...nations].sort(), clubs: [...clubs].sort() };
+  }
+  // ---- a single person's Hall of Fame page ------------------------------------------------------------------------------
+  function v_card(w, id) {
+    const card = cardOf(w, id); if (!card) throw new Error("unknown card");
+    const ch = chain(w, card), out = { id: card.id, k: card.k, name: card.name, nat: card.nat, pos: card.pos || null, ret: card.ret, retired: label(w, card.ret), chain: ch, badge: badge(card), line: line(w, card), uid: card.uid || null };
+    if (card.k === "p") {
+      const d = H.dataOf(card); out.peak = card.peak; out.trn = card.trn; out.home = card.home; out.scores = { W: d.sc.W, C: d.sc.C }; out.nat_rec = d.nat_rec;
+      out.clubs = Object.entries(d.sc.K).map(([c, s]) => ({ club: c, score: s })).sort((a, b) => b.score - a.score).slice(0, 4);
+      out.career = d.cr.map((r) => ({ season: r[0], label: label(w, r[0]), club: r[1], ovr: r[2] }));
+      out.honours = d.hon.map((r) => ({ season: r[0], kind: r[1], title: r[2] }));
+    } else {
+      const co = card.co, sc = H.cscores(w, co); out.scores = { W: sc.W }; out.stats = { seasons: co.seasons, w: co.w, d: co.d, l: co.l, titles: co.titles, cups: co.cups, cwc: co.cwc };
+      out.stints = H.stintsOf(co).map((s) => { const n = H.stintNums(w, co, s); return { kind: s.k, team: s.t, from: s.f ? label(w, s.f) : null, to: s.u === null || s.u === undefined ? null : (s.u ? label(w, s.u) : null), seasons: Math.round(n.s || 0), titles: Math.round(n.ti || 0), cups: Math.round(n.cu || 0), wc: s.wc || 0, ct: s.ct || 0, est: !!s.est }; });
+    }
+    return out;
+  }
+  // a short chain for the player page (looks the card up by uid, or by name and peak for stars kept before v16)
+  function chainFor(w, p) {
+    const h = st(w); let card = null;
+    for (const id of Object.keys(h.cards)) { const c = h.cards[id]; if (c.k === "p" && ((c.uid && c.uid === p.uid) || (c.name === p.name && c.nat === p.nat && c.peak === p.peak))) { card = c; break; } }
+    return card ? { id: card.id, chain: chain(w, card), badge: badge(card) } : null;
+  }
+  // the people on any of the world's ballots in their last years, for the swipe cards before the vote
+  function v_watch(w) {
+    const h = st(w), out = [];
+    for (const id of Object.keys(h.cards)) { const c = h.cards[id]; if (c.k !== "p") continue; const s = c.st.W; if (s && s.status === "ballot" && s.n >= H.CFG.window - 2) out.push(row(w, c, { n: s.n, left: H.CFG.window - s.n, pct: s.pct })); }
+    out.sort((a, b) => b.pct - a.pct); return out.slice(0, 10);
+  }
+  return { TIERS, TIER_NAME, label, badge, chain, row, entryRow, v_day, v_leagueday, v_hof, v_card, chainFor, v_watch, favourites, line, cardOf };
+})();
+
+// v16 Off-season moves pages: reads over w.mv (the move log) and, for seasons from before the log, over w.transfers.
+// Nothing here changes the simulation. Plain JS (not generated).
+$mods["movepages"] = (function () {
+  const M = () => $mods.moves, clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+  const label = (w, y) => $mods.cal.season_label(w.cfg.start_year, y);
+  const UP = 4, DOWN = -4;                                         // how far a club's pull must change to count as a step up or down
+  const mvOf = (a) => a == null ? null : a >= UP ? "up" : a <= DOWN ? "down" : "side";
+  const kx = (w) => w.cfg.money_x;
+
+  // the events of one season, with the old transfer list as a fallback for seasons before the log existed
+  function eventsOf(w, S) {
+    const d = M().dataOf(w, S);
+    if (d) return { ev: d.ev, cnt: d.cnt, recorded: true };
+    const ev = [];
+    for (const t of w.transfers) if ($idx(t, "season") === S) ev.push({ k: "t", n: $idx(t, "player"), u: 0, nat: $idx(t, "nat"), pos: null, age: $idx(t, "age"), ovr: $idx(t, "ovr"), pot: $idx(t, "pot"), f: $idx(t, "frm"), t: $idx(t, "to"), fl: $idx(t, "frm_league"), tl: $idx(t, "to_league"), fee: $idx(t, "fee"), kd: $idx(t, "kind"), a: null, rv: 0, wg: 0 });
+    return { ev, cnt: { t: ev.length }, recorded: false };
+  }
+
+  // ---- how hot a move is (0 to 100) ---------------------------------------------------------------------------------
+  function hotOf(e, ctx) {
+    let h = 0;
+    switch (e.k) {
+      case "t": h = clamp((e.ovr - 64) * 2.1, 0, 44) + 34 * Math.sqrt(e.fee / (ctx.maxFee || 1)) + (e.fl !== e.tl ? 5 : 0) + (e.rv ? 8 : 0) + (e.a == null ? 0 : Math.min(9, Math.abs(e.a) / 2)) + (e.age <= 21 && e.pot >= 82 ? 6 : 0); break;
+      case "f": h = clamp((e.ovr - 62) * 2.1, 0, 46) + 20 * Math.sqrt((e.wg || 0) / (ctx.maxWage || 1)) + (e.age <= 21 && e.pot >= 82 ? 8 : 0) + (e.a == null ? 0 : Math.min(8, Math.abs(e.a) / 2)); h = Math.min(h, 88); break;
+      case "r": h = clamp((e.ovr - 62) * 1.6, 0, 40); break;
+      case "p": h = clamp(e.pr / ctx.maxPr * 78 + (e.pk - 80) * 1.2, 0, 100); break;
+      case "h": h = e.pr * 1.15 + (e.src === "acad" ? 30 : 0) + (e.src === "new" ? 6 : 0) + (e.a == null ? 0 : Math.min(14, Math.abs(e.a) / 1.5)); break;
+      case "x": h = e.pr * 1.05 + 10; break;
+      case "q": h = e.pr * 0.95 + 4; break;
+      case "cr": h = e.pr * 1.0 + e.ti * 2; break;
+      case "n": h = e.pr * 0.9 + 8 + (e.home ? 4 : 0); break;
+    }
+    return Math.round(clamp(h, 0, 100));
+  }
+  const ctxOf = (list) => {
+    const c = { maxFee: 0.1, maxWage: 0.1, maxPr: 1 };
+    for (const e of list) { if (e.k === "t") c.maxFee = Math.max(c.maxFee, e.fee); if (e.k === "f" || e.k === "r") c.maxWage = Math.max(c.maxWage, e.wg || 0); if (e.k === "p") c.maxPr = Math.max(c.maxPr, e.pr); }
+    return c;
+  };
+  const KIND = { t: "Transfer", f: "Free agent", r: "Released", p: "Retired", h: "Hired", x: "Sacked", q: "Walked away", cr: "Retired", n: "National team" };
+
+  function rowOf(w, e, i, ctx, who) {
+    const r = { i, k: e.k, kind: KIND[e.k], hot: hotOf(e, ctx), name: e.n, nat: e.nat, age: e.age, mv: null, a: e.a == null ? null : e.a };
+    if (e.k === "t" || e.k === "f" || e.k === "r" || e.k === "p") Object.assign(r, { uid: e.u || 0, pos: e.pos, ovr: e.ovr, pot: e.pot, pk: e.pk || null });
+    if (e.k === "t") Object.assign(r, { from: e.f, to: e.t, fromL: e.fl, toL: e.tl, fee: Math.round(e.fee * kx(w) * 10) / 10, why: e.kd, rival: !!e.rv, pay: e.fee, mv: mvOf(e.a), abroad: e.fl !== e.tl });
+    if (e.k === "f") Object.assign(r, { from: e.f, to: e.t, fromL: e.fl, toL: e.tl, wage: Math.round(e.wg * kx(w) * 10) / 10, pay: e.wg * 3, mv: mvOf(e.a), first: !!e.first, abroad: !!(e.fl && e.fl !== e.tl) });
+    if (e.k === "r") Object.assign(r, { from: e.f, fromL: e.fl, wage: Math.round(e.wg * kx(w) * 10) / 10, pay: e.wg * 3 });
+    if (e.k === "p") Object.assign(r, { club: e.c, clubL: e.cl, prestige: e.pr, seasons: e.ss, honours: e.tn, hid: e.hid });
+    if (e.k === "h" || e.k === "x" || e.k === "q" || e.k === "cr" || e.k === "n") Object.assign(r, { prestige: e.pr, seasons: e.ss, titles: e.ti, cups: e.cu, cwc: e.cwc, pay: e.pr });
+    if (e.k === "h") Object.assign(r, { to: e.t, toL: e.tl, from: e.f, src: e.src, mv: e.src === "acad" ? "up" : mvOf(e.a), idle: e.ua });
+    if (e.k === "x" || e.k === "q") Object.assign(r, { from: e.f, fromL: e.fl });
+    if (e.k === "cr") Object.assign(r, { from: e.f, fromL: e.fl, hid: e.hid });
+    if (e.k === "n") Object.assign(r, { nation: e.t, prev: e.prev, home: !!e.home, src: e.src });
+    return r;
+  }
+  const inLeague = (e, lg) => !lg || e.fl === lg || e.tl === lg || e.cl === lg;
+  const SORTS = {
+    hot: (a, b) => b.hot - a.hot,
+    pay: (a, b) => (b.pay || 0) - (a.pay || 0),
+    level: (a, b) => (b.ovr || 0) - (a.ovr || 0) || b.hot - a.hot,
+    jump: (a, b) => Math.abs(b.a || 0) - Math.abs(a.a || 0) || b.hot - a.hot,
+    young: (a, b) => (a.age || 99) - (b.age || 99) || b.hot - a.hot,
+    name: (a, b) => (b.prestige || 0) - (a.prestige || 0),
+    prestige: (a, b) => (b.prestige || 0) - (a.prestige || 0) || (b.pk || 0) - (a.pk || 0),
+    peak: (a, b) => (b.pk || 0) - (a.pk || 0) || (b.prestige || 0) - (a.prestige || 0),
+    age: (a, b) => (b.age || 0) - (a.age || 0)
+  };
+
+  // the walk-through: chapters, hottest first inside each
+  function walk(w, rows) {
+    const take = (kinds, n, filt) => rows.filter((r) => kinds.includes(r.k) && (!filt || filt(r))).sort(SORTS.hot).slice(0, n);
+    const chap = [["Transfers", take(["t"], 8)], ["Free agents", take(["f"], 5)], ["Coaches", []], ["Retirements", take(["p"], 4).concat(take(["cr"], 2))]];
+    const co = rows.filter((r) => ["h", "x", "q", "n"].includes(r.k)).sort(SORTS.hot), pick = [];
+    const add = (r) => { if (r && !pick.includes(r)) pick.push(r); };
+    add(co.find((r) => r.src === "acad")); add(co.find((r) => r.k === "x")); for (const r of co) { if (pick.length >= 7) break; add(r); }
+    chap[2][1] = pick.sort(SORTS.hot);
+    const out = []; for (const [c, list] of chap) list.forEach((r, j) => out.push(Object.assign({}, r, { chapter: c, n: j + 1, of: list.length })));
+    return out;
+  }
+
+  function v_moves(w, q) {
+    const seasons = w.hist.length, S = q.season >= 1 && q.season <= seasons ? q.season : seasons;
+    if (!seasons) return { season: null };
+    const { ev, cnt, recorded } = eventsOf(w, S), ctx = ctxOf(ev);
+    const tab = q.tab || "highlights", lg = q.league || null;
+    const leagues = w.leagues.keysArr().slice().sort((a, b) => (w.leagues.get_(b).get_("prestige") - w.leagues.get_(a).get_("prestige")) || (a < b ? -1 : 1));
+    const all = ev.map((e, i) => ({ e, i }));
+    const rowsFor = (kinds) => all.filter((x) => kinds.includes(x.e.k) && inLeague(x.e, lg)).map((x) => rowOf(w, x.e, x.i, ctx));
+    const base = { season: S, label: label(w, S), seasons, recorded, league: lg, leagues, tab, counts: { transfers: cnt.t || 0, free: cnt.fa || 0, hired: cnt.h || 0, fired: cnt.x || 0, left: cnt.q || 0, coachRetired: cnt.cr || 0, academy: cnt.ac || 0, national: cnt.n || 0, retired: cnt.p || 0 }, sort: null, shown: 0, total: 0, rows: [] };
+    if (tab === "highlights") {
+      const rows = rowsFor(["t", "f", "p", "h", "x", "q", "cr", "n"]);
+      const wk = walk(w, rows); base.walk = wk; base.rows = []; base.total = wk.length; return markLinks(w, base);
+    }
+    let kinds, filt = () => true;
+    if (tab === "players") {
+      const k = q.kind || "all"; kinds = k === "t" ? ["t"] : k === "f" ? ["f"] : k === "r" ? ["r"] : ["t", "f", "r"];
+      if (q.mv && q.mv !== "all") filt = (r) => r.mv === q.mv;
+    } else if (tab === "coaches") {
+      const k = q.kind || "all"; kinds = k === "all" ? ["h", "x", "q", "cr", "n"] : k === "acad" ? ["h"] : [k];
+      filt = (r) => (k !== "acad" || r.src === "acad") && (!q.mv || q.mv === "all" || r.mv === q.mv);
+    } else { kinds = q.who === "c" ? ["cr"] : ["p"]; }
+    const sort = SORTS[q.sort] ? q.sort : (tab === "retired" ? "prestige" : "hot");
+    let rows = rowsFor(kinds).filter(filt).sort(SORTS[sort]);
+    base.sort = sort; base.total = rows.length; base.rows = rows.slice(0, +q.limit || 60); base.shown = base.rows.length;
+    if (tab === "players") { const mvc = { up: 0, side: 0, down: 0 }; for (const r of rowsFor(["t", "f"])) if (r.mv) mvc[r.mv]++; base.mvCounts = mvc; }
+    return markLinks(w, base);
+  }
+  // which people can be opened: active players have a page, retired ones through their Hall of Fame card
+  function markLinks(w, d) {
+    const act = new Set(); for (const p of w.players) if (p.uid) act.add(p.uid); for (const p of w.retired_players) if (p.uid) act.add(p.uid);
+    const fix = (r) => {
+      if (r.uid && !act.has(r.uid)) r.uid = 0;
+      if (r.hid) { const c = $mods.hofpages.cardOf(w, r.hid); if (!c) r.hid = null; else { const f = Object.values(c.st).map((s) => s.first).filter((x) => x); if (f.length) r.hofFrom = label(w, Math.min.apply(null, f)); r.hofTiers = Object.keys(c.st).map((k) => k[0]).filter((v, i, a) => a.indexOf(v) === i).length; } }
+    };
+    d.rows.forEach(fix); if (d.walk) d.walk.forEach(fix);
+    return d;
+  }
+  return { v_moves, eventsOf, hotOf, mvOf, UP, DOWN };
 })();
 
 // v15.2: league hall of fame, competition history and all-time statistics for every competition family.
@@ -8390,9 +9311,22 @@ function v_qualstats(cid) {
 }
 GET = $lit_dict([["/api/status", ((q) => v_status())],
 ["/api/favs", ((q) => v_favs())],
-["/api/prospects", ((q) => v_prospects(q))], ["/api/qualstats", ((q) => v_qualstats($idx(q, "id")))], ["/api/world", ((q) => v_world())], ["/api/leaguemoney", ((q) => v_leaguemoney($idx(q, "name")))], ["/api/leaguehof", ((q) => { const w = need_world(); if (!$in($idx(q, "name"), w.leagues)) throw $new(ApiError, ["unknown league", 404]); return $mods.pages.league_hof(w, $idx(q, "name")); })], ["/api/comphub", ((q) => $dict($kw({"cards": $mods.pages.cards(need_world(), (c) => comp_progress(need_world(), c), (n) => cal.season_label(need_world().cfg.start_year, n))})))], ["/api/comphist", ((q) => { const w = need_world(); if (!$mods.pages.is_valid(w, $idx(q, "key")) || $idx(q, "key").startsWith("league:")) throw $new(ApiError, ["unknown competition", 404]); return $mods.pages.history(w, $idx(q, "key"), (n) => cal.season_label(w.cfg.start_year, n)); })], ["/api/compalltime", ((q) => { const w = need_world(); if (!$mods.pages.is_valid(w, $idx(q, "key"))) throw $new(ApiError, ["unknown competition", 404]); return $mods.pages.alltime(w, $idx(q, "key")); })], ["/api/worldmoney", ((q) => v_worldmoney())], ["/api/continent", ((q) => v_continent($idx(q, "code")))], ["/api/map", ((q) => v_map())], ["/api/league", ((q) => v_league($idx(q, "name")))], ["/api/league_season", ((q) => v_league_season($idx(q, "name"), $int($idx(q, "season"))))], ["/api/club", ((q) => v_club($idx(q, "name")))], ["/api/player", ((q) => v_player($idx(q, "uid")))], ["/api/players", ((q) => v_players(q))], ["/api/compstats", ((q) => v_compsum($idx(q, "id"), ($T($M.get(q, "season")) ? $int($idx(q, "season")) : null)))], ["/api/settings", ((q) => $dict($kw({"god": ST.god, "money_x": ($T(ST.world) ? ST.world.cfg.money_x : 3.5), "clubs": ($T(ST.world) ? $sorted(ST.world.clubs) : [])})))], ["/api/comp", ((q) => v_comp($idx(q, "id")))], ["/api/nations", ((q) => v_nations($M.get(q, "confed")))], ["/api/nation", ((q) => v_nation($idx(q, "name")))], ["/api/news", ((q) => v_news())], ["/api/money", ((q) => v_money())], ["/api/ledger", ((q) => v_ledger(($T($M.get(q, "season")) && $idx(q, "season") !== "all" ? $int($idx(q, "season")) : null), ($T($M.get(q, "league")) ? $idx(q, "league") : null), $M.get(q, "season") === "all"))], ["/api/records", ((q) => v_records())], ["/api/review", ((q) => $dict($kw({"review": ST.last_review})))], ["/api/awards", ((q) => v_awards(($T($M.get(q, "season")) ? $int($idx(q, "season")) : null)))], ["/api/trophies", ((q) => $dict($kw({"options": T.options(need_world()), "selected": ($T($M.get(q, "key")) ? T.winners(need_world(), $idx(q, "key")) : null)})))], ["/api/edits", ((q) => v_edits())], ["/api/charts", ((q) => v_charts())], ["/api/halloffame", ((q) => T.halloffame(need_world()))]]);
+["/api/prospects", ((q) => v_prospects(q))], ["/api/qualstats", ((q) => v_qualstats($idx(q, "id")))], ["/api/world", ((q) => v_world())], ["/api/leaguemoney", ((q) => v_leaguemoney($idx(q, "name")))], ["/api/leaguehof", ((q) => { const w = need_world(); if (!$in($idx(q, "name"), w.leagues)) throw $new(ApiError, ["unknown league", 404]); return $mods.pages.league_hof(w, $idx(q, "name")); })], ["/api/comphub", ((q) => $dict($kw({"cards": $mods.pages.cards(need_world(), (c) => comp_progress(need_world(), c), (n) => cal.season_label(need_world().cfg.start_year, n))})))], ["/api/comphist", ((q) => { const w = need_world(); if (!$mods.pages.is_valid(w, $idx(q, "key")) || $idx(q, "key").startsWith("league:")) throw $new(ApiError, ["unknown competition", 404]); return $mods.pages.history(w, $idx(q, "key"), (n) => cal.season_label(w.cfg.start_year, n)); })], ["/api/compalltime", ((q) => { const w = need_world(); if (!$mods.pages.is_valid(w, $idx(q, "key"))) throw $new(ApiError, ["unknown competition", 404]); return $mods.pages.alltime(w, $idx(q, "key")); })], ["/api/worldmoney", ((q) => v_worldmoney())], ["/api/continent", ((q) => v_continent($idx(q, "code")))], ["/api/map", ((q) => v_map())], ["/api/league", ((q) => v_league($idx(q, "name")))], ["/api/league_season", ((q) => v_league_season($idx(q, "name"), $int($idx(q, "season"))))], ["/api/club", ((q) => v_club($idx(q, "name")))], ["/api/player", ((q) => { const r = v_player($idx(q, "uid")), w = need_world(), p = w.player_by_uid($int($idx(q, "uid"))); r.set("hof", $mods.hofpages.chainFor(w, p)); return r; })], ["/api/players", ((q) => v_players(q))], ["/api/compstats", ((q) => v_compsum($idx(q, "id"), ($T($M.get(q, "season")) ? $int($idx(q, "season")) : null)))], ["/api/settings", ((q) => $dict($kw({"god": ST.god, "money_x": ($T(ST.world) ? ST.world.cfg.money_x : 3.5), "clubs": ($T(ST.world) ? $sorted(ST.world.clubs) : [])})))], ["/api/comp", ((q) => v_comp($idx(q, "id")))], ["/api/nations", ((q) => v_nations($M.get(q, "confed")))], ["/api/nation", ((q) => v_nation($idx(q, "name")))], ["/api/news", ((q) => v_news())], ["/api/money", ((q) => v_money())], ["/api/ledger", ((q) => v_ledger(($T($M.get(q, "season")) && $idx(q, "season") !== "all" ? $int($idx(q, "season")) : null), ($T($M.get(q, "league")) ? $idx(q, "league") : null), $M.get(q, "season") === "all"))], ["/api/records", ((q) => v_records())], ["/api/review", ((q) => $dict($kw({"review": ST.last_review})))], ["/api/awards", ((q) => v_awards(($T($M.get(q, "season")) ? $int($idx(q, "season")) : null)))], ["/api/trophies", ((q) => $dict($kw({"options": T.options(need_world()), "selected": ($T($M.get(q, "key")) ? T.winners(need_world(), $idx(q, "key")) : null)})))], ["/api/edits", ((q) => v_edits())], ["/api/charts", ((q) => v_charts())], ["/api/halloffame", ((q) => T.halloffame(need_world()))]]);
 POST = $lit_dict([["/api/favs", a_favs],
 ["/api/settings_set", a_settings], ["/api/export", a_export], ["/api/edit", a_edit], ["/api/new", a_new], ["/api/sim", a_sim], ["/api/years", a_year], ["/api/rollover", a_rollover], ["/api/flow", a_flow], ["/api/stops", a_stops], ["/api/save", a_save], ["/api/load", a_load], ["/api/delete", a_delete], ["/api/beat", a_beat], ["/api/quit", a_quit]]);
+// v16 Hall of Fame routes
+{
+  const HP = $mods.hofpages, hq = (q, k, d) => { const v = $M.get(q, k); return v === null || v === undefined || v === "" ? d : v; };
+  const bad = (m, c = 404) => { throw $new(ApiError, [m, c]); };
+  GET.set("/api/hofday", (q) => { const w = need_world(); return $dict($kw(HP.v_day(w, $T($M.get(q, "season")) ? $int($idx(q, "season")) : w.season))); });
+  GET.set("/api/hofleague", (q) => { const w = need_world(); if (!w.leagues.has($idx(q, "league"))) bad("unknown league"); return $dict($kw(HP.v_leagueday(w, $idx(q, "league"), $T($M.get(q, "season")) ? $int($idx(q, "season")) : null))); });
+  GET.set("/api/hof", (q) => { const w = need_world(); return $dict($kw(HP.v_hof(w, { tier: hq(q, "tier", "W"), name: hq(q, "name", null), kind: hq(q, "kind", "p") }))); });
+  GET.set("/api/hofcard", (q) => { const w = need_world(); if (!HP.cardOf(w, $idx(q, "id"))) bad("unknown Hall of Fame card"); return $dict($kw(HP.v_card(w, $idx(q, "id")))); });
+  GET.set("/api/academy", (q) => { const w = need_world(); if (!w.clubs.has($idx(q, "club"))) bad("unknown club"); const v = $mods.hof.acadView(w, $idx(q, "club")); v.in_halls = v.in_halls.map((id) => HP.row(w, HP.cardOf(w, id))); return $dict($kw(v)); });
+  GET.set("/api/academies", (q) => { const w = need_world(), sc = hq(q, "scope", "world"), nm = hq(q, "name", null); const rows = $mods.hof.acadRanking(w, sc, nm); const leagues = w.leagues.keysArr(), conf = []; for (const l of w.leagues.valuesArr()) if (!conf.includes(l.get_("confed"))) conf.push(l.get_("confed")); return $dict($kw({ "rows": rows, "scope": sc, "name": nm, "leagues": leagues, "confeds": conf, "season": w.season })); });
+  GET.set("/api/moves", (q) => { const w = need_world(); const g = (k) => hq(q, k, null); return $dict($kw($mods.movepages.v_moves(w, { season: g("season") ? $int(g("season")) : 0, tab: g("tab"), kind: g("kind"), mv: g("mv"), sort: g("sort"), league: g("league"), who: g("who"), limit: g("limit") ? $int(g("limit")) : 0 }))); });
+  GET.set("/api/hofwatch", (q) => $dict($kw({ "rows": HP.v_watch(need_world()) })));
+}
 return {ApiError: ApiError, BaseHTTPRequestHandler: BaseHTTPRequestHandler, C: C, CONF_ORDER: CONF_ORDER, G: G, GEO: GEO, GET: GET, Handler: Handler, POST: POST, PRESETS: PRESETS, S: S, ST: ST, STOP_ITEMS: STOP_ITEMS, State: State, Stops: Stops, T: T, ThreadingHTTPServer: ThreadingHTTPServer, _LS: _LS, _a_sim: _a_sim, _done_set: _done_set, a_beat: a_beat, a_delete: a_delete, a_edit: a_edit, a_export: a_export, a_load: a_load, a_new: a_new, a_quit: a_quit, a_rollover: a_rollover, a_save: a_save, a_settings: a_settings, a_sim: a_sim, a_stops: a_stops, a_year: a_year, argparse: argparse, awards_brief: awards_brief, bracket_upcoming: bracket_upcoming, cal: cal, coach_row: coach_row, comp_emblem: comp_emblem, comp_progress: comp_progress, compstats: compstats, cur_stats: cur_stats, ev_date: ev_date, find_browser: find_browser, header: header, json: json, list_saves: list_saves, live_stats: live_stats, main: main, mimetypes: mimetypes, mx: mx, need_world: need_world, os: os, parse_qs: parse_qs, player_row: player_row, r1: r1, re: re, review: review, round_name_: round_name_, rule_defaults: rule_defaults, safe_slot: safe_slot, shim: shim, shutil: shutil, stops_view: stops_view, subprocess: subprocess, sys: sys, threading: threading, time: time, traceback: traceback, urlparse: urlparse, v_awards: v_awards, v_charts: v_charts, v_club: v_club, v_comp: v_comp, v_compsum: v_compsum, v_continent: v_continent, v_edits: v_edits, v_league: v_league, v_league_season: v_league_season, v_ledger: v_ledger, v_map: v_map, v_money: v_money, v_nation: v_nation, v_nations: v_nations, v_news: v_news, v_player: v_player, v_players: v_players, v_records: v_records, v_status: v_status, v_world: v_world, watchdog: watchdog};
 })();
 
@@ -8856,7 +9790,7 @@ function historyHTML(h, lk, nation) {
 function liveTabs(cid) { const key = famKey(cid); return key ? `<div class="v2">${compTabsHTML(key, "now", cid)}</div>` : ""; }
 
 // ---------------------------------------------------------------- league page
-const LTABS = [["table", "Table"], ["money", "Money"], ["hof", "Hall of Fame"], ["fix", "Fixtures"], ["stats", "Stats"]];
+const LTABS = [["table", "Table"], ["money", "Money"], ["hof", "Honours"], ["halls", "Hall of Fame"], ["fix", "Fixtures"], ["stats", "Stats"]];
 const HEALTH_TAG = { Strong: "green", Steady: "", Tight: "gold", "In debt": "red" };
 function leagueMoneyHTML(mon, d) {
   if (!mon || !mon.season) return `<div class="card"><h3>League health</h3><div class="dim small">The books open after the first completed season.</div></div>`;
@@ -8883,7 +9817,7 @@ function leagueMoneyHTML(mon, d) {
     <div class="card"><h3>Compare with other leagues</h3>${near.map((x) => `<a class="row" href="#/league/${enc(x.league)}"><span ${x.league === mon.league ? 'class="gold"' : ""}>${esc(x.league)}</span><span class="dim small">${money(x.avg_income)} · x${(+x.tv).toFixed(2)}</span></a>`).join("")}<a class="more" href="#/money"><span>All leagues: strength and money</span><span>&rsaquo;</span></a></div>`;
 }
 function leagueHofHTML(hof, d) {
-  if (!hof || !hof.seasons_n) return `<div class="card"><h3>Hall of Fame</h3><div class="dim small">No completed season yet. Titles, champions and records appear after the first one.</div></div>`;
+  if (!hof || !hof.seasons_n) return `<div class="card"><h3>Honours</h3><div class="dim small">No completed season yet. Titles, champions and records appear after the first one.</div></div>`;
   const top = Math.max(1, hof.most_n), nm = (names) => (names.length > 2 ? names.length + " clubs" : names.map(esc).join(" and "));
   const run = hof.run;
   const tiles = `<div class="tiles"><div class="tile"><span class="eyebrow">Current champion</span><b>${clubLink(hof.holder.club)}</b><span class="dim small">season ${hof.holder.season}</span></div>
@@ -8934,12 +9868,23 @@ async function viewLeague(name, season) {
     <div style="display:flex;align-items:center;gap:12px"><span class="cem big-e">${emblem(d.emblem, 48)}</span><div><h1>${esc(d.name)}</h1><div class="sub">${subBits.join(" · ")}${past ? ` · <span class="tag gold">season ${past.season} final table</span>` : ""}</div></div></div>
     <div class="stat4"><div><b>${d.avg}</b><span>AVG OVR</span></div><div><b>${mon && mon.season ? money(mon.avg_income) : "-"}</b><span>CLUB INCOME</span></div><div><b>x${(+d.tv).toFixed(2)}</b><span>TV MONEY</span></div><div><b>${mon && mon.season ? "#" + mon.rank : "-"}</b><span>${mon && mon.season ? "RICHEST OF " + mon.of : "RICHEST"}</span></div></div>
     <nav class="tabs2" id="lg-tabs" aria-label="League sections">${LTABS.map(([k, t]) => `<button data-lt="${k}" class="${k === S.tab ? "on" : ""}">${t}</button>`).join("")}</nav>
-    <div id="lg-table">${tablePane}</div><div id="lg-money" hidden>${leagueMoneyHTML(mon, d)}</div><div id="lg-hof" hidden>${leagueHofHTML(hof, d)}</div><div id="lg-fix" hidden>${fixPane}</div><div id="lg-stats" hidden></div></div>`;
+    <div id="lg-table">${tablePane}</div><div id="lg-money" hidden>${leagueMoneyHTML(mon, d)}</div><div id="lg-hof" hidden>${leagueHofHTML(hof, d)}</div><div id="lg-fix" hidden>${fixPane}</div><div id="lg-halls" hidden></div><div id="lg-stats" hidden></div></div>`;
   const built = {};
   const show = (t) => {
     S.tab = t;
     document.querySelectorAll("#lg-tabs [data-lt]").forEach((b) => b.classList.toggle("on", b.dataset.lt === t));
     LTABS.forEach(([k]) => { $("#lg-" + k).hidden = k !== t; });
+    if (t === "halls" && !built.halls) {
+      built.halls = 1;
+      Promise.all([api("/api/hof?tier=L&kind=p&name=" + enc(name)), api("/api/hof?tier=L&kind=c&name=" + enc(name))]).then(([hp, hc]) => {
+        const last = hp.classes[0], lastC = hc.classes[0], fin = (STATUS.header.season - (p.done >= p.total ? 0 : 1));
+        $("#lg-halls").innerHTML = `<div class="card"><h3>${esc(name)} Hall of Fame <small>${hp.total} players &middot; ${hc.total} coaches</small></h3>
+          ${last ? `<div class="dim small" style="margin-bottom:6px">Class of ${esc(last.label)}</div><div class="hlist">${last.rows.map((r) => hofRow(r, { right: "year " + r.n })).join("")}</div>` : '<div class="dim small">Nobody inducted yet. People become eligible five years after they retire.</div>'}
+          ${lastC ? `<div class="dim small" style="margin:10px 0 6px">Latest coach: class of ${esc(lastC.label)}</div><div class="hlist">${lastC.rows.map((r) => hofRow(r, { right: "year " + r.n })).join("")}</div>` : ""}
+          <a class="more" href="#/hof/L/${enc(name)}"><span>Full league Hall of Fame</span><span>&rsaquo;</span></a>
+          ${fin > 0 ? `<a class="more" href="#/hofleague/${enc(name)}/${p.done >= p.total ? STATUS.header.season : STATUS.header.season - 1}"><span>Latest Hall of Fame day</span><span>&rsaquo;</span></a>` : ""}</div>`;
+      }).catch((e) => { $("#lg-halls").innerHTML = `<div class="card dim small">${esc(e.message)}</div>`; });
+    }
     if (t === "stats" && !built.stats) {
       built.stats = 1;
       const seasons = (hof ? hof.strip : []).map((s) => ({ season: s.season, cid: d.id, winner: s.club, stats: true }));
@@ -8958,6 +9903,491 @@ async function viewLeague(name, season) {
   if ($("#l-now")) $("#l-now").onclick = () => (location.hash = "#/league/" + enc(name));
   $("#l-past").onchange = (e) => (location.hash = e.target.value ? `#/league/${enc(name)}/${e.target.value}` : "#/league/" + enc(name));
   show(S.tab);
+}
+</script>
+<script>"use strict";
+// v16 Hall of Fame pages: the Hall of Fame tab (World / Country / League / Club, players and coaches), a person's Hall of Fame page,
+// the world induction day (final-year watch, the vote, who fell off), and a league's Hall of Fame day with its results.
+// Loaded before app.js; the helpers it uses (api, esc, enc, flag, crest, emblem, clubLink, ...) are only touched when a page is drawn.
+
+const HOF = { kind: "p", tab: "ind" };
+const HOF_CLR = { W: "#f5c542", C: "#b48cff", L: "#4aa8ff", K: "#8fa8b8" };
+const HOF_LBL = { W: "World", C: "Country", L: "League", K: "Club" };
+const hueOf = (s) => { let h = 0; for (const ch of String(s)) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return h % 360; };
+const hofStar = (px) => `<svg width="${px}" height="${px}" viewBox="0 0 24 24" aria-hidden="true"><polygon points="12,2.5 14.9,8.9 21.8,9.6 16.6,14.2 18.1,21 12,17.5 5.9,21 7.4,14.2 2.2,9.6 9.1,8.9" fill="#f5c542"/></svg>`;
+// one badge per row: the highest tier reached, drawn with the emblem of that scope (star, flag, league cup, club crest)
+function hofBadge(b, size) {
+  if (!b) return "";
+  size = size || 24;
+  let inner;
+  if (b.tier === "W") inner = hofStar(size - 10);
+  else if (b.tier === "C" && b.scope) inner = flag(b.scope, size - 10);
+  else if (b.tier === "L" && b.scope) inner = emblem({ kind: "league_cup", color: `hsl(${hueOf(b.scope)} 62% 58%)` }, size - 8);
+  else if (b.tier === "K" && b.scope) inner = crest(b.scope, size - 10);
+  else inner = `<i class="hb-s ${b.tier}"></i>`;
+  const tip = HOF_LBL[b.tier] + " Hall of Fame" + (b.scope ? ": " + b.scope : "");
+  return `<span class="hb ${b.tier}" style="width:${size}px;height:${size}px;--hc:${HOF_CLR[b.tier]}" title="${esc(tip)}">${inner}</span>`;
+}
+const hofPct = (x) => Math.round(x * 100) + "%";
+const hofYrs = (r) => (r.years ? `S${r.years[0]}-S${r.years[1]}` : "");
+function hofSub(r) {
+  const bits = [r.k === "c" ? "Coach" : (r.pos ? `<span class="pos-${esc(r.pos)}">${esc(r.pos)}</span>` : ""), r.nat ? esc(r.nat) : "", hofYrs(r), r.n ? "year " + r.n + (r.left !== undefined ? " of 10" : "") : ""].filter(Boolean);
+  return bits.join(" &middot; ");
+}
+const hofLink = (r, txt) => `<a href="#/hofcard/${esc(r.id)}">${esc(txt || r.name)}</a>`;
+// a two-line row: name and badge on top, a short line below
+function hofRow(r, o) {
+  o = o || {};
+  const right = o.right != null ? `<span class="hr-r">${o.right}</span>` : "";
+  const tag = o.tag ? `<span class="tag ${o.tagc || ""}">${o.tag}</span>` : "";
+  const bar = o.bar != null ? `<div class="hbar"><i class="${o.gold ? "g" : ""}" style="width:${Math.round(o.bar * 100)}%"></i><u style="left:75%"></u></div>` : "";
+  return `<div class="hr"><div class="hr-a">${r.nat ? flag(r.nat, 18) : ""}<div class="hr-m"><b>${r.still === false ? esc(r.name) : hofLink(r)}</b><span class="dim small">${o.sub != null ? o.sub : hofSub(r)}</span></div>${tag}${right}${hofBadge(r.badge, 22)}</div>${bar}</div>`;
+}
+const hofSeg = (attr, list, cur) => `<div class="seg" role="group">${list.map(([k, t]) => `<button ${attr}="${esc(k)}" class="${k === cur ? "on" : ""}">${t}</button>`).join("")}</div>`;
+
+// ---------------------------------------------------------------- the Hall of Fame tab
+async function viewHof(tier, name) {
+  tier = ["W", "C", "L", "K"].includes(tier) ? tier : "W";
+  const d = await api("/api/hof?tier=" + tier + "&kind=" + HOF.kind + (name ? "&name=" + enc(name) : ""));
+  const opts = d.options;
+  const favLeagues = (FAVS || []).filter((k) => k.startsWith("L:")).map((k) => k.slice(2));
+  if (tier !== "W" && !name) {
+    const first = tier === "L" ? (favLeagues[0] || opts.leagues[0]) : tier === "C" ? (opts.nations[0] || "") : (opts.clubs[0] || "");
+    if (first) { location.replace("#/hof/" + tier + "/" + enc(first)); return; }
+  }
+  const scopes = tier === "L" ? opts.leagues : tier === "C" ? opts.nations : tier === "K" ? opts.clubs : [];
+  const scopeSel = tier === "W" ? "" : `<select id="hof-scope" aria-label="${HOF_LBL[tier]}">${tier === "L" && favLeagues.length ? `<optgroup label="Favourites">${favLeagues.map((n) => `<option value="${esc(n)}" ${n === name ? "selected" : ""}>${esc(n)}</option>`).join("")}</optgroup><optgroup label="All leagues">` : ""}${scopes.map((n) => `<option value="${esc(n)}" ${n === name ? "selected" : ""}>${esc(n)}</option>`).join("")}${tier === "L" && favLeagues.length ? "</optgroup>" : ""}</select>`;
+  const tabs = [["ind", "Inductees"], ["bal", "Ballot"], ["watch", "Watch"], ["snub", "Snubs"], ["rec", "Records"]];
+  const tab = HOF.tab;
+  let body = "";
+  const people = HOF.kind === "c" ? "coaches" : "players";
+  if (tab === "ind") {
+    body = d.classes.length ? d.classes.map((c, i) => `<details class="hcls" ${i < 1 ? "open" : ""}><summary><b>Class of ${esc(c.label)}</b><span class="dim small">${c.rows.length} inducted</span></summary>${c.rows.map((r) => hofRow(r, { right: r.n === 1 ? "first ballot" : "year " + r.n, sub: hofSub(Object.assign({}, r, { n: 0 })) })).join("")}</details>`).join("")
+      : `<div class="card dim small">No ${people} in this hall yet. People become eligible ${d.cfg.wait} years after they retire.</div>`;
+  } else if (tab === "bal") {
+    body = d.ballot.length ? `<div class="dim small" style="margin:0 2px 8px">${esc(d.ballot_label)} vote &middot; ${Math.round(d.cfg.pass * 100)}% to get in &middot; up to ${d.cfg.window} years on the ballot</div><div class="hlist">${d.ballot.map((r) => hofRow(r, { right: hofPct(r.pct), bar: r.pct, tag: r.left <= 1 ? (r.left === 0 ? "last year" : "1 year left") : "", tagc: "red" })).join("")}</div>`
+      : `<div class="card dim small">Nobody is on this ballot right now.</div>`;
+  } else if (tab === "watch") {
+    body = d.watch.length ? `<div class="dim small" style="margin:0 2px 8px">Running out of time: two years or fewer left on the ballot.</div><div class="hlist">${d.watch.map((r) => hofRow(r, { right: hofPct(r.pct), bar: r.pct, tag: r.left === 0 ? "last year" : r.left + " left", tagc: "red" })).join("")}</div>` : `<div class="card dim small">Nobody is close to running out of time.</div>`;
+  } else if (tab === "snub") {
+    const list = (tier === "W" || tier === "C") && HOF.kind === "p" ? d.snubs : [];
+    body = (list.length ? `<div class="dim small" style="margin:0 2px 8px">Great careers that fell off the ballot without being voted in.</div><div class="hlist">${list.map((r) => hofRow(Object.assign({ still: false, k: "p" }, r), { sub: `${esc(r.pos || "")} &middot; ${esc(r.nat)} &middot; peak ${r.peak}`, right: "off " + r.y })).join("")}</div>` : "")
+      + (d.dropped.length ? `<h2 class="lbl2">Came off the ballot</h2><div class="hlist">${d.dropped.map((r) => hofRow(r, { right: r.why === "time" ? "ten years" : "no support", sub: hofSub(Object.assign({}, r, { n: 0 })) })).join("")}</div>` : "")
+      || `<div class="card dim small">Nobody has fallen off the ballot yet.</div>`;
+  } else {
+    body = d.records.length ? `<div class="card" style="margin-top:0">${d.records.map((r) => `<div class="row"><span>${esc(r.label)}</span><span class="dim small" style="text-align:right">${r.id ? `<a href="#/hofcard/${esc(r.id)}">${esc(r.value)}</a>` : esc(r.value)}</span></div>`).join("")}</div>` : `<div class="card dim small">Records appear once someone is inducted.</div>`;
+  }
+  $("#view").innerHTML = `<div class="v2 hof2"><h1>Hall of Fame</h1>
+    ${hofSeg("data-tier", [["W", "World"], ["C", "Country"], ["L", "League"], ["K", "Club"]], tier)}
+    <div class="hof-ctl">${scopeSel}${hofSeg("data-kind", [["p", "Players"], ["c", "Coaches"]], HOF.kind)}</div>
+    <div class="hof-sc">${HOF_LBL[tier]}${name ? " &middot; " + esc(name) : ""} <span class="dim small">&middot; ${d.total} ${people} inducted</span></div>
+    <nav class="chips hof-tabs">${tabs.map(([k, t]) => `<button data-htab="${k}" class="${k === tab ? "on" : ""}">${t}</button>`).join("")}</nav>
+    ${body}
+    <a class="more" href="#/academies"><span>Academies ranking</span><span>&rsaquo;</span></a><a class="more" href="#/trophies/players"><span>All-time rankings by points</span><span>&rsaquo;</span></a></div>`;
+  document.querySelectorAll("[data-tier]").forEach((b) => (b.onclick = () => (location.hash = "#/hof/" + b.dataset.tier)));
+  document.querySelectorAll("[data-kind]").forEach((b) => (b.onclick = () => { HOF.kind = b.dataset.kind; route(); }));
+  document.querySelectorAll("[data-htab]").forEach((b) => (b.onclick = () => { HOF.tab = b.dataset.htab; route(); }));
+  const sel = $("#hof-scope"); if (sel) sel.onchange = () => (location.hash = "#/hof/" + tier + "/" + enc(sel.value));
+}
+
+// ---------------------------------------------------------------- one person's Hall of Fame page
+const HOF_ST = (it, c) => {
+  if (!it) return `<span class="dim">Not nominated</span>`;
+  if (it.status === "in") return `<b class="gold">Inducted ${esc(it.label)}</b>${it.via === "world" ? ` <span class="dim small">with the world</span>` : ""}`;
+  if (it.status === "ballot") return `On the ballot, year ${it.n || 0} of 10`;
+  return `<span class="dim">Fell off the ballot</span>`;
+};
+async function viewHofCard(id) {
+  const c = await api("/api/hofcard?id=" + enc(id)), ch = c.chain;
+  const rows = ["W", "C", "L", "K"].map((t) => {
+    const it = ch[t], tierBadge = hofBadge(it && it.status === "in" ? { tier: t, scope: it.scope } : { tier: t, scope: null }, 24);
+    return `<div class="hch ${it && it.status === "in" ? "in" : ""}">${tierBadge}<div class="hch-m"><b>${HOF_LBL[t]}</b><span class="small">${HOF_ST(it, c)}${it && it.scope ? ` <span class="dim small">${esc(it.scope)}</span>` : ""}</span></div></div>`;
+  }).join("");
+  const more = ch.all.filter((x) => (x.tier === "L" || x.tier === "K") && !(ch[x.tier] && ch[x.tier].scope === x.scope));
+  const veto = ch.veto ? `<div class="hveto">${esc(ch.veto.text)}</div>` : "";
+  let tail = "";
+  if (c.k === "p") {
+    const hon = {}; for (const h of c.honours) { const k = h.kind === "award" ? h.title : h.kind === "league" ? "League titles" : h.kind === "cup" ? "Continental and club cups" : h.kind === "world" ? "World Cups" : h.kind === "contin" ? "Continental championships" : h.kind === "nl" ? "Nations League" : h.title; hon[k] = (hon[k] || 0) + 1; }
+    const seasons = c.career.length, clubs = [...new Set(c.career.map((r) => r.club).filter(Boolean))];
+    tail = `<div class="card"><h3>Career <small>${seasons} seasons &middot; peak ${c.peak}</small></h3>
+      <div class="dim small">${clubs.map((x) => clubLink(x)).join(" &rarr; ")}</div>
+      <div class="hhon">${Object.entries(hon).map(([k, v]) => `<span class="tag">${v}&times; ${esc(k)}</span>`).join(" ")}</div>
+      ${c.trn ? `<div class="dim small" style="margin-top:8px">Academy graduate of ${clubLink(c.trn)}</div>` : ""}
+      ${c.nat_rec ? `<div class="dim small" style="margin-top:8px">For ${esc(c.nat)}: ${c.nat_rec.seasons} seasons of national-team football, ${c.nat_rec.g + c.nat_rec.a} goals and assists${c.nat_rec.world ? ", " + c.nat_rec.world + " World Cup" + (c.nat_rec.world > 1 ? "s" : "") : ""}</div>` : ""}</div>`;
+  } else {
+    const s = c.stats;
+    tail = `<div class="card"><h3>Coaching career <small>${s.seasons} seasons &middot; ${s.titles} league titles &middot; ${s.cups} continental cups</small></h3>
+      <div class="hstep">${c.stints.map((x) => `<div class="hs"><i></i><div><b>${x.kind === "acad" ? "Academy manager, " + clubLink(x.team) : x.kind === "nat" ? natLink(x.team) : clubLink(x.team)}</b><div class="dim small">${x.est ? "earlier career" : (x.from || "") + (x.to ? " to " + x.to : " to now")} &middot; ${x.seasons} seasons${x.titles ? " &middot; " + x.titles + " titles" : ""}${x.cups ? " &middot; " + x.cups + " cups" : ""}${x.wc ? " &middot; World Cup" : ""}</div></div></div>`).join("")}</div></div>`;
+  }
+  $("#view").innerHTML = `<div class="v2"><a class="crumb" href="#/hof">&lsaquo; Hall of Fame</a>
+    <div class="hd"><div><h1>${flag(c.nat, 26)} ${esc(c.name)}</h1><div class="sub">${c.k === "c" ? "Coach" : esc(c.pos || "")} &middot; ${natLink(c.nat)} &middot; retired ${esc(c.retired)}</div></div>${hofBadge(c.badge, 38)}</div>
+    <div class="dim small" style="margin-bottom:8px">${esc(c.line)}</div>
+    <div class="card"><h3>The four halls</h3><div class="hchain">${rows}</div>${more.length ? `<div class="dim small" style="margin-top:8px">Also: ${more.map((x) => `${esc(x.scope)} (${esc(x.label)})`).join(", ")}</div>` : ""}${veto}</div>${tail}
+    ${c.uid ? `<a class="more" href="#/player/${c.uid}"><span>Full player page</span><span>&rsaquo;</span></a>` : ""}</div>`;
+}
+// the block on a player's page
+function hofPlayerBlock(h) {
+  if (!h) return "";
+  const ch = h.chain, rows = ["W", "C", "L", "K"].map((t) => {
+    const it = ch[t];
+    return `<div class="hch ${it && it.status === "in" ? "in" : ""}">${hofBadge(it && it.status === "in" ? { tier: t, scope: it.scope } : { tier: t, scope: null }, 22)}<div class="hch-m"><b>${HOF_LBL[t]}</b><span class="small">${HOF_ST(it)}</span></div></div>`;
+  }).join("");
+  return `<div class="card"><h3>Hall of Fame <small><a href="#/hofcard/${esc(h.id)}">full page</a></small></h3><div class="hchain">${rows}</div>${ch.veto ? `<div class="hveto">${esc(ch.veto.text)}</div>` : ""}</div>`;
+}
+
+// ---------------------------------------------------------------- reveal card, shared by both ceremonies
+function hofReveal(e, scopeText, idx, n) {
+  const gold = true;
+  return `<div class="hrv"><div class="dim small">${esc(scopeText)}${n ? ` &middot; ${idx + 1} of ${n}` : ""}</div>
+    <div class="hrv-n">${flag(e.nat, 34)}<div><div class="hrv-name">${esc(e.name)}</div><div class="dim small">${hofSub(Object.assign({}, e, { n: 0 }))}</div></div></div>
+    <div class="hrv-p"><span class="dim small">${e.n === 1 ? "First ballot" : "Year " + e.n + " on the ballot"}</span><b>${hofPct(e.pct)}</b></div>
+    <div class="hbar big"><i class="g" style="width:${Math.round(e.pct * 100)}%"></i><u style="left:75%"></u></div>
+    <div class="dim small">${esc(e.line || "")}</div>
+    <div style="margin-top:12px"><span class="tag gold">Inducted</span> ${hofBadge(e.badge || { tier: e.tier || "W", scope: e.scope || null }, 26)}</div></div>`;
+}
+
+// ---------------------------------------------------------------- world induction day
+async function viewHofDay(season, sub) {
+  const S = season || STATUS.header.season - (STATUS.header.flow ? 0 : 1);
+  const d = await api("/api/hofday?season=" + S);
+  if (sub === "watch") return hofDayWatch(d);
+  const list = (arr, o) => arr.length ? `<div class="hlist">${arr.map((r) => hofRow(r, o(r))).join("")}</div>` : "";
+  const ind = d.inducted.concat(d.coaches.inducted);
+  $("#view").innerHTML = `<div class="v2"><a class="crumb" href="#/ceremony/${S}">&lsaquo; Awards &middot; Season ${S}</a>
+    <div class="hd"><div><h1>World Hall of Fame</h1><div class="sub">Class of ${esc(d.label)}</div></div><a class="btn sm" href="#/hofday/${S}/watch">Watch the vote</a></div>
+    <h2 class="lbl2">Inducted</h2>${ind.length ? list(ind, (r) => ({ right: hofPct(r.pct), bar: r.pct, gold: true })) : `<div class="card dim small">Nobody reached ${Math.round(d.cfg.pass * 100)}% this year.</div>`}
+    ${d.vetoes.length ? d.vetoes.map((v) => `<div class="hveto"><b>${esc(v.nat)} did not honour ${esc(v.name)}.</b> ${esc(v.text.replace(/^.*?Federation veto: /, "Federation veto: "))}</div>`).join("") : ""}
+    ${d.missed.length ? `<h2 class="lbl2">Missed out</h2>${list(d.missed, (r) => ({ right: hofPct(r.pct), bar: r.pct, tag: r.left === 0 ? "last year" : r.left === 1 ? "1 year left" : "", tagc: "red" }))}` : ""}
+    ${d.fell.length ? `<h2 class="lbl2">Fell off the ballot</h2>${list(d.fell, (r) => ({ right: r.why === "time" ? "ten years" : "no support" }))}` : ""}
+    ${d.favs.length ? `<h2 class="lbl2">Your favourites</h2><div class="hlist">${d.favs.map((f) => `<div class="hr"><div class="hr-a"><div class="hr-m"><b>${f.kind === "league" ? leagueLink(f.name) : natLink(f.name)}</b><span class="dim small">${f.inducted.length ? "inducted " + f.inducted.map(esc).join(", ") : "no inductees this year"}</span></div></div></div>`).join("")}</div>` : ""}
+    <a class="more" href="#/hof"><span>Open the Hall of Fame</span><span>&rsaquo;</span></a></div>`;
+}
+function hofDayWatch(d) {
+  const S = d.season, steps = ["Watch", "Vote", "Fell off"];
+  let step = d.watch.length ? 0 : 1, i = 0;
+  const ind = d.inducted.concat(d.coaches.inducted).sort((a, b) => a.pct - b.pct);
+  const head = (t) => `<a class="crumb" href="#/hofday/${S}">&lsaquo; Results</a><div class="hd"><div><div class="dim small">World Hall of Fame &middot; class of ${esc(d.label)}</div><h1>${t}</h1></div></div>
+    <div class="stp">${steps.map((s, k) => `<span class="${k === step ? "on" : ""}">${k + 1} ${s}</span>`).join("")}</div>`;
+  const draw = () => {
+    let h;
+    if (step === 0) {
+      h = head("Final-year watch") + `<div class="dim small" style="margin:8px 2px">They are running out of time. Swipe to see who is on the edge before the vote.</div>
+        <div class="hswipe">${d.watch.map((r) => `<div class="hsw"><div class="hrv-n">${flag(r.nat, 30)}<div><div class="hrv-name">${esc(r.name)}</div><div class="dim small">${hofSub(Object.assign({}, r, { n: 0 }))}</div></div></div>
+          <div class="hrv-p"><span class="dim small">Year ${r.n} of 10</span>${r.left === 0 ? '<span class="tag red">last chance</span>' : `<span class="tag red">${r.left} left</span>`}</div>
+          ${r.last != null ? `<div class="hbar"><i style="width:${Math.round(r.last * 100)}%"></i><u style="left:75%"></u></div><div class="dim small">Last year ${hofPct(r.last)}</div>` : ""}
+          <div class="dim small" style="margin-top:6px">${esc(r.line)}</div></div>`).join("")}</div>
+        <div class="foot"><button class="btn" id="hd-skip">Skip</button><button class="btn pri" id="hd-next">The vote</button></div>`;
+    } else if (step === 1) {
+      if (i < ind.length) {
+        const e = ind[i];
+        h = head("The vote") + `<div class="dim small" style="margin:8px 2px">${ind.length} inducted, revealed from the lowest vote up.</div>${hofReveal(e, (e.k === "c" ? "World Hall of Fame · coach" : "World Hall of Fame"), i, ind.length)}
+          <div class="foot"><button class="btn" id="hd-skip">Skip to summary</button><button class="btn pri" id="hd-next">${i === ind.length - 1 ? "Summary" : "Next"}</button></div>`;
+      } else {
+        h = head("The vote: summary") + `<h2 class="lbl2">Inducted</h2>${ind.length ? `<div class="hlist">${ind.slice().reverse().map((r) => hofRow(r, { right: hofPct(r.pct), bar: r.pct, gold: true })).join("")}</div>` : '<div class="card dim small">Nobody reached 75% this year.</div>'}
+          ${d.vetoes.map((v) => `<div class="hveto"><b>${esc(v.nat)} did not honour ${esc(v.name)}.</b> ${esc(v.text.replace(/^.*?Federation veto: /, "Federation veto: "))}</div>`).join("")}
+          ${d.missed.length ? `<h2 class="lbl2">Missed out</h2><div class="hlist">${d.missed.slice(0, 4).map((r) => hofRow(r, { right: hofPct(r.pct), tag: r.left === 0 ? "last year" : r.left === 1 ? "1 year left" : "", tagc: "red" })).join("")}</div>` : ""}
+          ${d.favs.length ? `<h2 class="lbl2">Your favourites</h2><div class="hlist">${d.favs.map((f) => `<div class="hr"><div class="hr-a"><div class="hr-m"><b>${esc(f.name)}</b><span class="dim small">${f.inducted.length ? "inducted " + f.inducted.map(esc).join(", ") : "no inductees"}</span></div></div></div>`).join("")}</div>` : ""}
+          <div class="foot"><button class="btn" id="hd-back">Back</button><button class="btn pri" id="hd-next">Who fell off</button></div>`;
+      }
+    } else {
+      h = head("Fell off the ballot") + (d.fell.length ? `<div class="dim small" style="margin:8px 2px">Their time is up. They keep their other halls.</div><div class="hlist">${d.fell.map((r) => hofRow(r, { right: r.why === "time" ? "ten years" : "no support", sub: `${hofSub(Object.assign({}, r, { n: 0 }))} &middot; ${esc(r.line)}` })).join("")}</div>` : '<div class="card dim small">Nobody fell off the world ballot this year.</div>')
+        + `<div class="foot"><button class="btn" id="hd-back">Back</button><a class="btn pri" href="#/hofday/${S}">Results</a></div>`;
+    }
+    $("#view").innerHTML = `<div class="v2 hday">${h}</div>`;
+    const nx = $("#hd-next"), sk = $("#hd-skip"), bk = $("#hd-back");
+    if (nx) nx.onclick = () => { if (step === 0) { step = 1; i = 0; } else if (step === 1) { if (i < ind.length) i++; else step = 2; } draw(); window.scrollTo(0, 0); };
+    if (sk) sk.onclick = () => { if (step === 0) { step = 1; i = 0; } else i = ind.length; draw(); };
+    if (bk) bk.onclick = () => { if (step === 2) { step = 1; i = ind.length; } else { i = Math.max(0, ind.length - 1); } draw(); };
+  };
+  draw();
+}
+
+// ---------------------------------------------------------------- a league's Hall of Fame day
+const HLG = { tab: "league" };
+async function viewHofLeague(league, season, sub, club) {
+  const d = await api("/api/hofleague?league=" + enc(league) + (season ? "&season=" + season : ""));
+  if (!d.ready) { $("#view").innerHTML = `<div class="v2"><a class="crumb" href="#/league/${enc(league)}">&lsaquo; ${esc(league)}</a><h1>Hall of Fame day</h1><div class="card dim small">The vote happens when the ${esc(league)} season finishes.</div></div>`; return; }
+  if (sub === "watch") return hofLeagueWatch(d);
+  if (sub === "club" && club) {
+    const c = d.clubs.find((x) => x.club === club);
+    const cd = await api("/api/hof?tier=K&kind=p&name=" + enc(club));
+    $("#view").innerHTML = `<div class="v2"><a class="crumb" href="#/hofleague/${enc(league)}/${d.season}">&lsaquo; ${esc(league)} results</a>
+      <div class="row" style="gap:10px;margin-top:8px">${crest(club, 44)}<div><h1 style="margin:0">${esc(club)}</h1><div class="dim small">Club Hall of Fame &middot; class of ${esc(d.label)}</div></div></div>
+      <h2 class="lbl2">Inducted this year</h2>${c && c.inducted.length ? `<div class="hlist">${c.inducted.map((r) => hofRow(r, { right: hofPct(r.pct), bar: r.pct, gold: true })).join("")}</div>` : '<div class="card dim small">Nobody this year.</div>'}
+      ${cd.ballot.length ? `<h2 class="lbl2">Still on the club ballot</h2><div class="hlist">${cd.ballot.slice(0, 6).map((r) => hofRow(r, { right: hofPct(r.pct), bar: r.pct, tag: r.left <= 1 ? (r.left === 0 ? "last year" : "1 year left") : "", tagc: "red" })).join("")}</div>` : ""}
+      <a class="more" href="#/hof/K/${enc(club)}"><span>Full ${esc(club)} Hall of Fame</span><span>&rsaquo;</span></a></div>`;
+    return;
+  }
+  const tab = HLG.tab;
+  let body;
+  if (tab === "league") body = (d.league_ind.length ? `<h2 class="lbl2">${esc(league)} Hall of Fame</h2><div class="hlist">${d.league_ind.map((r) => hofRow(r, { right: hofPct(r.pct), bar: r.pct, gold: true })).join("")}</div>` : `<div class="card dim small">No league inductees this year.</div>`);
+  else if (tab === "clubs") body = `<h2 class="lbl2">Clubs <span class="dim small" style="text-transform:none;letter-spacing:0">tap a club for its results</span></h2><div class="hlist">${d.clubs.map((c) => `<a class="hr hr-link" href="#/hofleague/${enc(league)}/${d.season}/club/${enc(c.club)}"><div class="hr-a">${crest(c.club, 28)}<div class="hr-m"><b>${esc(c.club)}</b></div><span class="tag ${c.inducted.length ? "gold" : ""}">${c.inducted.length ? c.inducted.length + " inducted" : "none"}</span><i class="chev"></i></div></a>`).join("")}</div>`;
+  else body = d.ballot.length ? `<div class="hlist">${d.ballot.map((r) => hofRow(r, { right: hofPct(r.pct), bar: r.pct, tag: r.left <= 1 ? (r.left === 0 ? "last year" : "1 year left") : "", tagc: "red" })).join("")}</div>` : `<div class="card dim small">Nobody is on the league ballot.</div>`;
+  $("#view").innerHTML = `<div class="v2"><a class="crumb" href="#/league/${enc(league)}">&lsaquo; ${esc(league)}</a>
+    <div class="hd"><div><h1>Hall of Fame day ${esc(d.label)}</h1><div class="sub">${esc(league)} &middot; ${d.nLeague} league and ${d.nClubs} club inductees</div></div><a class="btn sm" href="#/hofleague/${enc(league)}/${d.season}/watch">Watch</a></div>
+    ${hofSeg("data-ltab", [["league", "League"], ["clubs", "Clubs"], ["ballot", "Ballot"]], tab)}${body}
+    <a class="more" href="#/hof/L/${enc(league)}"><span>Full ${esc(league)} Hall of Fame</span><span>&rsaquo;</span></a></div>`;
+  document.querySelectorAll("[data-ltab]").forEach((b) => (b.onclick = () => { HLG.tab = b.dataset.ltab; route(); }));
+}
+function hofLeagueWatch(d) {
+  const items = [];
+  for (const e of d.league_ind) items.push({ e, scope: d.league + " Hall of Fame" + (e.k === "c" ? " · coach" : "") });
+  for (const c of d.clubs) for (const e of c.inducted) items.push({ e, scope: c.club + " Hall of Fame" + (e.k === "c" ? " · coach" : "") });
+  let i = 0;
+  const draw = () => {
+    const last = i >= items.length;
+    $("#view").innerHTML = `<div class="v2 hday"><a class="crumb" href="#/hofleague/${enc(d.league)}/${d.season}">&lsaquo; Results</a>
+      <div class="hd"><div><div class="dim small">${esc(d.league)} &middot; ${esc(d.label)}</div><h1>Hall of Fame day</h1></div></div>
+      ${items.length ? (last ? `<div class="card" style="text-align:center;padding:22px 14px"><div class="eyebrow gold">That is the class</div><div style="font-size:18px;font-weight:700;margin:8px 0">${d.nLeague} league and ${d.nClubs} club inductees</div></div>` : hofReveal(items[i].e, items[i].scope, i, items.length)) : `<div class="card dim small">Nobody was inducted this year.</div>`}
+      <div class="foot">${last || !items.length ? `<a class="btn" href="#/hof/L/${enc(d.league)}">League hall</a><a class="btn pri" href="#/hofleague/${enc(d.league)}/${d.season}">Results</a>` : `<a class="btn" href="#/hofleague/${enc(d.league)}/${d.season}">Skip to results</a><button class="btn pri" id="hl-next">${i === items.length - 1 ? "Finish" : "Next"}</button>`}</div></div>`;
+    const nx = $("#hl-next"); if (nx) nx.onclick = () => { i++; draw(); window.scrollTo(0, 0); };
+  };
+  draw();
+}
+// the block in the league-finish popup: fetched once the league is done
+async function hofLeagueBlock(league) {
+  try {
+    const d = await api("/api/hofleague?league=" + enc(league));
+    if (!d.ready) return null;
+    return d;
+  } catch (e) { return null; }
+}
+
+// ---------------------------------------------------------------- academies: prestige, manager, ranking
+const GRADE_TXT = { 1: ["Strong", "green"], 0: ["Average", ""], "-1": ["Weak", "red"] };
+async function academyHofBlock(club) {
+  const el = $("#acad-hof"); if (!el) return;
+  try {
+    const a = await api("/api/academy?club=" + enc(club)), m = a.manager, g = m ? GRADE_TXT[m.grade] : null, od = a.odds;
+    const bar = (x, c) => `<span style="display:block;height:100%;width:${Math.round(x * 100)}%;background:${c}"></span>`;
+    el.innerHTML = `<div class="v2"><div class="card hero"><h3>Academy prestige <small>#${a.rank} of ${a.of}</small></h3>
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px"><div class="big">${Math.round(a.prestige)}</div><span class="tag ${a.rising > 1 ? "green" : a.rising < -1 ? "red" : ""}">${a.rising > 1 ? "Rising" : a.rising < -1 ? "Falling" : "Steady"} ${a.rising > 0 ? "+" : ""}${a.rising}</span></div>
+      <div class="dim small">Earned from graduates: how good they became, what they won, and every Hall of Fame they enter.</div>
+      <div class="stat4"><div><b>${a.graduates}</b><span>GRADUATES</span></div><div><b>${a.pros}</b><span>FIVE+ SEASONS</span></div><div><b>${a.stars}</b><span>80+ PEAK</span></div><div><b>${a.halls}</b><span>HALL POINTS</span></div></div>
+      <a class="more" href="#/academies"><span>All academies ranked</span><span>&rsaquo;</span></a></div>
+    <div class="card"><h3>Academy manager ${g ? `<small><span class="tag ${g[1]}">${g[0]}</span></small>` : ""}</h3>
+      ${m ? `<div class="row"><span><b>${esc(m.name)}</b> <span class="dim small">${natLink(m.nat)} &middot; age ${m.age}</span></span><span class="dim small">since S${m.since}</span></div>` : '<div class="dim small">No manager yet.</div>'}
+      <div class="dim small" style="margin-top:6px">He adds ${m ? (m.grade > 0 ? "a boost to" : m.grade < 0 ? "a drag on" : "nothing extra to") : "nothing to"} the academy's development. If the first-team job opens he is a candidate, and the academy then draws a fresh manager.</div>
+      <div class="dim small" style="margin-top:8px">Next draw: ${hofPct(od.strong)} strong, ${hofPct(od.average)} average, ${hofPct(od.weak)} weak</div>
+      <div style="display:flex;height:6px;gap:2px;margin-top:6px;border-radius:3px;overflow:hidden">${bar(od.strong, "#3ddc84")}${bar(od.average, "#8fa89a")}${bar(od.weak, "#ff6b6b")}</div></div>
+    <div class="card"><h3>Best graduates</h3>${a.best.length ? a.best.map((b) => `<div class="row"><span>${flag(b.nat, 16)} ${b.uid ? `<a href="#/player/${b.uid}">${esc(b.name)}</a>` : esc(b.name)}${b.active ? ' <span class="tag green">playing</span>' : ""}</span><span class="dim small">peak ${b.peak}</span></div>`).join("") : '<div class="dim small">No graduates have broken through yet.</div>'}</div>
+    ${a.in_halls.length ? `<div class="card"><h3>Graduates in a Hall of Fame</h3><div class="hlist">${a.in_halls.map((r) => hofRow(r)).join("")}</div></div>` : ""}</div>`;
+  } catch (e) { el.innerHTML = ""; }
+}
+const ACV = { sort: "prestige", scope: "world" };
+async function viewAcademies(scope, name) {
+  scope = ["world", "continent", "league"].includes(scope) ? scope : ACV.scope; ACV.scope = scope;
+  const d = await api("/api/academies?scope=" + scope + (name ? "&name=" + enc(name) : ""));
+  if (scope !== "world" && !name) { location.replace("#/academies/" + scope + "/" + enc(scope === "league" ? d.leagues[0] : d.confeds[0])); return; }
+  let rows = d.rows.slice();
+  if (ACV.sort === "rising") rows = rows.filter((r) => r.rising > 0).sort((a, b) => b.rising - a.rising);
+  else if (ACV.sort === "under") rows = rows.filter((r) => r.under).sort((a, b) => b.level - a.level);
+  rows = rows.slice(0, 30);
+  const sel = scope === "world" ? "" : `<select id="ac-sel">${(scope === "league" ? d.leagues : d.confeds).map((n) => `<option ${n === name ? "selected" : ""}>${esc(n)}</option>`).join("")}</select>`;
+  $("#view").innerHTML = `<div class="v2"><a class="crumb" href="#/hof">&lsaquo; Hall of Fame</a><h1>Academies</h1><div class="sub">Ranked by prestige: what their graduates became.</div>
+    ${hofSeg("data-acs", [["world", "World"], ["continent", "Continent"], ["league", "League"]], scope)}
+    <div class="hof-ctl">${sel}${hofSeg("data-acsort", [["prestige", "Top"], ["rising", "Rising"], ["under", "Underachievers"]], ACV.sort)}</div>
+    <div class="hlist" style="margin-top:10px">${rows.length ? rows.map((r) => `<a class="hr hr-link" href="#/club/${enc(r.club)}" data-acad="1"><div class="hr-a"><span class="rk">${r.rank}</span>${crest(r.club, 26)}<div class="hr-m"><b>${esc(r.club)}</b><span class="dim small">level ${r.level} &middot; ${r.stars} stars &middot; ${r.graduates} graduates</span></div>${r.rising > 1 ? '<span class="tag green">rising</span>' : ""}${r.under ? '<span class="tag red">spent a lot</span>' : ""}<span class="hr-r">${Math.round(r.prestige)}</span></div><div class="hbar"><i style="width:${Math.min(100, r.prestige)}%"></i></div></a>`).join("") : '<div class="card dim small" style="margin:0">Nobody fits yet.</div>'}</div></div>`;
+  document.querySelectorAll("[data-acs]").forEach((b) => (b.onclick = () => (location.hash = "#/academies/" + b.dataset.acs)));
+  document.querySelectorAll("[data-acsort]").forEach((b) => (b.onclick = () => { ACV.sort = b.dataset.acsort; route(); }));
+  document.querySelectorAll("[data-acad]").forEach((a) => (a.onclick = () => { CV_OPEN = "acad"; }));
+  const s2 = $("#ac-sel"); if (s2) s2.onchange = () => (location.hash = "#/academies/" + scope + "/" + enc(s2.value));
+}
+</script>
+<script>"use strict";
+// v16 Off-season moves: one page for everything that changes hands between two seasons. Highlights (with a walk-through that
+// steps through the hottest moves one at a time), Players (transfers, free agents, released), Coaches (hired, sacked, academy
+// managers getting their shot, national jobs) and Retired (players and coaches ranked by prestige or peak level).
+// Loaded before app.js; the helpers it uses (api, esc, enc, flag, crest, money, ovr, leagueLink, FAVS, STATUS, ...) are only touched when a page is drawn.
+
+const MV = { kind: "all", mv: "all", sort: "", league: "", who: "p", limit: 60, cokind: "all" };
+const MV_TABS = [["highlights", "Highlights"], ["players", "Players"], ["coaches", "Coaches"], ["retired", "Retired"], ["money", "Money"]];
+const mvChips = (attr, list, cur) => `<div class="mchips" role="group">${list.map(([k, t]) => `<button ${attr}="${esc(k)}" class="${k === cur ? "on" : ""}">${t}</button>`).join("")}</div>`;
+const mvTag = (m) => m === "up" ? `<span class="tag green">&#9650; Step up</span>` : m === "down" ? `<span class="tag red">&#9660; Step down</span>` : m === "side" ? `<span class="tag">&#9644; Lateral</span>` : "";
+const mvAgo = (n) => (n === 1 ? "a year" : n + " years");
+const mvPos = (r) => (r.pos ? `<span class="pos-${esc(r.pos)}">${esc(r.pos)}</span>` : "");
+// the one emblem on a row: the club the person ends up at, or the one they leave; a flag for a national job
+function mvBadge(r, size) {
+  size = size || 28;
+  if (r.k === "n") return flag(r.nation, size - 4);
+  const club = r.to || r.from || r.club;
+  return club ? crest(club, size) : "";
+}
+function mvWho(r) {
+  const nm = r.uid ? `<a href="#/player/${r.uid}">${esc(r.name)}</a>` : r.hid ? `<a href="#/hofcard/${esc(r.hid)}">${esc(r.name)}</a>` : esc(r.name);
+  return nm;
+}
+function mvLine(r) {
+  const age = r.age ? `age ${r.age}` : "";
+  const who = r.k === "t" || r.k === "f" || r.k === "r" || r.k === "p" ? [mvPos(r), age].filter(Boolean).join(" &middot; ") : "Coach &middot; " + age;
+  let mid = "";
+  if (r.k === "t") mid = `${esc(r.from)} &rarr; ${esc(r.to)}`;
+  else if (r.k === "f") mid = r.first ? `first pro contract &rarr; ${esc(r.to)}` : r.from ? `${esc(r.from)} &rarr; ${esc(r.to)}` : `free agent &rarr; ${esc(r.to)}`;
+  else if (r.k === "r") mid = `released by ${esc(r.from)}`;
+  else if (r.k === "p") mid = `${r.club ? "last at " + esc(r.club) : "no club"} &middot; peak ${r.pk || r.ovr}`;
+  else if (r.k === "h") mid = r.src === "acad" ? `${esc(r.from)} academy &rarr; ${esc(r.to)}` : r.src === "new" ? `first job &rarr; ${esc(r.to)}` : r.from ? `${esc(r.from)} &rarr; ${esc(r.to)}` : `hired by ${esc(r.to)}`;
+  else if (r.k === "x") mid = `sacked by ${esc(r.from)}`;
+  else if (r.k === "q") mid = `left ${esc(r.from)}`;
+  else if (r.k === "cr") mid = r.from ? `last at ${esc(r.from)}` : "retired";
+  else if (r.k === "n") mid = `${esc(r.nation)} national team`;
+  return [who, mid].filter(Boolean).join(" &middot; ");
+}
+function mvRight(r) {
+  if (r.k === "t") return `<b>${money(r.fee)}</b>${mvTag(r.mv)}`;
+  if (r.k === "f") return `<b>${r.wage ? money(r.wage) + "/yr" : "free"}</b>${mvTag(r.mv)}`;
+  if (r.k === "r") return `<b>${r.wage ? money(r.wage) + "/yr" : ""}</b><span class="tag">no club</span>`;
+  if (r.k === "p") return `<b>${r.prestige}</b><span class="dim small">prestige</span>`;
+  if (r.k === "h") return r.src === "acad" ? `<span class="tag gold">Academy shot</span>` : `<span class="tag green">Hired</span>${mvTag(r.mv)}`;
+  if (r.k === "x") return `<span class="tag red">Sacked</span>`;
+  if (r.k === "q") return `<span class="tag">Left</span>`;
+  if (r.k === "cr") return `<span class="tag">Retired</span>`;
+  return `<span class="tag blue">National</span>`;
+}
+// a two-line row: emblem, name with rating, a short line, and the money or tag on the right
+function mvRow(r, i, attrs) {
+  const star = (r.k === "t" || r.k === "f" || r.k === "r" || r.k === "p") && r.ovr ? " " + ovr(r.k === "p" ? (r.pk || r.ovr) : r.ovr) : "";
+  const hot = r.hot >= 70 ? `<span class="mvhot" title="hot move">&#128293;</span>` : "";
+  return `<div class="hr mvr" ${attrs || ""}><div class="hr-a"><span class="mvb">${mvBadge(r)}</span><div class="hr-m"><b>${r.nat ? flag(r.nat, 16) + " " : ""}${mvWho(r)}${star}${hot}</b><span class="dim small">${mvLine(r)}${r.k === "p" && r.hofFrom ? ` &middot; Hall of Fame from ${esc(r.hofFrom)}` : ""}</span></div><span class="hr-r mvR">${mvRight(r)}</span></div></div>`;
+}
+const mvSeasonLabel = (d) => `Season ${d.season} &middot; ${esc(d.label)}`;
+
+// ---------------------------------------------------------------- the page
+async function viewMoves(season, tab) {
+  tab = MV_TABS.some((t) => t[0] === tab) || tab === "walk" ? tab : "highlights";
+  if (tab === "money") { location.replace("#/ledger/" + (season || "")); return; }
+  const walking = tab === "walk";
+  const q = new URLSearchParams();
+  if (season) q.set("season", season);
+  q.set("tab", walking ? "highlights" : tab);
+  if (MV.league) q.set("league", MV.league);
+  if (tab === "players") { if (MV.kind !== "all") q.set("kind", MV.kind); if (MV.mv !== "all") q.set("mv", MV.mv); }
+  if (tab === "coaches") { if (MV.cokind !== "all") q.set("kind", MV.cokind); if (MV.mv !== "all") q.set("mv", MV.mv); }
+  if (tab === "retired") q.set("who", MV.who);
+  if (MV.sort) q.set("sort", MV.sort);
+  q.set("limit", MV.limit);
+  const d = await api("/api/moves?" + q.toString());
+  if (!d.season) { $("#view").innerHTML = `<div class="v2"><div class="hd"><div><h1>Off-season moves</h1></div></div><div class="card dim small">No completed season yet. Transfers, new coaches and retirements appear here once a season is over.</div></div>`; return; }
+  if (walking) return mvWalk(d);
+  const S = d.season, favL = (FAVS || []).filter((k) => k.startsWith("L:")).map((k) => k.slice(2));
+  const lgOpt = (l) => `<option value="${esc(l)}" ${l === d.league ? "selected" : ""}>${esc(l)}</option>`;
+  const head = `<div class="hd"><div><h1>Off-season moves</h1><div class="sub">${mvSeasonLabel(d)}</div></div></div>
+    <p class="filters"><select id="mv-s" aria-label="Season">${Array.from({ length: d.seasons }, (_, i) => d.seasons - i).map((s) => `<option value="${s}" ${s === S ? "selected" : ""}>Season ${s}</option>`).join("")}</select>
+    <select id="mv-l" aria-label="League"><option value="">All leagues</option>${favL.length ? `<optgroup label="Favourites">${favL.map(lgOpt).join("")}</optgroup><optgroup label="All leagues">` : ""}${d.leagues.map(lgOpt).join("")}${favL.length ? "</optgroup>" : ""}</select></p>
+    <div class="seg mtabs" role="tablist">${MV_TABS.map(([k, t]) => `<button data-t="${k}" class="${k === tab ? "on" : ""}">${t}</button>`).join("")}</div>`;
+  const c = d.counts;
+  let body = "";
+  if (!d.recorded && tab !== "highlights" && tab !== "players") body = `<div class="card dim small">Coach moves and retirements were not written down for this season. Transfers were: see the Players tab.</div>`;
+  else if (tab === "highlights") {
+    const w = d.walk, hotRows = w.slice().sort((a, b) => b.hot - a.hot).slice(0, 6);
+    body = `<div class="mtiles"><a data-t="players"><b>${c.transfers}</b><span>transfers</span></a><a data-t="players" data-k="f"><b>${c.free}</b><span>free agents signed</span></a><a data-t="coaches"><b>${c.hired + c.fired + c.left}</b><span>coach moves</span></a><a data-t="retired"><b>${c.retired}</b><span>players retired</span></a></div>
+      ${c.academy ? `<div class="dim small" style="margin:6px 2px">${c.academy} academy manager${c.academy > 1 ? "s" : ""} got a first-team job. ${c.fired ? c.fired + " coaches were sacked." : ""}</div>` : ""}
+      ${w.length ? `<a class="btn pri mvgo" href="#/moves/${S}/walk">Start the walk-through <small>${w.length} moves, hottest first</small></a>
+      <h2 class="lbl2">Hottest moves</h2><div class="hlist">${hotRows.map((r) => mvRow(r, 0, `data-w="${w.indexOf(r)}"`)).join("")}</div>` : `<div class="card dim small">Nothing noteworthy was recorded${d.league ? " for " + esc(d.league) : ""}.</div>`}
+      ${!d.recorded ? `<div class="dim small" style="margin:8px 2px">This season was played before moves were written down, so only transfers show up.</div>` : ""}`;
+  } else if (tab === "players") {
+    const mc = d.mvCounts || { up: 0, side: 0, down: 0 };
+    body = `<div class="dim small" style="margin:8px 2px 4px">Kind</div>${mvChips("data-k", [["all", "All"], ["t", "Transfers"], ["f", "Free agents"], ["r", "Released"]], MV.kind)}
+      <div class="dim small" style="margin:8px 2px 4px">Move</div>${mvChips("data-m", [["all", "All"], ["up", "&#9650; Up " + mc.up], ["side", "&#9644; Lateral " + mc.side], ["down", "&#9660; Down " + mc.down]], MV.mv)}
+      <p class="filters" style="margin:8px 0"><select id="mv-o" aria-label="Sort">${[["hot", "Hottest"], ["pay", "Highest paid"], ["level", "Best player"], ["jump", "Biggest jump"], ["young", "Youngest"]].map(([k, t]) => `<option value="${k}" ${(d.sort || "hot") === k ? "selected" : ""}>Sort: ${t}</option>`).join("")}</select><span class="dim small">${d.total} moves</span></p>`;
+  } else if (tab === "coaches") {
+    body = `${mvChips("data-ck", [["all", "All"], ["h", "Hired"], ["acad", "Academy shot"], ["x", "Sacked"], ["q", "Left"], ["cr", "Retired"], ["n", "National"]], MV.cokind)}
+      <div class="dim small" style="margin:8px 2px 4px">Move</div>${mvChips("data-m", [["all", "All"], ["up", "&#9650; Up"], ["side", "&#9644; Lateral"], ["down", "&#9660; Down"]], MV.mv)}
+      <p class="filters" style="margin:8px 0"><select id="mv-o" aria-label="Sort">${[["hot", "Hottest"], ["name", "Biggest name"], ["jump", "Biggest jump"]].map(([k, t]) => `<option value="${k}" ${(d.sort || "hot") === k ? "selected" : ""}>Sort: ${t}</option>`).join("")}</select><span class="dim small">${d.total} moves</span></p>`;
+  } else {
+    body = `${mvChips("data-w", [["p", "Players"], ["c", "Coaches"]], MV.who)}
+      <p class="filters" style="margin:8px 0"><select id="mv-o" aria-label="Sort">${[["prestige", "Prestige"], ["peak", "Peak level"], ["age", "Oldest"]].map(([k, t]) => `<option value="${k}" ${(d.sort || "prestige") === k ? "selected" : ""}>Rank by: ${t}</option>`).join("")}</select><span class="dim small">${d.total} retired</span></p>`;
+  }
+  if (tab !== "highlights" && (d.recorded || tab === "players")) {
+    body += d.rows.length ? `<div class="hlist">${d.rows.map((r) => mvRow(r, 0)).join("")}</div>${d.total > d.rows.length ? `<button class="btn mvmore" id="mv-more">Show more (${d.total - d.rows.length} left)</button>` : ""}`
+      : `<div class="card dim small">Nothing matches these filters.</div>`;
+  }
+  $("#view").innerHTML = `<div class="v2 mvp">${head}${body}</div>`;
+  const go = (t, extra) => { if (extra) extra(); MV.limit = 60; if (location.hash === "#/moves/" + S + "/" + t) route(); else location.hash = "#/moves/" + S + "/" + t; };
+  document.querySelectorAll(".mtabs [data-t]").forEach((b) => b.onclick = () => go(b.dataset.t));
+  document.querySelectorAll(".mtiles [data-t]").forEach((b) => b.onclick = () => go(b.dataset.t, () => { if (b.dataset.k) MV.kind = b.dataset.k; }));
+  $("#mv-s").onchange = (e) => { location.hash = "#/moves/" + e.target.value + "/" + tab; };
+  $("#mv-l").onchange = (e) => { MV.league = e.target.value; MV.limit = 60; route(); };
+  const o = $("#mv-o"); if (o) o.onchange = (e) => { MV.sort = e.target.value; route(); };
+  document.querySelectorAll("[data-k]:not(.mtiles *)").forEach((b) => b.onclick = () => { MV.kind = b.dataset.k; MV.limit = 60; route(); });
+  document.querySelectorAll("[data-ck]").forEach((b) => b.onclick = () => { MV.cokind = b.dataset.ck; MV.limit = 60; route(); });
+  document.querySelectorAll(".mchips [data-m]").forEach((b) => b.onclick = () => { MV.mv = b.dataset.m; MV.limit = 60; route(); });
+  document.querySelectorAll(".mchips [data-w]").forEach((b) => b.onclick = () => { MV.who = b.dataset.w; MV.sort = ""; route(); });
+  document.querySelectorAll(".hlist [data-w]").forEach((b) => b.onclick = (e) => { if (e.target.closest("a")) return; sessionStorage.setItem("mvStart", b.dataset.w); location.hash = "#/moves/" + S + "/walk"; });
+  const more = $("#mv-more"); if (more) more.onclick = () => { MV.limit += 60; route(); };
+}
+
+// ---------------------------------------------------------------- the walk-through
+const MV_FLAVOUR = {
+  up: "A step up: the new club has more pull than the old one.",
+  down: "A step down: the new club has less pull than the old one.",
+  side: "A lateral move: the two clubs are about level."
+};
+function mvStory(r) {
+  const nm = esc(r.name);
+  if (r.k === "t") {
+    const bits = [`${nm} (${esc(r.pos || "")}, ${r.age}) moves from ${esc(r.from)} to ${esc(r.to)} for ${money(r.fee)}.`];
+    if (r.abroad) bits.push(`He crosses from the ${esc(r.fromL)} to the ${esc(r.toL)}.`);
+    if (r.rival) bits.push("The two clubs are rivals.");
+    if (r.mv) bits.push(MV_FLAVOUR[r.mv]);
+    return bits.join(" ");
+  }
+  if (r.k === "f") return r.first ? `${nm} (${r.age}) signs a first professional contract with ${esc(r.to)}, ${money(r.wage)} a year.` : `${nm} (${esc(r.pos || "")}, ${r.age}) was out of contract${r.from ? " at " + esc(r.from) : ""} and signs for ${esc(r.to)} on ${money(r.wage)} a year. ${r.mv ? MV_FLAVOUR[r.mv] : ""}`;
+  if (r.k === "r") return `${esc(r.from)} let ${nm} go. He is still looking for a club.`;
+  if (r.k === "h") {
+    if (r.src === "acad") return `The ${esc(r.from)} academy manager gets his shot: ${nm} (${r.age}) is promoted to first-team manager at ${esc(r.to)}.`;
+    if (r.src === "new") return `${esc(r.to)} give ${nm} (${r.age}) his first head coach job.`;
+    const bits = [r.from ? `${nm} (${r.age}) leaves ${esc(r.from)} and takes over at ${esc(r.to)}.` : `${esc(r.to)} appoint ${nm} (${r.age}).`];
+    if (r.idle > 0) bits.push(`He had been out of work for ${mvAgo(r.idle)}.`);
+    if (r.mv) bits.push(MV_FLAVOUR[r.mv].replace("new club has more pull than the old one", "bigger job than his last").replace("new club has less pull than the old one", "smaller job than his last").replace("the two clubs are about level", "a job of about the same size"));
+    return bits.join(" ");
+  }
+  if (r.k === "x") return `${esc(r.from)} sack ${nm} (${r.age}) after ${r.seasons} season${r.seasons === 1 ? "" : "s"} in management${r.titles ? " and " + r.titles + " league title" + (r.titles === 1 ? "" : "s") : ""}.`;
+  if (r.k === "q") return `${nm} (${r.age}) walks away from ${esc(r.from)}.`;
+  if (r.k === "cr") return `${nm} retires at ${r.age} after ${r.seasons} seasons in management: ${r.titles} league title${r.titles === 1 ? "" : "s"}, ${r.cups} continental cup${r.cups === 1 ? "" : "s"}.`;
+  if (r.k === "n") return `${nm} (${r.age}) is named ${esc(r.nation)} national team coach${r.prev ? ", replacing " + esc(r.prev) : ""}.`;
+  if (r.k === "p") return `${nm} (${esc(r.pos || "")}, ${r.age}) retires${r.club ? " from " + esc(r.club) : ""} after ${r.seasons || "many"} seasons. Peak rating ${r.pk || r.ovr}, prestige ${r.prestige}.${r.hofFrom ? " He becomes eligible for the Hall of Fame in " + esc(r.hofFrom) + "." : ""}`;
+  return "";
+}
+function mvSlide(r, n, total) {
+  const money_ = r.k === "t" ? `<div class="mvbig">${money(r.fee)}</div>` : r.k === "f" && r.wage ? `<div class="mvbig">${money(r.wage)}<small>/yr</small></div>` : "";
+  const fromTo = (r.k === "t" || r.k === "f" || r.k === "h") && r.to ? `<div class="mvft"><span>${r.from ? crest(r.from, 44) + `<i>${esc(r.from)}</i>` : `<i>${r.k === "h" ? "" : "free agent"}</i>`}</span><span class="mvar">&rarr;</span><span>${crest(r.to, 44)}<i>${esc(r.to)}</i></span></div>` : r.k === "n" ? `<div class="mvft"><span>${flag(r.nation, 44)}<i>${esc(r.nation)}</i></span></div>` : (r.from || r.club) ? `<div class="mvft"><span>${crest(r.from || r.club, 44)}<i>${esc(r.from || r.club)}</i></span></div>` : "";
+  const rating = r.ovr ? `${ovr(r.ovr)}` : "";
+  return `<div class="hrv mvs"><div class="dim small">${esc(r.chapter)} &middot; ${r.n} of ${r.of}</div>
+    <div class="hrv-n">${r.nat ? flag(r.nat, 34) : ""}<div><div class="hrv-name">${mvWho(r)} ${rating}</div><div class="dim small">${r.k === "p" || r.k === "t" || r.k === "f" || r.k === "r" ? mvPos(r) + " &middot; age " + r.age : "Coach &middot; age " + r.age}${r.nat ? " &middot; " + esc(r.nat) : ""}</div></div></div>
+    ${fromTo}${money_}
+    <div class="mvstory">${mvStory(r)}</div>
+    <div class="mvtags">${r.k === "h" && r.src === "acad" ? `<span class="tag gold">Academy manager gets his shot</span>` : `<span class="tag">${esc(r.kind)}</span>`}${mvTag(r.mv)}${r.rival ? `<span class="tag red">Rivals</span>` : ""}${r.hid ? `<span class="tag gold">Hall of Fame candidate</span>` : ""}</div>
+    <div class="mvheat"><span class="dim small">Heat</span><div class="hbar"><i class="${r.hot >= 70 ? "g" : ""}" style="width:${r.hot}%"></i></div><b>${r.hot}</b></div></div>`;
+}
+function mvWalk(d) {
+  const S = d.season, w = d.walk;
+  if (!w || !w.length) { location.replace("#/moves/" + S + "/highlights"); return; }
+  let i = Math.min(w.length - 1, Math.max(0, +sessionStorage.getItem("mvStart") || 0)); try { sessionStorage.removeItem("mvStart"); } catch (e) { }
+  const chapters = []; w.forEach((r, k) => { if (!chapters.length || chapters[chapters.length - 1][0] !== r.chapter) chapters.push([r.chapter, k]); });
+  const inFlow = STATUS.header.phase === "transfers";
+  const draw = () => {
+    const done = i >= w.length, r = w[i];
+    const head = `<a class="crumb" href="#/moves/${S}/highlights">&lsaquo; Off-season moves</a><div class="hd"><div><div class="dim small">${mvSeasonLabel(d)}</div><h1>${done ? "That was the off-season" : esc(r.chapter)}</h1></div></div>
+      <div class="stp">${chapters.map(([c, k], x) => `<span class="${!done && r.chapter === c ? "on" : ""}" data-c="${k}">${esc(c)}</span>`).join("")}</div>
+      <div class="mvprog"><i style="width:${Math.round((Math.min(i, w.length)) / w.length * 100)}%"></i></div>`;
+    let body;
+    if (!done) body = mvSlide(r, i + 1, w.length) + `<div class="foot"><button class="btn" id="mw-back" ${i === 0 ? "disabled" : ""}>Back</button><button class="btn pri" id="mw-next">${i === w.length - 1 ? "Finish" : "Next move"}</button></div><div style="text-align:center;margin-top:8px"><button class="linkbtn" id="mw-skip">Skip this chapter</button></div>`;
+    else {
+      const c = d.counts;
+      body = `<div class="mtiles"><a><b>${c.transfers}</b><span>transfers</span></a><a><b>${c.free}</b><span>free agents signed</span></a><a><b>${c.hired + c.fired + c.left}</b><span>coach moves</span></a><a><b>${c.retired}</b><span>retired</span></a></div>
+        <div class="dim small" style="margin:8px 2px">Want more? Every move is in the tabs, sorted the way you like.</div>
+        <div class="foot"><button class="btn" id="mw-back">Back</button><a class="btn pri" href="#/moves/${S}/players">Browse all moves</a></div>
+        ${inFlow ? `<div style="text-align:center;margin-top:8px"><button class="linkbtn" id="mw-grad">Continue to graduates</button></div>` : ""}`;
+    }
+    $("#view").innerHTML = `<div class="v2 hday mvp">${head}${body}</div>`;
+    const nx = $("#mw-next"), bk = $("#mw-back"), sk = $("#mw-skip"), gr = $("#mw-grad");
+    if (nx) nx.onclick = () => { i++; draw(); window.scrollTo(0, 0); };
+    if (bk) bk.onclick = () => { i = Math.max(0, i - 1); draw(); window.scrollTo(0, 0); };
+    if (sk) sk.onclick = () => { const cur = r.chapter; while (i < w.length && w[i].chapter === cur) i++; draw(); window.scrollTo(0, 0); };
+    if (gr) gr.onclick = () => flowStep("graduates");
+    document.querySelectorAll(".stp [data-c]").forEach((s) => s.onclick = () => { i = +s.dataset.c; draw(); });
+  };
+  draw();
 }
 </script>
 <script>"use strict";
@@ -9013,8 +10443,8 @@ const moneyS = (m) => (m > 0 ? "+" : "") + money(m);
 function renderShell() {
   const has = STATUS && STATUS.has_world;
   const route = location.hash.split("/")[1] || "";
-  const items = [["world", "World"], ["nations", "Nations"], ["news", "News"], ["money", "Money"], ["ledger", "Transfers"], ["rivals", "Rivals"], ["players", "Players"], ["ceremony", "Awards"], ["trophies", "Trophies"], ["records", "Records"]];
-  $("#nav").innerHTML = has ? items.map(([k, t]) => `<a href="#/${k}" class="${route === k ? "on" : ""}">${t}</a>`).join("") : "";
+  const items = [["world", "World"], ["nations", "Nations"], ["news", "News"], ["money", "Money"], ["moves", "Off-season"], ["rivals", "Rivals"], ["players", "Players"], ["ceremony", "Awards"], ["hof", "Hall of Fame"], ["trophies", "Trophies"], ["records", "Records"]];
+  $("#nav").innerHTML = has ? items.map(([k, t]) => `<a href="#/${k}" class="${route === k || (k === "moves" && route === "ledger") ? "on" : ""}">${t}</a>`).join("") : "";
   const h = STATUS && STATUS.header;
   $("#season-info").innerHTML = h
     ? (h.flow
@@ -9026,7 +10456,7 @@ function renderShell() {
 }
 let SBOPEN = false;
 // the season loop: Season -> Summer tournaments -> Awards -> Transfers -> next season (the engine's header.phase says where we are)
-const FLOW_STEPS = [["season", "Season"], ["summer", "Summer"], ["awards", "Awards"], ["transfers", "Transfers"], ["graduates", "Graduates"]];
+const FLOW_STEPS = [["season", "Season"], ["summer", "Summer"], ["awards", "Awards"], ["transfers", "Off-season"], ["graduates", "Graduates"]];
 function flowBar(h) {
   const at = { season: 0, summer: 1, done: 2, awards: 2, transfers: 3, graduates: 4 }[h.phase] ?? 0;
   const cell = (i, [k, t]) => `<div class="${i < at ? "done" : i === at ? "on" : ""}"${i === at ? ' aria-current="step"' : ""}>${i < at ? "&#10003; " : ""}${t}</div>`;
@@ -9041,8 +10471,8 @@ function renderSimBar() {
   const main = play
     ? `<button class="main" id="sb-week">Next week</button><button class="main" id="sb-4">4 weeks</button><button class="pri main" id="sb-end">${ph === "summer" ? "Finish summer" : "Rest of season"}</button>`
     : ph === "done" ? `<button class="pri main" id="sb-roll">Wrap up season ${h.season}</button>`
-    : ph === "awards" ? `<button class="main" id="sb-cer">Awards</button><button class="pri main" id="sb-tr">Continue to transfers</button>`
-    : ph === "transfers" ? `<button class="main" id="sb-mk">Transfers</button><button class="pri main" id="sb-gr">Continue to graduates</button>`
+    : ph === "awards" ? `<button class="main" id="sb-cer">Awards</button><button class="pri main" id="sb-tr">Continue to off-season</button>`
+    : ph === "transfers" ? `<button class="main" id="sb-mk">Off-season moves</button><button class="pri main" id="sb-gr">Continue to graduates</button>`
     : `<button class="main" id="sb-pg">Graduates</button><button class="pri main" id="sb-next">Start season ${h.season}</button>`;
   bar_.innerHTML = `
     ${flowBar(h)}
@@ -9064,7 +10494,7 @@ function renderSimBar() {
   on("#sb-roll", rollover);
   on("#sb-cer", () => (location.hash = "#/ceremony/" + fs + "/start"));
   on("#sb-tr", () => flowStep("transfers"));
-  on("#sb-mk", () => (location.hash = "#/ledger/" + fs));
+  on("#sb-mk", () => (location.hash = "#/moves/" + fs));
   on("#sb-gr", () => flowStep("graduates"));
   on("#sb-pg", () => (location.hash = "#/prospects"));
   on("#sb-next", () => flowStep("done"));
@@ -9130,7 +10560,7 @@ async function flowStep(step) {
   const fs = STATUS.header.flow ? STATUS.header.flow.season : STATUS.header.season - 1;
   await api("/api/flow", { step });
   await refreshStatus();
-  const to = step === "transfers" ? "#/ledger/" + fs : step === "graduates" ? "#/prospects" : "#/world";
+  const to = step === "transfers" ? "#/moves/" + fs : step === "graduates" ? "#/prospects" : "#/world";
   if (location.hash === to) await route(); else location.hash = to;
 }
 async function simYears() {
@@ -9286,7 +10716,7 @@ function wireSaves(inGame) {
 
 // ---------------------------------------------------------------- favorites
 // A favorite is a key: "L:<league>" or "<kind>:<confed>" (cup, ct, nl, qual). The list is kept inside the world, so it travels with every save.
-const APP_VERSION = "v15.2", APP_TAG = "League & Competition Pages";
+const APP_VERSION = "v16", APP_TAG = "Hall of Fame";
 let FAVS = null, PICK_ASKED = false;                    // FAVS: null until the player has chosen, then an array of keys
 const CT_NAMES = { UEFA: "European Championship", CONMEBOL: "Copa America", CONCACAF: "Gold Cup", CAF: "Africa Cup of Nations", AFC: "Asian Cup", OFC: "OFC Nations Cup" };
 const NL_NAMES = { UEFA: "UEFA Nations League", CONMEBOL: "CONMEBOL Nations League", CONCACAF: "CONCACAF Nations League", CAF: "CAF Nations League", AFC: "AFC Nations League", OFC: "OFC Nations League" };
@@ -9420,7 +10850,7 @@ async function viewStart() {
       <details class="opts"><summary>Storage, logos and importing</summary><div id="store-note"></div>${saveTools()}${logoPanel()}</details></div>`;
   $("#view").innerHTML = `<div class="start">
     <div class="start-head"><h1>Soccer Sim <span class="ver">${APP_VERSION}</span></h1>
-      <div class="start-tag">${starSvg(14)} ${APP_TAG}<span>Every league, cup and tournament now has its own page</span></div>
+      <div class="start-tag">${starSvg(14)} ${APP_TAG}<span>Halls of Fame, academy managers and every off-season move</span></div>
       <div class="sub">Commissioner mode: no lineups, no relegation, one worldwide player market.</div></div>
     ${hasSaves ? loadCard + newCard : newCard + loadCard}</div>`;
   $("#rules-on").onchange = (e) => ($("#rules").hidden = !e.target.checked);
@@ -9632,7 +11062,7 @@ async function viewClub(name) {
     if (t === "sq") drawSquad();
     if (built[t]) return; built[t] = 1;
     if (t === "fin") { const draw = (sel) => { $("#ct-fin").innerHTML = financeTab(c, sel); const sl = $("#fin-s"); if (sl) sl.onchange = (e) => draw(+e.target.value); }; draw(null); }
-    if (t === "acad") $("#ct-acad").innerHTML = academyTab(c);
+    if (t === "acad") { $("#ct-acad").innerHTML = `<div id="acad-hof"></div>` + academyTab(c); academyHofBlock(c.name); }
     if (t === "stad") { const rv = await api("/api/rivalries?club=" + enc(c.name)).catch(() => ({ rows: [] })); $("#ct-stad").innerHTML = stadiumTab(c, rv.rows); }
   };
   document.querySelectorAll("#ct-tabs [data-ct]").forEach((b) => (b.onclick = () => show(b.dataset.ct)));
@@ -10119,7 +11549,8 @@ function awGate(d) {
       <div class="eyebrow gold">The season is over</div>
       <div style="font-size:18px;font-weight:700;margin:8px 0 4px">Ballon d'Or, Golden Boot, Young Player, Coach and more</div>
       <div class="dim small">Watch them revealed one at a time, or skip and see every winner on one page.</div>
-      <div style="display:grid;gap:10px;margin-top:18px"><a class="btn pri" href="#/ceremony/${S}/watch" style="min-height:52px;font-size:15px">Watch the ceremony</a><a class="btn" href="#/ceremony/${S}" style="min-height:52px;font-size:15px">Skip to results</a></div></div></div>`;
+      <div style="display:grid;gap:10px;margin-top:18px"><a class="btn pri" href="#/ceremony/${S}/watch" style="min-height:52px;font-size:15px">Watch the ceremony</a><a class="btn" href="#/ceremony/${S}" style="min-height:52px;font-size:15px">Skip to results</a></div></div>
+    <a class="more" href="#/hofday/${S}"><span>World Hall of Fame induction day</span><span>&rsaquo;</span></a></div>`;
 }
 function awResults(d) {
   const a = d.awards, b = a.ballon, w = b[0], bt = a.boot[0], yg = a.young[0], co = a.coach[0];
@@ -10154,7 +11585,9 @@ function awResults(d) {
     <section id="aw-cups" class="card"><h3>Cup awards <small>MVPs feed the Ballon d'Or</small></h3>
       ${cupsShow.map((c) => `<details class="acc"><summary><span>${esc(c.name)}</span><span class="dim">${c.winner ? esc(c.winner) : ""}</span></summary><div class="b">${awCompBlock(c)}</div></details>`).join("")}
       <a class="more" href="#/ceremony/${S}/team"><span>All ${nComps} competitions</span><span>&rsaquo;</span></a>
-    </section>`;
+    </section>
+    <section class="card hofcta"><h3>World Hall of Fame <small>induction day</small></h3><div class="dim small">The world votes on the players and coaches whose time has come.</div>
+      <div class="hofcta-b"><a class="btn pri" href="#/hofday/${S}/watch">Watch the vote</a><a class="btn" href="#/hofday/${S}">Results</a></div></section>`;
 }
 function awBallon(d, back, hdr) {
   const a = d.awards, b = a.ballon, mx = b[0].pts || 1, w = b[0];
@@ -10221,7 +11654,7 @@ async function viewTrophies(key, tab) {
   const go = (t) => (location.hash = t === "winners" ? "#/trophies" : "#/trophies/" + t);
   if (tab === "clubs") {
     const h = await api("/api/hof_clubs");
-    $("#view").innerHTML = `<h1>Hall of Fame</h1><div class="sub">Greatest clubs of all time, ranked on trophies the way players are ranked on honours.</div>${tabs}
+    $("#view").innerHTML = `<h1>All-time ranking</h1><div class="sub">Greatest clubs of all time, ranked on trophies the way players are ranked on honours.</div>${tabs}
       <div class="scroll"><table class="hof"><thead><tr><th>#</th><th class="l">Club</th><th>Score</th><th class="l hide-m">League</th><th>Titles</th><th>Cont.</th><th class="hide-m">CWC</th><th title="Individual awards won by their players and coaches, plus Team of the Year places">Awards</th><th class="hide-m">Runner-up</th><th class="hide-m">Last</th><th class="l hide-m">Major honours</th></tr></thead><tbody>
       ${h.clubs.map((c, i) => `<tr><td>${i + 1}</td><td class="l"><b>${clubLink(c.name)}</b><div class="meta show-m">${esc(c.league)} &middot; last S${c.last}</div></td><td class="pts">${c.score}</td><td class="l meta hide-m">${esc(c.league)}</td><td>${c.league_titles}</td><td>${c.continental}</td><td class="hide-m">${c.cwc}</td><td>${c.awards + c.toty}</td><td class="hide-m">${c.runner_ups}</td><td class="hide-m">S${c.last}</td><td class="l meta wrap hide-m">${esc(c.honours)}</td></tr>`).join("") || '<tr><td colspan="11" class="empty">No trophies yet. Sim a season first.</td></tr>'}</tbody></table></div>
       <div class="meta" style="margin-top:8px">How the score works: ${esc(h.points)}. ${h.total} clubs have scored so far.</div>`;
@@ -10230,7 +11663,7 @@ async function viewTrophies(key, tab) {
   }
   if (tab === "players" || tab === "coaches") {
     const h = await api("/api/halloffame");
-    $("#view").innerHTML = `<h1>Hall of Fame</h1><div class="sub">Greatest players and coaches of all time, scored on awards, titles and peak rating.</div>${tabs}` + (tab === "players"
+    $("#view").innerHTML = `<h1>All-time ranking</h1><div class="sub">Greatest players and coaches of all time, scored on awards, titles and peak rating.</div>${tabs}` + (tab === "players"
       ? `<div class="scroll"><table class="hof"><thead><tr><th>#</th><th class="l">Player</th><th class="l hide-m">Nation</th><th class="l hide-m">Pos</th><th>Peak</th><th class="hide-m">Goals</th><th class="hide-m">Seasons</th><th class="l hide-m">Honours</th><th>Score</th></tr></thead><tbody>
       ${h.players.map((p, i) => { const hon = Object.entries(p.honours).map(([k, v]) => `${v}&times; ${esc(k)}`).join(" &middot; "); return `<tr><td>${i + 1}</td><td class="l"><b>${p.uid ? playerLink(p) : esc(p.name)}</b> ${p.retired ? '<span class="tag">retired</span>' : `<span class="meta">${p.club ? esc(p.club) : "free agent"}</span>`}<div class="meta show-m"><span class="pos-${esc(p.pos)}">${esc(p.pos)}</span> &middot; ${esc(p.nat)} &middot; ${p.goals} goals &middot; ${p.seasons} seasons</div>${hon ? `<div class="meta show-m">${hon}</div>` : ""}</td><td class="l hide-m">${natLink(p.nat)}</td><td class="l hide-m pos-${esc(p.pos)}">${esc(p.pos)}</td><td>${ovr(p.peak)}</td><td class="hide-m">${p.goals}</td><td class="hide-m">${p.seasons}</td>
       <td class="l meta wrap hide-m">${hon}</td><td class="pts">${p.score}</td></tr>`; }).join("") || '<tr><td colspan="9" class="empty">Nobody yet.</td></tr>'}</tbody></table></div>`
@@ -10321,7 +11754,7 @@ async function viewLedger(season) {
   const summary = d.league
     ? `${d.n} moves involving ${esc(d.league)}${all ? " in all seasons" : ""} (${d.abroad} between leagues)`
     : `${d.n} moves (${d.abroad} between leagues) &middot; ${money(d.total)} paid in fees`;
-  $("#view").innerHTML = `<h1>Transfers - ${all ? "all seasons" : "season " + d.season}${d.league ? ` <small>${esc(d.league)}</small>` : ""}</h1>
+  $("#view").innerHTML = `<a class="crumb" href="#/moves/${all ? "" : d.season}">&lsaquo; Off-season moves</a><h1>Transfer money - ${all ? "all seasons" : "season " + d.season}${d.league ? ` <small>${esc(d.league)}</small>` : ""}</h1>
     <p class="filters"><select id="t-s"><option value="all" ${all ? "selected" : ""}>All seasons</option>${seasons.map((s) => `<option value="${s}" ${s === d.season ? "selected" : ""}>Season ${s}</option>`).join("")}</select>
     <select id="t-l"><option value="">All leagues</option>${d.leagues.map((l) => `<option ${l === d.league ? "selected" : ""}>${esc(l)}</option>`).join("")}</select></p>
     <div class="sub">${summary}</div>
@@ -10509,13 +11942,25 @@ function showCompEnd(s, more) {
     if (sc) facts.push(`Top scorer: ${playerLink(sc)} <span class="meta">${tm(sc.team)}</span> <b>${sc.goals}</b> goals`);
     if (mv) facts.push(`Most valuable player: ${playerLink(mv)} <span class="meta">${tm(mv.team)}</span>`);
     if (co) facts.push(`Coach of the competition: <b>${esc(co.name)}</b> <span class="meta">${tm(co.team)}</span>`);
-    openModal(`<div class="ce"><div class="ce-emb">${emblem(s.emblem, window.innerWidth < 700 ? 72 : 96)}</div><div class="ce-t">${esc(s.name)} <span class="meta">${esc(s.season_label || "")}</span></div>
-      <div class="ce-w">${s.winner ? tm(s.winner) : "-"}</div><div class="ce-sub">${s.kind === "league" ? "Champions" : "Winners"}</div>
-      <div class="ce-facts">${facts.map((f, i) => `<div class="ce-f" style="animation-delay:${1.3 + i * 0.45}s">${f}</div>`).join("")}</div>
-      <div class="ce-btns"><button class="pri" id="ce-next">${more ? "Next" : "Close"}</button>${more ? ' <button id="ce-skip">Skip all</button>' : ""}</div></div>`);
-    const done = (skip) => { closeModal(); res(skip); };
-    $("#ce-next").onclick = () => done(false);
-    if ($("#ce-skip")) $("#ce-skip").onclick = () => done(true);
+    const lg = s.kind === "league" ? (s.name || "") : "";
+    const draw = (hof) => {
+      const hofBlock = hof ? `<div class="ce-hof"><span class="hb W" style="width:36px;height:36px;--hc:#f5c542">${hofStar(24)}</span><div><b>Hall of Fame day</b><div class="meta">${hof.nLeague} league inductee${hof.nLeague === 1 ? "" : "s"} &middot; ${hof.nClubs} club inductee${hof.nClubs === 1 ? "" : "s"}</div></div></div>` : "";
+      openModal(`<div class="ce"><div class="ce-emb">${emblem(s.emblem, window.innerWidth < 700 ? 72 : 96)}</div><div class="ce-t">${esc(s.name)} <span class="meta">${esc(s.season_label || "")}</span></div>
+        <div class="ce-w">${s.winner ? tm(s.winner) : "-"}</div><div class="ce-sub">${s.kind === "league" ? "Champions" : "Winners"}</div>
+        <div class="ce-facts">${facts.map((f, i) => `<div class="ce-f" style="animation-delay:${1.3 + i * 0.45}s">${f}</div>`).join("")}</div>${hofBlock}
+        <div class="ce-btns">${hof ? '<button class="gold" id="ce-hw">Watch the ceremony</button> <button id="ce-hr">Hall of Fame results</button> ' : ""}<button class="pri" id="ce-next">${more ? "Next" : "Close"}</button>${more ? ' <button id="ce-skip">Skip all</button>' : ""}</div></div>`);
+      const done = (skip) => { closeModal(); res(skip); };
+      $("#ce-next").onclick = () => done(false);
+      if ($("#ce-skip")) $("#ce-skip").onclick = () => done(true);
+      if ($("#ce-hw")) $("#ce-hw").onclick = () => { location.hash = "#/hofleague/" + enc(lg) + "/" + hof.season + "/watch"; done(true); };
+      if ($("#ce-hr")) $("#ce-hr").onclick = () => { location.hash = "#/hofleague/" + enc(lg) + "/" + hof.season; done(true); };
+    };
+    draw(null);
+    if (lg) hofLeagueBlock(lg).then((h) => {
+      if (!h || !$("#ce-next")) return;
+      draw(h);
+      if (FAVS && FAVS.includes("L:" + lg) && (h.nLeague + h.nClubs) > 0) $("#ce-hw").click();     // a followed league plays its ceremony by itself
+    });
   });
 }
 
@@ -10566,7 +12011,7 @@ async function viewPlayer(uid) {
       <div class="card"><h3>Rating by season</h3>${lineChart(p.career.map((c) => [c.season, c.ovr]), 520, 170)}</div>
       <div class="card" style="margin-top:14px"><h3>League seasons</h3>${p.seasons.length ? `<div class="scroll"><table><thead><tr><th>Season</th><th class="l">Club</th><th>Goals</th><th>Assists</th><th>CS</th></tr></thead><tbody>${p.seasons.slice().reverse().map((x) => `<tr><td>${x.season}${x.live ? " <span class=\"tag\">so far</span>" : ""}</td><td class="l">${clubLink(x.club)}</td><td>${x.goals}</td><td>${x.assists}</td><td>${x.cs || ""}</td></tr>`).join("")}</tbody></table></div>` : '<div class="meta">No completed seasons yet.</div>'}</div>
       <div class="card" style="margin-top:14px"><h3>Cups and tournaments</h3>${p.cups.length ? `<div class="scroll"><table><thead><tr><th>Season</th><th class="l">Competition</th><th class="l">Team</th><th>Goals</th><th>Assists</th><th>CS</th></tr></thead><tbody>${p.cups.slice().reverse().map((x) => `<tr><td>${x.season}</td><td class="l">${esc(x.comp)}</td><td class="l">${esc(x.team)}</td><td>${x.goals}</td><td>${x.assists}</td><td>${x.cs || ""}</td></tr>`).join("")}</tbody></table></div>` : '<div class="meta">Nothing yet.</div>'}</div></div>
-    <div><div class="card"><h3>Honours</h3>${hon.length ? hon.map(([t, ys]) => `<div class="row"><span>${esc(t)}${ys.length > 1 ? " x" + ys.length : ""}</span><span class="meta">${ys.map((y) => "S" + y).join(", ")}</span></div>`).join("") : '<div class="meta">None yet.</div>'}</div>
+    <div>${hofPlayerBlock(p.hof)}<div class="card"><h3>Honours</h3>${hon.length ? hon.map(([t, ys]) => `<div class="row"><span>${esc(t)}${ys.length > 1 ? " x" + ys.length : ""}</span><span class="meta">${ys.map((y) => "S" + y).join(", ")}</span></div>`).join("") : '<div class="meta">None yet.</div>'}</div>
       <div class="card" style="margin-top:14px"><h3>Career</h3>${p.career.length ? p.career.slice().reverse().map((c) => `<div class="row"><span>S${c.season} ${c.club ? clubLink(c.club) : "free agent"}</span><span>${ovr(c.ovr)}</span></div>`).join("") : '<div class="meta">No history yet.</div>'}</div></div></div>`;
   if ($("#g-edit-p")) $("#g-edit-p").onclick = () => godPlayer(p);
 }
@@ -10680,9 +12125,15 @@ async function routeInner(r, a, b) {
     if (r === "map") { location.replace("#/world"); return; }               // the league map was removed
     if (r === "ceremony") return await viewCeremony(a ? +a : null, b);
     if (r === "prospects") return await viewProspects();
+    if (r === "hof") return await viewHof(a, b);
+    if (r === "academies") return await viewAcademies(a, b);
+    if (r === "hofcard") return await viewHofCard(a);
+    if (r === "hofday") return await viewHofDay(a ? +a : null, b);
+    if (r === "hofleague") { const q = location.hash.replace(/^#\/?/, "").split("/").map(decodeURIComponent); return await viewHofLeague(a, b ? +b : null, q[3], q[4]); }
     if (r === "trophies") return a === "winners" ? await viewTrophies(b, "winners") : await viewTrophies(null, a || "winners");
     if (r === "money") return await viewMoney();
     if (r === "ledger") return await viewLedger(a);
+    if (r === "moves") return await viewMoves(a, b);
     if (r === "records") return await viewRecords();
     location.hash = "#/world";
   }

@@ -14,6 +14,7 @@ On Android or desktop, open the link in Chrome/Edge and use **Install** or just 
 
 ## What's in it
 
+- **Hall of Fame (v16):** four-tier Halls of Fame for players and coaches decided by votes, induction days, league ceremonies, academy prestige and academy managers, and an Off-season moves page (walk-through, players, coaches, retired).
 - **League & Competition Pages (v15.2):** league pages with Table, Money, Hall of Fame, Fixtures and Stats tabs; continent pages for all confederations; History and Stats pages for every cup, championship, Nations League, World Cup and Club World Cup.
 - **The Season Loop (v15.1):** a guided Season, Summer, Awards, Transfers loop; awards, Nations and club pages split into short tabs.
 - **The Business Update (v15):** real club finances (yearly income, wages, ledger), academies with worldwide recruiting, a demand-driven transfer market, national federations with football culture and golden generations, rivalries with History and Heat, and a 32-club Club World Cup with groups.

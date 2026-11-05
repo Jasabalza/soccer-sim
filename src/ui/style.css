@@ -720,3 +720,26 @@ button.wide { width: 100%; min-height: 44px; margin-top: 10px; }
 .chev { width: 8px; height: 8px; border-right: 2px solid var(--dim); border-bottom: 2px solid var(--dim); transform: rotate(-45deg); margin-right: 4px; flex: none; }
 .ce-hof { margin-top: 14px; border: 1px solid #6b5a1c; background: #17190f; border-radius: 14px; padding: 12px; text-align: left; display: flex; align-items: center; gap: 12px; }
 .ce-hof .hb { border-radius: 50%; }
+
+/* v16 Off-season moves */
+.mtabs { margin-top: 10px; } .mtabs button { flex: 1; padding: 0 4px; font-size: 13px; min-height: 40px; }
+.mchips { display: flex; flex-wrap: wrap; gap: 6px; } .mchips button { min-height: 36px; padding: 0 12px; border-radius: 99px; border: 1px solid var(--line); background: var(--panel); font-size: 13px; }
+.mchips button.on { background: #1f3a2c; color: var(--accent); border-color: #2c7a4d; font-weight: 700; }
+.mtiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+.mtiles a { display: flex; flex-direction: column; padding: 12px; min-height: 64px; border-radius: 14px; background: var(--panel); border: 1px solid var(--line); color: inherit; text-decoration: none; }
+.mtiles a b { font-size: 24px; line-height: 1.1; } .mtiles a span { font-size: 12px; color: var(--dim, #8aa095); }
+.mvgo { display: flex !important; flex-direction: column; align-items: center; justify-content: center; min-height: 56px; margin: 14px 0 4px; text-decoration: none; }
+.mvgo small { font-weight: 500; opacity: .75; font-size: 12px; }
+.mvr .hr-r.mvR { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+.mvb { width: 30px; display: flex; justify-content: center; flex: none; }
+.mvhot { margin-left: 4px; font-size: 12px; }
+.mvmore { width: 100%; margin-top: 10px; min-height: 46px; }
+.mvprog { height: 4px; border-radius: 2px; background: #1d2b25; margin: 6px 0 12px; } .mvprog i { display: block; height: 100%; border-radius: 2px; background: var(--accent); }
+.mvft { display: flex; align-items: center; justify-content: center; gap: 14px; margin: 12px 0 4px; } .mvft span { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; min-width: 0; text-align: center; } .mvft i { font-style: normal; font-size: 12px; color: var(--dim, #8aa095); }
+.mvar { font-size: 24px; flex: none !important; color: var(--accent); }
+.mvbig { text-align: center; font-size: 34px; font-weight: 800; margin: 6px 0; color: var(--accent2); } .mvbig small { font-size: 14px; font-weight: 500; }
+.mvstory { font-size: 15px; line-height: 1.45; margin: 10px 0; }
+.mvtags { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.mvheat { display: flex; align-items: center; gap: 10px; margin-top: 6px; } .mvheat .hbar { flex: 1; margin: 0; }
+.linkbtn { background: none; border: 0; color: #7cc0ff; font-size: 14px; min-height: 44px; padding: 0 14px; }
+.stp span[data-c] { cursor: pointer; }

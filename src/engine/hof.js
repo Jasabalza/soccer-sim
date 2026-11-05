@@ -156,8 +156,8 @@ $mods["hof"] = (function () {
     return card;
   }
   // ---- retirement hooks (called from sim_core) ----------------------------------------------------------------------------
-  function onRetire(w, p) { const H = ensure(w); try { acadRetire(w, p); return makePlayerCard(w, p, w.season, 0); } catch (e) { return null; } }
-  function onCoachRetire(w, co) { const H = ensure(w); co.ret_s = w.season; closeStint(w, co); co.card = null; try { return makeCoachCard(w, co, w.season, 0); } catch (e) { return null; } }
+  function onRetire(w, p) { const H = ensure(w); let card = null; try { acadRetire(w, p); card = makePlayerCard(w, p, w.season, 0); } catch (e) { card = null; } try { $mods.moves.retired(w, p, card); } catch (e) { } return card; }
+  function onCoachRetire(w, co) { const H = ensure(w); co.ret_s = w.season; closeStint(w, co); co.card = null; let card = null; try { card = makeCoachCard(w, co, w.season, 0); } catch (e) { card = null; } try { $mods.moves.coachRetired(w, co, card); } catch (e) { } return card; }
   // coaches keep a list of stints: one per spell at a club or with a nation
   function openStint(w, co, kind, team) {
     const f0 = kind === "nat" ? w.season : w.season + 1;

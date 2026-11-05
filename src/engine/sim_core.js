@@ -729,6 +729,7 @@ class World {
   _log_transfer(p, seller, buyer, fee, kind) {
     const self = this;
     $M.append(self.transfers, $dict($kw({"season": self.season, "player": p.name, "nat": p.nat, "age": p.age, "ovr": p.ovr, "pot": p.pot, "frm": seller, "to": buyer, "fee": fee, "kind": kind, "frm_league": $idx($idx(self.clubs, seller), "league"), "to_league": $idx($idx(self.clubs, buyer), "league"), "why": $mods.market.take_why()})));
+    $mods.moves.transfer(self, p, seller, buyer, fee, kind, $mods.rivals.intensity(self, seller, buyer) > 0);
     if (p.ovr >= 80 || $mods.rivals.intensity(self, seller, buyer) > 0) $mods.rivals.transfer_heat(self, seller, buyer, p.ovr >= 80 ? 2.5 : 1.5);
   }
   // bring a save made before v15 up to date (new settings, an unfinished old-style Club World Cup)
@@ -953,6 +954,7 @@ class World {
       throw $new(RuntimeError, [("Season not finished: " + $M.join(", ", left))]);
     }
     $mods.rivals.update_season(self);
+    $mods.moves.begin(self);
     rec = $lit_dict([["season", self.season], ["retired", 0], ["youth", 0], ["outflow", 0], ["down", 0], ["up", 0]]);
     [tables, recs] = $iter([new $Dict(), new $Dict()]);
     for (const $f35 of $iter(self.leagues)) {
@@ -1098,6 +1100,7 @@ class World {
         self.comps_nat_refresh(nm);
       }
     }
+    $mods.moves.finish(self, $idx(rec, "season"));
     return rec;
   }
   comps_nat_refresh(nm) {
@@ -1281,6 +1284,7 @@ class World {
     c = $idx(self.clubs, n);
     co = $idx(c, "coach");
     $setidx(c, "cp", fclamp($sub($idx(c, "cp"), $mul(co.prestige, cfg.transfer_share)), 0, 1000));
+    $mods.moves.coachOut(self, co, n, reason);
     $mods.hof.coachLeft(self, co);
     co.club = null;
     co.last_club = n;
@@ -1314,6 +1318,7 @@ class World {
     cfg = self.cfg;
     c = $idx(self.clubs, n);
     $setidx(c, "cp", fclamp($add($idx(c, "cp"), $mul(co.prestige, cfg.transfer_share)), 0, 1000));
+    $mods.moves.coachIn(self, co, n);
     co.club = n;
     co.contract = self._contract();
     co.hot = 0;
@@ -1426,6 +1431,7 @@ class World {
     const self = this;
     let best, bs, co, floor, n, nm, old, order, pool, rng, s;
     rng = self.rng;
+    const natBefore = {}; for (const k of self.nations.keysArr()) natBefore[k] = $idx($idx(self.nations, k), "coach") || null;
     pool = (() => { const $r = []; let co; for (const $c0 of $iter(self.retired_coaches)) { co = $c0; if (!(co.intl == null)) continue; $r.push(co); } return $r; })();
     for (const $f71 of $iter($M.items(self.nations))) {
       [nm, n] = $iter($f71);
@@ -1466,6 +1472,7 @@ class World {
       $idx(n, "coach").contract = self.cfg.nat_coach_years;
     }
     self.retired_coaches = (() => { const $r = []; let co; for (const $c0 of $iter(pool)) { co = $c0; if (!((co.intl == null) && (co.age <= 75))) continue; $r.push(co); } return $r; })();
+    { const natAfter = {}; for (const k of self.nations.keysArr()) natAfter[k] = $idx($idx(self.nations, k), "coach") || null; $mods.moves.natCycle(self, natBefore, natAfter); }
   }
   _develop(p) {
     const self = this;
@@ -1728,6 +1735,7 @@ class World {
             p.wage = wage_for(p.ovr, p.age);
             p.prot = 0;
           } else {
+            $mods.moves.released(self, p, p.club);
             p.club = null;
           }
         }
@@ -1749,6 +1757,7 @@ class World {
       if ($gt($len(members), SQUAD_MAX)) {
         for (const $f90 of $iter($slice($sorted(members, $kw({"key": ((x) => x.ovr)})), null, $sub($len(members), SQUAD_MAX), null))) {
           p = $f90;
+          $mods.moves.released(self, p, p.club);
           p.club = null;
         }
       }
@@ -1871,6 +1880,7 @@ class World {
           }
         }
         [p.club, p.league, p.wage] = $iter([cname, $idx(c, "league"), ask]);
+        $mods.moves.signed(self, p, cname, ask, first);
         if ($T(first)) {
           [p.contract, p.prot] = $iter([self.cfg.first_contract, self.cfg.first_contract]);
         } else {

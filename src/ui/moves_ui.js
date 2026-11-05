@@ -1,0 +1,195 @@
+"use strict";
+// v16 Off-season moves: one page for everything that changes hands between two seasons. Highlights (with a walk-through that
+// steps through the hottest moves one at a time), Players (transfers, free agents, released), Coaches (hired, sacked, academy
+// managers getting their shot, national jobs) and Retired (players and coaches ranked by prestige or peak level).
+// Loaded before app.js; the helpers it uses (api, esc, enc, flag, crest, money, ovr, leagueLink, FAVS, STATUS, ...) are only touched when a page is drawn.
+
+const MV = { kind: "all", mv: "all", sort: "", league: "", who: "p", limit: 60, cokind: "all" };
+const MV_TABS = [["highlights", "Highlights"], ["players", "Players"], ["coaches", "Coaches"], ["retired", "Retired"], ["money", "Money"]];
+const mvChips = (attr, list, cur) => `<div class="mchips" role="group">${list.map(([k, t]) => `<button ${attr}="${esc(k)}" class="${k === cur ? "on" : ""}">${t}</button>`).join("")}</div>`;
+const mvTag = (m) => m === "up" ? `<span class="tag green">&#9650; Step up</span>` : m === "down" ? `<span class="tag red">&#9660; Step down</span>` : m === "side" ? `<span class="tag">&#9644; Lateral</span>` : "";
+const mvAgo = (n) => (n === 1 ? "a year" : n + " years");
+const mvPos = (r) => (r.pos ? `<span class="pos-${esc(r.pos)}">${esc(r.pos)}</span>` : "");
+// the one emblem on a row: the club the person ends up at, or the one they leave; a flag for a national job
+function mvBadge(r, size) {
+  size = size || 28;
+  if (r.k === "n") return flag(r.nation, size - 4);
+  const club = r.to || r.from || r.club;
+  return club ? crest(club, size) : "";
+}
+function mvWho(r) {
+  const nm = r.uid ? `<a href="#/player/${r.uid}">${esc(r.name)}</a>` : r.hid ? `<a href="#/hofcard/${esc(r.hid)}">${esc(r.name)}</a>` : esc(r.name);
+  return nm;
+}
+function mvLine(r) {
+  const age = r.age ? `age ${r.age}` : "";
+  const who = r.k === "t" || r.k === "f" || r.k === "r" || r.k === "p" ? [mvPos(r), age].filter(Boolean).join(" &middot; ") : "Coach &middot; " + age;
+  let mid = "";
+  if (r.k === "t") mid = `${esc(r.from)} &rarr; ${esc(r.to)}`;
+  else if (r.k === "f") mid = r.first ? `first pro contract &rarr; ${esc(r.to)}` : r.from ? `${esc(r.from)} &rarr; ${esc(r.to)}` : `free agent &rarr; ${esc(r.to)}`;
+  else if (r.k === "r") mid = `released by ${esc(r.from)}`;
+  else if (r.k === "p") mid = `${r.club ? "last at " + esc(r.club) : "no club"} &middot; peak ${r.pk || r.ovr}`;
+  else if (r.k === "h") mid = r.src === "acad" ? `${esc(r.from)} academy &rarr; ${esc(r.to)}` : r.src === "new" ? `first job &rarr; ${esc(r.to)}` : r.from ? `${esc(r.from)} &rarr; ${esc(r.to)}` : `hired by ${esc(r.to)}`;
+  else if (r.k === "x") mid = `sacked by ${esc(r.from)}`;
+  else if (r.k === "q") mid = `left ${esc(r.from)}`;
+  else if (r.k === "cr") mid = r.from ? `last at ${esc(r.from)}` : "retired";
+  else if (r.k === "n") mid = `${esc(r.nation)} national team`;
+  return [who, mid].filter(Boolean).join(" &middot; ");
+}
+function mvRight(r) {
+  if (r.k === "t") return `<b>${money(r.fee)}</b>${mvTag(r.mv)}`;
+  if (r.k === "f") return `<b>${r.wage ? money(r.wage) + "/yr" : "free"}</b>${mvTag(r.mv)}`;
+  if (r.k === "r") return `<b>${r.wage ? money(r.wage) + "/yr" : ""}</b><span class="tag">no club</span>`;
+  if (r.k === "p") return `<b>${r.prestige}</b><span class="dim small">prestige</span>`;
+  if (r.k === "h") return r.src === "acad" ? `<span class="tag gold">Academy shot</span>` : `<span class="tag green">Hired</span>${mvTag(r.mv)}`;
+  if (r.k === "x") return `<span class="tag red">Sacked</span>`;
+  if (r.k === "q") return `<span class="tag">Left</span>`;
+  if (r.k === "cr") return `<span class="tag">Retired</span>`;
+  return `<span class="tag blue">National</span>`;
+}
+// a two-line row: emblem, name with rating, a short line, and the money or tag on the right
+function mvRow(r, i, attrs) {
+  const star = (r.k === "t" || r.k === "f" || r.k === "r" || r.k === "p") && r.ovr ? " " + ovr(r.k === "p" ? (r.pk || r.ovr) : r.ovr) : "";
+  const hot = r.hot >= 70 ? `<span class="mvhot" title="hot move">&#128293;</span>` : "";
+  return `<div class="hr mvr" ${attrs || ""}><div class="hr-a"><span class="mvb">${mvBadge(r)}</span><div class="hr-m"><b>${r.nat ? flag(r.nat, 16) + " " : ""}${mvWho(r)}${star}${hot}</b><span class="dim small">${mvLine(r)}${r.k === "p" && r.hofFrom ? ` &middot; Hall of Fame from ${esc(r.hofFrom)}` : ""}</span></div><span class="hr-r mvR">${mvRight(r)}</span></div></div>`;
+}
+const mvSeasonLabel = (d) => `Season ${d.season} &middot; ${esc(d.label)}`;
+
+// ---------------------------------------------------------------- the page
+async function viewMoves(season, tab) {
+  tab = MV_TABS.some((t) => t[0] === tab) || tab === "walk" ? tab : "highlights";
+  if (tab === "money") { location.replace("#/ledger/" + (season || "")); return; }
+  const walking = tab === "walk";
+  const q = new URLSearchParams();
+  if (season) q.set("season", season);
+  q.set("tab", walking ? "highlights" : tab);
+  if (MV.league) q.set("league", MV.league);
+  if (tab === "players") { if (MV.kind !== "all") q.set("kind", MV.kind); if (MV.mv !== "all") q.set("mv", MV.mv); }
+  if (tab === "coaches") { if (MV.cokind !== "all") q.set("kind", MV.cokind); if (MV.mv !== "all") q.set("mv", MV.mv); }
+  if (tab === "retired") q.set("who", MV.who);
+  if (MV.sort) q.set("sort", MV.sort);
+  q.set("limit", MV.limit);
+  const d = await api("/api/moves?" + q.toString());
+  if (!d.season) { $("#view").innerHTML = `<div class="v2"><div class="hd"><div><h1>Off-season moves</h1></div></div><div class="card dim small">No completed season yet. Transfers, new coaches and retirements appear here once a season is over.</div></div>`; return; }
+  if (walking) return mvWalk(d);
+  const S = d.season, favL = (FAVS || []).filter((k) => k.startsWith("L:")).map((k) => k.slice(2));
+  const lgOpt = (l) => `<option value="${esc(l)}" ${l === d.league ? "selected" : ""}>${esc(l)}</option>`;
+  const head = `<div class="hd"><div><h1>Off-season moves</h1><div class="sub">${mvSeasonLabel(d)}</div></div></div>
+    <p class="filters"><select id="mv-s" aria-label="Season">${Array.from({ length: d.seasons }, (_, i) => d.seasons - i).map((s) => `<option value="${s}" ${s === S ? "selected" : ""}>Season ${s}</option>`).join("")}</select>
+    <select id="mv-l" aria-label="League"><option value="">All leagues</option>${favL.length ? `<optgroup label="Favourites">${favL.map(lgOpt).join("")}</optgroup><optgroup label="All leagues">` : ""}${d.leagues.map(lgOpt).join("")}${favL.length ? "</optgroup>" : ""}</select></p>
+    <div class="seg mtabs" role="tablist">${MV_TABS.map(([k, t]) => `<button data-t="${k}" class="${k === tab ? "on" : ""}">${t}</button>`).join("")}</div>`;
+  const c = d.counts;
+  let body = "";
+  if (!d.recorded && tab !== "highlights" && tab !== "players") body = `<div class="card dim small">Coach moves and retirements were not written down for this season. Transfers were: see the Players tab.</div>`;
+  else if (tab === "highlights") {
+    const w = d.walk, hotRows = w.slice().sort((a, b) => b.hot - a.hot).slice(0, 6);
+    body = `<div class="mtiles"><a data-t="players"><b>${c.transfers}</b><span>transfers</span></a><a data-t="players" data-k="f"><b>${c.free}</b><span>free agents signed</span></a><a data-t="coaches"><b>${c.hired + c.fired + c.left}</b><span>coach moves</span></a><a data-t="retired"><b>${c.retired}</b><span>players retired</span></a></div>
+      ${c.academy ? `<div class="dim small" style="margin:6px 2px">${c.academy} academy manager${c.academy > 1 ? "s" : ""} got a first-team job. ${c.fired ? c.fired + " coaches were sacked." : ""}</div>` : ""}
+      ${w.length ? `<a class="btn pri mvgo" href="#/moves/${S}/walk">Start the walk-through <small>${w.length} moves, hottest first</small></a>
+      <h2 class="lbl2">Hottest moves</h2><div class="hlist">${hotRows.map((r) => mvRow(r, 0, `data-w="${w.indexOf(r)}"`)).join("")}</div>` : `<div class="card dim small">Nothing noteworthy was recorded${d.league ? " for " + esc(d.league) : ""}.</div>`}
+      ${!d.recorded ? `<div class="dim small" style="margin:8px 2px">This season was played before moves were written down, so only transfers show up.</div>` : ""}`;
+  } else if (tab === "players") {
+    const mc = d.mvCounts || { up: 0, side: 0, down: 0 };
+    body = `<div class="dim small" style="margin:8px 2px 4px">Kind</div>${mvChips("data-k", [["all", "All"], ["t", "Transfers"], ["f", "Free agents"], ["r", "Released"]], MV.kind)}
+      <div class="dim small" style="margin:8px 2px 4px">Move</div>${mvChips("data-m", [["all", "All"], ["up", "&#9650; Up " + mc.up], ["side", "&#9644; Lateral " + mc.side], ["down", "&#9660; Down " + mc.down]], MV.mv)}
+      <p class="filters" style="margin:8px 0"><select id="mv-o" aria-label="Sort">${[["hot", "Hottest"], ["pay", "Highest paid"], ["level", "Best player"], ["jump", "Biggest jump"], ["young", "Youngest"]].map(([k, t]) => `<option value="${k}" ${(d.sort || "hot") === k ? "selected" : ""}>Sort: ${t}</option>`).join("")}</select><span class="dim small">${d.total} moves</span></p>`;
+  } else if (tab === "coaches") {
+    body = `${mvChips("data-ck", [["all", "All"], ["h", "Hired"], ["acad", "Academy shot"], ["x", "Sacked"], ["q", "Left"], ["cr", "Retired"], ["n", "National"]], MV.cokind)}
+      <div class="dim small" style="margin:8px 2px 4px">Move</div>${mvChips("data-m", [["all", "All"], ["up", "&#9650; Up"], ["side", "&#9644; Lateral"], ["down", "&#9660; Down"]], MV.mv)}
+      <p class="filters" style="margin:8px 0"><select id="mv-o" aria-label="Sort">${[["hot", "Hottest"], ["name", "Biggest name"], ["jump", "Biggest jump"]].map(([k, t]) => `<option value="${k}" ${(d.sort || "hot") === k ? "selected" : ""}>Sort: ${t}</option>`).join("")}</select><span class="dim small">${d.total} moves</span></p>`;
+  } else {
+    body = `${mvChips("data-w", [["p", "Players"], ["c", "Coaches"]], MV.who)}
+      <p class="filters" style="margin:8px 0"><select id="mv-o" aria-label="Sort">${[["prestige", "Prestige"], ["peak", "Peak level"], ["age", "Oldest"]].map(([k, t]) => `<option value="${k}" ${(d.sort || "prestige") === k ? "selected" : ""}>Rank by: ${t}</option>`).join("")}</select><span class="dim small">${d.total} retired</span></p>`;
+  }
+  if (tab !== "highlights" && (d.recorded || tab === "players")) {
+    body += d.rows.length ? `<div class="hlist">${d.rows.map((r) => mvRow(r, 0)).join("")}</div>${d.total > d.rows.length ? `<button class="btn mvmore" id="mv-more">Show more (${d.total - d.rows.length} left)</button>` : ""}`
+      : `<div class="card dim small">Nothing matches these filters.</div>`;
+  }
+  $("#view").innerHTML = `<div class="v2 mvp">${head}${body}</div>`;
+  const go = (t, extra) => { if (extra) extra(); MV.limit = 60; if (location.hash === "#/moves/" + S + "/" + t) route(); else location.hash = "#/moves/" + S + "/" + t; };
+  document.querySelectorAll(".mtabs [data-t]").forEach((b) => b.onclick = () => go(b.dataset.t));
+  document.querySelectorAll(".mtiles [data-t]").forEach((b) => b.onclick = () => go(b.dataset.t, () => { if (b.dataset.k) MV.kind = b.dataset.k; }));
+  $("#mv-s").onchange = (e) => { location.hash = "#/moves/" + e.target.value + "/" + tab; };
+  $("#mv-l").onchange = (e) => { MV.league = e.target.value; MV.limit = 60; route(); };
+  const o = $("#mv-o"); if (o) o.onchange = (e) => { MV.sort = e.target.value; route(); };
+  document.querySelectorAll("[data-k]:not(.mtiles *)").forEach((b) => b.onclick = () => { MV.kind = b.dataset.k; MV.limit = 60; route(); });
+  document.querySelectorAll("[data-ck]").forEach((b) => b.onclick = () => { MV.cokind = b.dataset.ck; MV.limit = 60; route(); });
+  document.querySelectorAll(".mchips [data-m]").forEach((b) => b.onclick = () => { MV.mv = b.dataset.m; MV.limit = 60; route(); });
+  document.querySelectorAll(".mchips [data-w]").forEach((b) => b.onclick = () => { MV.who = b.dataset.w; MV.sort = ""; route(); });
+  document.querySelectorAll(".hlist [data-w]").forEach((b) => b.onclick = (e) => { if (e.target.closest("a")) return; sessionStorage.setItem("mvStart", b.dataset.w); location.hash = "#/moves/" + S + "/walk"; });
+  const more = $("#mv-more"); if (more) more.onclick = () => { MV.limit += 60; route(); };
+}
+
+// ---------------------------------------------------------------- the walk-through
+const MV_FLAVOUR = {
+  up: "A step up: the new club has more pull than the old one.",
+  down: "A step down: the new club has less pull than the old one.",
+  side: "A lateral move: the two clubs are about level."
+};
+function mvStory(r) {
+  const nm = esc(r.name);
+  if (r.k === "t") {
+    const bits = [`${nm} (${esc(r.pos || "")}, ${r.age}) moves from ${esc(r.from)} to ${esc(r.to)} for ${money(r.fee)}.`];
+    if (r.abroad) bits.push(`He crosses from the ${esc(r.fromL)} to the ${esc(r.toL)}.`);
+    if (r.rival) bits.push("The two clubs are rivals.");
+    if (r.mv) bits.push(MV_FLAVOUR[r.mv]);
+    return bits.join(" ");
+  }
+  if (r.k === "f") return r.first ? `${nm} (${r.age}) signs a first professional contract with ${esc(r.to)}, ${money(r.wage)} a year.` : `${nm} (${esc(r.pos || "")}, ${r.age}) was out of contract${r.from ? " at " + esc(r.from) : ""} and signs for ${esc(r.to)} on ${money(r.wage)} a year. ${r.mv ? MV_FLAVOUR[r.mv] : ""}`;
+  if (r.k === "r") return `${esc(r.from)} let ${nm} go. He is still looking for a club.`;
+  if (r.k === "h") {
+    if (r.src === "acad") return `The ${esc(r.from)} academy manager gets his shot: ${nm} (${r.age}) is promoted to first-team manager at ${esc(r.to)}.`;
+    if (r.src === "new") return `${esc(r.to)} give ${nm} (${r.age}) his first head coach job.`;
+    const bits = [r.from ? `${nm} (${r.age}) leaves ${esc(r.from)} and takes over at ${esc(r.to)}.` : `${esc(r.to)} appoint ${nm} (${r.age}).`];
+    if (r.idle > 0) bits.push(`He had been out of work for ${mvAgo(r.idle)}.`);
+    if (r.mv) bits.push(MV_FLAVOUR[r.mv].replace("new club has more pull than the old one", "bigger job than his last").replace("new club has less pull than the old one", "smaller job than his last").replace("the two clubs are about level", "a job of about the same size"));
+    return bits.join(" ");
+  }
+  if (r.k === "x") return `${esc(r.from)} sack ${nm} (${r.age}) after ${r.seasons} season${r.seasons === 1 ? "" : "s"} in management${r.titles ? " and " + r.titles + " league title" + (r.titles === 1 ? "" : "s") : ""}.`;
+  if (r.k === "q") return `${nm} (${r.age}) walks away from ${esc(r.from)}.`;
+  if (r.k === "cr") return `${nm} retires at ${r.age} after ${r.seasons} seasons in management: ${r.titles} league title${r.titles === 1 ? "" : "s"}, ${r.cups} continental cup${r.cups === 1 ? "" : "s"}.`;
+  if (r.k === "n") return `${nm} (${r.age}) is named ${esc(r.nation)} national team coach${r.prev ? ", replacing " + esc(r.prev) : ""}.`;
+  if (r.k === "p") return `${nm} (${esc(r.pos || "")}, ${r.age}) retires${r.club ? " from " + esc(r.club) : ""} after ${r.seasons || "many"} seasons. Peak rating ${r.pk || r.ovr}, prestige ${r.prestige}.${r.hofFrom ? " He becomes eligible for the Hall of Fame in " + esc(r.hofFrom) + "." : ""}`;
+  return "";
+}
+function mvSlide(r, n, total) {
+  const money_ = r.k === "t" ? `<div class="mvbig">${money(r.fee)}</div>` : r.k === "f" && r.wage ? `<div class="mvbig">${money(r.wage)}<small>/yr</small></div>` : "";
+  const fromTo = (r.k === "t" || r.k === "f" || r.k === "h") && r.to ? `<div class="mvft"><span>${r.from ? crest(r.from, 44) + `<i>${esc(r.from)}</i>` : `<i>${r.k === "h" ? "" : "free agent"}</i>`}</span><span class="mvar">&rarr;</span><span>${crest(r.to, 44)}<i>${esc(r.to)}</i></span></div>` : r.k === "n" ? `<div class="mvft"><span>${flag(r.nation, 44)}<i>${esc(r.nation)}</i></span></div>` : (r.from || r.club) ? `<div class="mvft"><span>${crest(r.from || r.club, 44)}<i>${esc(r.from || r.club)}</i></span></div>` : "";
+  const rating = r.ovr ? `${ovr(r.ovr)}` : "";
+  return `<div class="hrv mvs"><div class="dim small">${esc(r.chapter)} &middot; ${r.n} of ${r.of}</div>
+    <div class="hrv-n">${r.nat ? flag(r.nat, 34) : ""}<div><div class="hrv-name">${mvWho(r)} ${rating}</div><div class="dim small">${r.k === "p" || r.k === "t" || r.k === "f" || r.k === "r" ? mvPos(r) + " &middot; age " + r.age : "Coach &middot; age " + r.age}${r.nat ? " &middot; " + esc(r.nat) : ""}</div></div></div>
+    ${fromTo}${money_}
+    <div class="mvstory">${mvStory(r)}</div>
+    <div class="mvtags">${r.k === "h" && r.src === "acad" ? `<span class="tag gold">Academy manager gets his shot</span>` : `<span class="tag">${esc(r.kind)}</span>`}${mvTag(r.mv)}${r.rival ? `<span class="tag red">Rivals</span>` : ""}${r.hid ? `<span class="tag gold">Hall of Fame candidate</span>` : ""}</div>
+    <div class="mvheat"><span class="dim small">Heat</span><div class="hbar"><i class="${r.hot >= 70 ? "g" : ""}" style="width:${r.hot}%"></i></div><b>${r.hot}</b></div></div>`;
+}
+function mvWalk(d) {
+  const S = d.season, w = d.walk;
+  if (!w || !w.length) { location.replace("#/moves/" + S + "/highlights"); return; }
+  let i = Math.min(w.length - 1, Math.max(0, +sessionStorage.getItem("mvStart") || 0)); try { sessionStorage.removeItem("mvStart"); } catch (e) { }
+  const chapters = []; w.forEach((r, k) => { if (!chapters.length || chapters[chapters.length - 1][0] !== r.chapter) chapters.push([r.chapter, k]); });
+  const inFlow = STATUS.header.phase === "transfers";
+  const draw = () => {
+    const done = i >= w.length, r = w[i];
+    const head = `<a class="crumb" href="#/moves/${S}/highlights">&lsaquo; Off-season moves</a><div class="hd"><div><div class="dim small">${mvSeasonLabel(d)}</div><h1>${done ? "That was the off-season" : esc(r.chapter)}</h1></div></div>
+      <div class="stp">${chapters.map(([c, k], x) => `<span class="${!done && r.chapter === c ? "on" : ""}" data-c="${k}">${esc(c)}</span>`).join("")}</div>
+      <div class="mvprog"><i style="width:${Math.round((Math.min(i, w.length)) / w.length * 100)}%"></i></div>`;
+    let body;
+    if (!done) body = mvSlide(r, i + 1, w.length) + `<div class="foot"><button class="btn" id="mw-back" ${i === 0 ? "disabled" : ""}>Back</button><button class="btn pri" id="mw-next">${i === w.length - 1 ? "Finish" : "Next move"}</button></div><div style="text-align:center;margin-top:8px"><button class="linkbtn" id="mw-skip">Skip this chapter</button></div>`;
+    else {
+      const c = d.counts;
+      body = `<div class="mtiles"><a><b>${c.transfers}</b><span>transfers</span></a><a><b>${c.free}</b><span>free agents signed</span></a><a><b>${c.hired + c.fired + c.left}</b><span>coach moves</span></a><a><b>${c.retired}</b><span>retired</span></a></div>
+        <div class="dim small" style="margin:8px 2px">Want more? Every move is in the tabs, sorted the way you like.</div>
+        <div class="foot"><button class="btn" id="mw-back">Back</button><a class="btn pri" href="#/moves/${S}/players">Browse all moves</a></div>
+        ${inFlow ? `<div style="text-align:center;margin-top:8px"><button class="linkbtn" id="mw-grad">Continue to graduates</button></div>` : ""}`;
+    }
+    $("#view").innerHTML = `<div class="v2 hday mvp">${head}${body}</div>`;
+    const nx = $("#mw-next"), bk = $("#mw-back"), sk = $("#mw-skip"), gr = $("#mw-grad");
+    if (nx) nx.onclick = () => { i++; draw(); window.scrollTo(0, 0); };
+    if (bk) bk.onclick = () => { i = Math.max(0, i - 1); draw(); window.scrollTo(0, 0); };
+    if (sk) sk.onclick = () => { const cur = r.chapter; while (i < w.length && w[i].chapter === cur) i++; draw(); window.scrollTo(0, 0); };
+    if (gr) gr.onclick = () => flowStep("graduates");
+    document.querySelectorAll(".stp [data-c]").forEach((s) => s.onclick = () => { i = +s.dataset.c; draw(); });
+  };
+  draw();
+}

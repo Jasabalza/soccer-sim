@@ -51,8 +51,8 @@ const moneyS = (m) => (m > 0 ? "+" : "") + money(m);
 function renderShell() {
   const has = STATUS && STATUS.has_world;
   const route = location.hash.split("/")[1] || "";
-  const items = [["world", "World"], ["nations", "Nations"], ["news", "News"], ["money", "Money"], ["ledger", "Transfers"], ["rivals", "Rivals"], ["players", "Players"], ["ceremony", "Awards"], ["hof", "Hall of Fame"], ["trophies", "Trophies"], ["records", "Records"]];
-  $("#nav").innerHTML = has ? items.map(([k, t]) => `<a href="#/${k}" class="${route === k ? "on" : ""}">${t}</a>`).join("") : "";
+  const items = [["world", "World"], ["nations", "Nations"], ["news", "News"], ["money", "Money"], ["moves", "Off-season"], ["rivals", "Rivals"], ["players", "Players"], ["ceremony", "Awards"], ["hof", "Hall of Fame"], ["trophies", "Trophies"], ["records", "Records"]];
+  $("#nav").innerHTML = has ? items.map(([k, t]) => `<a href="#/${k}" class="${route === k || (k === "moves" && route === "ledger") ? "on" : ""}">${t}</a>`).join("") : "";
   const h = STATUS && STATUS.header;
   $("#season-info").innerHTML = h
     ? (h.flow
@@ -64,7 +64,7 @@ function renderShell() {
 }
 let SBOPEN = false;
 // the season loop: Season -> Summer tournaments -> Awards -> Transfers -> next season (the engine's header.phase says where we are)
-const FLOW_STEPS = [["season", "Season"], ["summer", "Summer"], ["awards", "Awards"], ["transfers", "Transfers"], ["graduates", "Graduates"]];
+const FLOW_STEPS = [["season", "Season"], ["summer", "Summer"], ["awards", "Awards"], ["transfers", "Off-season"], ["graduates", "Graduates"]];
 function flowBar(h) {
   const at = { season: 0, summer: 1, done: 2, awards: 2, transfers: 3, graduates: 4 }[h.phase] ?? 0;
   const cell = (i, [k, t]) => `<div class="${i < at ? "done" : i === at ? "on" : ""}"${i === at ? ' aria-current="step"' : ""}>${i < at ? "&#10003; " : ""}${t}</div>`;
@@ -79,8 +79,8 @@ function renderSimBar() {
   const main = play
     ? `<button class="main" id="sb-week">Next week</button><button class="main" id="sb-4">4 weeks</button><button class="pri main" id="sb-end">${ph === "summer" ? "Finish summer" : "Rest of season"}</button>`
     : ph === "done" ? `<button class="pri main" id="sb-roll">Wrap up season ${h.season}</button>`
-    : ph === "awards" ? `<button class="main" id="sb-cer">Awards</button><button class="pri main" id="sb-tr">Continue to transfers</button>`
-    : ph === "transfers" ? `<button class="main" id="sb-mk">Transfers</button><button class="pri main" id="sb-gr">Continue to graduates</button>`
+    : ph === "awards" ? `<button class="main" id="sb-cer">Awards</button><button class="pri main" id="sb-tr">Continue to off-season</button>`
+    : ph === "transfers" ? `<button class="main" id="sb-mk">Off-season moves</button><button class="pri main" id="sb-gr">Continue to graduates</button>`
     : `<button class="main" id="sb-pg">Graduates</button><button class="pri main" id="sb-next">Start season ${h.season}</button>`;
   bar_.innerHTML = `
     ${flowBar(h)}
@@ -102,7 +102,7 @@ function renderSimBar() {
   on("#sb-roll", rollover);
   on("#sb-cer", () => (location.hash = "#/ceremony/" + fs + "/start"));
   on("#sb-tr", () => flowStep("transfers"));
-  on("#sb-mk", () => (location.hash = "#/ledger/" + fs));
+  on("#sb-mk", () => (location.hash = "#/moves/" + fs));
   on("#sb-gr", () => flowStep("graduates"));
   on("#sb-pg", () => (location.hash = "#/prospects"));
   on("#sb-next", () => flowStep("done"));
@@ -168,7 +168,7 @@ async function flowStep(step) {
   const fs = STATUS.header.flow ? STATUS.header.flow.season : STATUS.header.season - 1;
   await api("/api/flow", { step });
   await refreshStatus();
-  const to = step === "transfers" ? "#/ledger/" + fs : step === "graduates" ? "#/prospects" : "#/world";
+  const to = step === "transfers" ? "#/moves/" + fs : step === "graduates" ? "#/prospects" : "#/world";
   if (location.hash === to) await route(); else location.hash = to;
 }
 async function simYears() {
@@ -458,7 +458,7 @@ async function viewStart() {
       <details class="opts"><summary>Storage, logos and importing</summary><div id="store-note"></div>${saveTools()}${logoPanel()}</details></div>`;
   $("#view").innerHTML = `<div class="start">
     <div class="start-head"><h1>Soccer Sim <span class="ver">${APP_VERSION}</span></h1>
-      <div class="start-tag">${starSvg(14)} ${APP_TAG}<span>Every league, cup and tournament now has its own page</span></div>
+      <div class="start-tag">${starSvg(14)} ${APP_TAG}<span>Halls of Fame, academy managers and every off-season move</span></div>
       <div class="sub">Commissioner mode: no lineups, no relegation, one worldwide player market.</div></div>
     ${hasSaves ? loadCard + newCard : newCard + loadCard}</div>`;
   $("#rules-on").onchange = (e) => ($("#rules").hidden = !e.target.checked);
@@ -1362,7 +1362,7 @@ async function viewLedger(season) {
   const summary = d.league
     ? `${d.n} moves involving ${esc(d.league)}${all ? " in all seasons" : ""} (${d.abroad} between leagues)`
     : `${d.n} moves (${d.abroad} between leagues) &middot; ${money(d.total)} paid in fees`;
-  $("#view").innerHTML = `<h1>Transfers - ${all ? "all seasons" : "season " + d.season}${d.league ? ` <small>${esc(d.league)}</small>` : ""}</h1>
+  $("#view").innerHTML = `<a class="crumb" href="#/moves/${all ? "" : d.season}">&lsaquo; Off-season moves</a><h1>Transfer money - ${all ? "all seasons" : "season " + d.season}${d.league ? ` <small>${esc(d.league)}</small>` : ""}</h1>
     <p class="filters"><select id="t-s"><option value="all" ${all ? "selected" : ""}>All seasons</option>${seasons.map((s) => `<option value="${s}" ${s === d.season ? "selected" : ""}>Season ${s}</option>`).join("")}</select>
     <select id="t-l"><option value="">All leagues</option>${d.leagues.map((l) => `<option ${l === d.league ? "selected" : ""}>${esc(l)}</option>`).join("")}</select></p>
     <div class="sub">${summary}</div>
@@ -1741,6 +1741,7 @@ async function routeInner(r, a, b) {
     if (r === "trophies") return a === "winners" ? await viewTrophies(b, "winners") : await viewTrophies(null, a || "winners");
     if (r === "money") return await viewMoney();
     if (r === "ledger") return await viewLedger(a);
+    if (r === "moves") return await viewMoves(a, b);
     if (r === "records") return await viewRecords();
     location.hash = "#/world";
   }
