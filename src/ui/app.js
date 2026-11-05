@@ -324,7 +324,7 @@ function wireSaves(inGame) {
 
 // ---------------------------------------------------------------- favorites
 // A favorite is a key: "L:<league>" or "<kind>:<confed>" (cup, ct, nl, qual). The list is kept inside the world, so it travels with every save.
-const APP_VERSION = "v15.1", APP_TAG = "The Season Loop";
+const APP_VERSION = "v15.2", APP_TAG = "League & Competition Pages";
 let FAVS = null, PICK_ASKED = false;                    // FAVS: null until the player has chosen, then an array of keys
 const CT_NAMES = { UEFA: "European Championship", CONMEBOL: "Copa America", CONCACAF: "Gold Cup", CAF: "Africa Cup of Nations", AFC: "Asian Cup", OFC: "OFC Nations Cup" };
 const NL_NAMES = { UEFA: "UEFA Nations League", CONMEBOL: "CONMEBOL Nations League", CONCACAF: "CONCACAF Nations League", CAF: "CAF Nations League", AFC: "AFC Nations League", OFC: "OFC Nations League" };
@@ -527,6 +527,7 @@ async function viewWorld() {
     ${onlyFav ? "" : info}
     ${strip}
     <div class="grid">${summerCard}${conts.map(card).join("")}</div>${hidden}${onlyFav ? info : ""}${hint}`;
+  worldCompCards().catch(() => {});
   const ids = (code) => { const c = d.continents.find((x) => x.code === code); return [...c.leagues.map((l) => "L:" + l.name), ...c.comps.map((x) => x.id)]; };
   document.querySelectorAll("[data-lsim]").forEach((b) => b.onclick = () => simIds([b.dataset.lsim], { to_end: true }));
   document.querySelectorAll("[data-sim]").forEach((b) => b.onclick = () => simIds(ids(b.dataset.sim), { weeks: 1 }));
@@ -543,62 +544,7 @@ async function viewWorld() {
   if (!chosen && !PICK_ASKED) { PICK_ASKED = true; favPicker(d); }
 }
 
-async function viewContinent(code) {
-  const c = await api("/api/continent?code=" + code);
-  const ids = [...c.leagues.map((l) => "L:" + l.name), ...c.comps.map((x) => x.id)];
-  $("#view").innerHTML = `<div class="crumbs"><a href="#/world">World</a> / ${esc(c.name)}</div><h1>${esc(c.name)}</h1>
-    <div class="sub">Leagues, the continental cup and World Cup qualifying run on the same calendar. Sim them together or open one.</div>
-    <p><button data-w="1">Next week</button> <button data-w="4">4 weeks</button> <button id="c-end" class="pri">Continent to season end</button>
-    <a href="#/nations/${code}" style="margin-left:14px">National teams of ${esc(c.name)}</a></p>
-    <div class="card">${c.leagues.map((l) => progressRow({ link: leagueLink(l.name), sub: `${l.clubs} clubs &middot; leader ${esc(l.leader)} (${l.pts} pts) &middot; avg OVR ${l.avg}`, done: l.done, total: l.total })).join("")}
-    ${c.comps.map((x) => progressRow({ link: `<a href="#/comp/${enc(x.id)}">${esc(x.title)}</a>`, sub: x.next ? "next: " + esc(x.next) + (x.next_date ? " &middot; " + x.next_date.text : "") : "finished", done: x.done, total: x.total })).join("")}</div>`;
-  document.querySelectorAll("[data-w]").forEach((b) => b.onclick = () => simIds(ids, { weeks: +b.dataset.w }));
-  $("#c-end").onclick = () => simIds(ids, { to_end: true });
-}
-
-async function viewLeague(name, season) {
-  const d = await api("/api/league?name=" + enc(name));
-  let past = null;
-  if (season) past = await api(`/api/league_season?name=${enc(name)}&season=${season}`);
-  const rows = past ? past.rows.map((r) => ({ ...r, form: "", zone: "", ovr: null, gd: r.gf - r.ga })) : d.rows;
-  const p = d.progress;
-  const inProg = !past && d.next.some((f) => f.hg !== undefined);
-  const fx = past ? null : await api("/api/fixtures?name=" + enc(name)).catch(() => null);
-  $("#view").innerHTML = `<div class="crumbs"><a href="#/world">World</a> / <a href="#/continent/${d.confed}">${esc(d.confed)}</a> / ${esc(d.name)}</div>
-    <h1>${withEmb(d.emblem, 40, esc(d.name))} ${past ? `<span class="tag gold">season ${past.season} final table</span>` : ""}</h1>
-    <div class="sub">${d.games} games per club &middot; top ${d.slots} go to the ${esc(d.cup)} &middot; matchweek ${p.done}/${p.total}${d.next_date && !past ? " &middot; next: " + d.next_date.text : ""} &middot; league average OVR ${d.avg}</div>
-    <p>${past ? `<button id="l-now">Back to this season</button>` : `
-      <button class="pri" id="l-one" ${p.done >= p.total ? "disabled" : ""}>Next game</button>
-      <button id="l-rest" ${p.done >= p.total || !inProg ? "disabled" : ""}>Finish matchweek</button>
-      ${inProg ? "" : `<button data-m="1" ${p.done >= p.total ? "disabled" : ""}>Next matchweek</button>`}
-      <button data-m="4" ${p.done >= p.total ? "disabled" : ""}>Next 4</button>
-      <button class="pri" id="l-end" ${p.done >= p.total ? "disabled" : ""}>Rest of season</button>
-      <span style="margin-left:10px" class="lbl">go to matchweek</span> <input type="number" id="l-goto" min="1" max="${p.total}" value="${Math.min(p.total, p.done + 1)}"><button id="l-go">Go</button>`}
-      <span style="margin-left:14px" class="lbl">past season</span>
-      <select id="l-past"><option value="">- choose -</option>${d.seasons.slice().reverse().map((s) => `<option value="${s}" ${past && past.season === s ? "selected" : ""}>Season ${s}</option>`).join("")}</select></p>
-    <div class="cols league-cols"><div><div class="scroll"><table><thead><tr><th>#</th><th class="l">Club</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GF</th><th>GA</th><th>GD</th><th>Pts</th>${past ? "" : "<th>OVR</th><th>Form</th><th class='l'>Leads to</th>"}</tr></thead><tbody>
-    ${rows.map((r) => `<tr class="${past ? (r.pos === 1 ? "champ" : "") : r.pos === 1 ? "champ" : r.pos <= d.slots ? "cup" : ""}"><td>${r.pos}</td><td class="l">${clubLink(r.club)}${r.hot ? ' <span class="tag red">hot seat</span>' : ""}</td><td>${r.p}</td><td>${r.w}</td><td>${r.d}</td><td>${r.l}</td><td>${r.gf}</td><td>${r.ga}</td><td>${r.gd > 0 ? "+" : ""}${r.gd}</td><td class="pts">${r.pts}</td>${past ? "" : `<td>${ovr(r.ovr)}</td><td>${form(r.form)}</td><td class="l meta">${esc(r.zone)}</td>`}</tr>`).join("")}
-    </tbody></table></div></div>
-    <div>${past ? `<div class="card"><h3>Champion</h3>${clubLink(past.champion)}<div class="meta">coach ${esc(past.coach || "")}</div></div>` : `
-      ${fx && fx.rows.length ? `<div class="card"><h3>Matchweek ${fx.week} <small>${fx.rows.filter((f) => f.done).length}/${fx.rows.length} played${d.next_date ? " &middot; " + d.next_date.text : ""}</small></h3>
-        <div class="meta" style="margin-bottom:6px">Pick any game to sim it now, or open its preview first.</div>
-        ${fx.rows.map((f, i) => `<div class="fix2"><div class="fix"><span class="h">${clubLink(f.h)}</span><span class="s">${f.done ? f.hg + "-" + f.ag : "v"}</span><span>${clubLink(f.a)}</span></div>
-          <div class="fx-m">${f.rivalry ? `<span class="tag red">${esc(f.rivalry.name)}</span>` : ""}<a href="#/matchup/${enc(d.id)}/${enc(f.h)}/${enc(f.a)}">${f.done ? "Match info" : "Preview"}</a>${f.done ? "" : `<button data-fx="${i}">Sim this game</button>`}</div></div>`).join("")}</div>` : ""}
-      ${inProg && !d.last.length ? "" : `<div class="card" ${inProg ? 'style="margin-top:14px"' : ""}><h3>${d.last.length ? "Last matchweek" : "Next matchweek"} <small>${d.last.length ? (d.last_date ? d.last_date.text : "") : (d.next_date ? d.next_date.text : "")}</small></h3>
-      ${(d.last.length ? d.last.map((f) => `<div class="fix"><span class="h">${clubLink(f.h)}</span><span class="s">${f.hg}-${f.ag}</span><span>${clubLink(f.a)}</span></div>`) : d.next.map((f) => `<div class="fix"><span class="h">${clubLink(f.h)}</span><span class="s">v</span><span>${clubLink(f.a)}</span></div>`)).join("")}</div>`}`}
-      <div class="card" style="margin-top:14px"><h3>Champions</h3>
-      ${d.champs.length ? d.champs.slice(0, 15).map((c) => `<div class="row"><span>S${c.season} ${clubLink(c.club)}</span><span class="meta">${c.pts} pts &middot; ${esc(c.coach || "")}${c.date ? " &middot; " + c.date.text : ""}</span></div>`).join("") : '<div class="meta">No completed season yet.</div>'}</div></div></div>`;
-  $("#view").insertAdjacentHTML("beforeend", `<div class="card" style="margin-top:14px"><h3>Player stats ${past ? "(season " + past.season + ")" : "(this season)"}</h3><div id="cstats"></div></div>`);
-  loadStats($("#cstats"), d.id, past ? past.season : null);
-  document.querySelectorAll("[data-m]").forEach((b) => b.onclick = () => simComp(d.id, { matches: +b.dataset.m }));
-  if ($("#l-one")) $("#l-one").onclick = () => simComp(d.id, { fixtures: 1 });
-  document.querySelectorAll("[data-fx]").forEach((b) => b.onclick = () => { const f = fx.rows[+b.dataset.fx]; simComp(d.id, { fixture: { h: f.h, a: f.a } }); });
-  if ($("#l-rest")) $("#l-rest").onclick = () => simComp(d.id, { matches: 1 });
-  if ($("#l-end")) $("#l-end").onclick = () => simComp(d.id, { to_end: true });
-  if ($("#l-go")) $("#l-go").onclick = () => { const n = parseInt($("#l-goto").value) - p.done; if (n > 0) simComp(d.id, { matches: n }); };
-  if ($("#l-now")) $("#l-now").onclick = () => (location.hash = "#/league/" + enc(name));
-  $("#l-past").onchange = (e) => (location.hash = e.target.value ? `#/league/${enc(name)}/${e.target.value}` : "#/league/" + enc(name));
-}
+// viewContinent and viewLeague live in pages.js (v15.2)
 
 function sortRows(rows, key, dir) {
   return rows.slice().sort((a, b) => { const x = a[key], y = b[key]; return (typeof x === "string" ? x.localeCompare(y) : x - y) * dir || b.ovr - a.ovr; });
@@ -730,6 +676,7 @@ async function viewClub(name) {
   document.querySelectorAll("#ct-tabs [data-ct]").forEach((b) => (b.onclick = () => show(b.dataset.ct)));
   document.querySelectorAll("[data-goto]").forEach((b) => (b.onclick = () => { show(b.dataset.goto); window.scrollTo(0, 0); }));
   CV.tab = "ov";
+  if (CV_OPEN) { const want = CV_OPEN; CV_OPEN = null; show(want); }
 }
 
 // ---- trophy rooms ------------------------------------------------------------------------------------
@@ -959,7 +906,7 @@ async function viewComp(id) {
       <div id="tab-fld" hidden><div class="scroll"><table><thead><tr><th class="l">Club</th><th class="l">League</th><th>OVR</th></tr></thead><tbody>${x.field.map((f) => `<tr><td class="l">${clubLink(f.club)}</td><td class="l meta">${esc(f.league)}</td><td>${ovr(f.ovr)}</td></tr>`).join("")}</tbody></table></div></div>` : ""}`;
   }
   const finished = p.done >= p.total;
-  $("#view").innerHTML = `<div class="crumbs"><a href="#/world">World</a> / ${esc(x.title)}</div><h1>${withEmb(x.emblem, 44, esc(x.title))}</h1>
+  $("#view").innerHTML = `<div class="crumbs"><a href="#/world">World</a> / ${esc(x.title)}</div><h1>${withEmb(x.emblem, 44, esc(x.title))}</h1>${liveTabs(id)}
     ${locked ? `<div class="card" style="margin-bottom:14px"><span class="tag red">LOCKED</span> needs ${p.locked.map((m) => `<a href="#/comp/${enc(m.id)}">${esc(m.title)}</a>`).join(", ")} to finish first.
       <p style="margin:10px 0 0"><button id="k-up" class="pri">Sim up to here</button> <span class="meta">plays only what it needs, then stops so you can play it your way.</span></p>
       <p style="margin:8px 0 0"><button id="k-pre">Sim everything it needs, then this to the end</button></p></div>`
@@ -1762,6 +1709,7 @@ async function routeInner(r, a, b) {
     if (r === "matchup") return await viewMatchup(a, b, (location.hash.split("/")[4] || ""));
     if (r === "rivals") return await viewRivals();
     if (r === "comp") return await viewComp(a);
+    if (r === "c") return await viewCompPage(a, b || "history");
     if (r === "nations") return await viewNations(a);
     if (r === "nation") return await viewNation(a);
     if (r === "news") return await viewNews();
