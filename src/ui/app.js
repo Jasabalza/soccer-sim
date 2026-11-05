@@ -583,6 +583,7 @@ async function viewClub(name) {
   const co = c.coach;
   $("#view").innerHTML = `<div class="crumbs"><a href="#/world">World</a> / <a href="#/continent/${c.confed}">${esc(c.confed)}</a> / ${leagueLink(c.league)} / ${esc(c.name)}</div>
     <h1 class="hcrest">${crest(c.name, 52)}<span>${esc(c.name)}</span></h1>
+    ${c.cwc.length ? `<div style="margin:4px 0 6px"><span class="tag gold">World champions${c.cwc.length > 1 ? " x" + c.cwc.length : ""}</span> <span class="meta">Club World Cup ${c.cwc.map((x) => "S" + x).join(", ")}</span></div>` : ""}
     <div class="sub">${leagueLink(c.league)} &middot; ${c.titles.length} league title(s) &middot; ${c.cups.length} continental cup(s) &middot; ${c.cwc.length} Club World Cup(s) &middot; last finish ${c.last_finish || "-"}</div>
     <div class="cols3" style="grid-template-columns:repeat(5,1fr);margin-bottom:14px">
       <div class="stat"><div class="k">Team OVR (best 11)</div><div class="v">${c.ovr}</div></div>
@@ -780,13 +781,30 @@ async function viewComp(id) {
       <div class="grid g-groups">${x.groups.map((g, i) => groupBox("Group " + (i + 1), g.map((r) => r.nation), `<table class="gt"><thead><tr><th class="l">Nation</th><th>P</th><th>GD</th><th>Pts</th></tr></thead><tbody>${g.map((r) => `<tr><td class="l">${natLink(r.nation)}</td><td>${r.p}</td><td>${r.gf - r.ga}</td><td class="pts">${r.pts}</td></tr>`).join("")}</tbody></table>`, i === 0 || window.innerWidth > 700)).join("")}</div>`;
   } else if (x.kind === "ic") {
     body = `<div class="sub">${x.spots} place(s)${x.field.length ? " &middot; field: " + x.field.map(natLink).join(", ") : ""}</div>${x.qualified.length ? "<p>Qualified: " + x.qualified.map(natLink).join(", ") + "</p>" : '<div class="empty">Not played yet.</div>'}`;
-  } else if (x.kind === "wc" || x.kind === "ct" || x.kind === "nl") {
-    body = `<div class="sub">${x.host ? "Host " + esc(x.host) : ""}${x.kind === "nl" ? "Tiers by national ranking; top tier ends with semifinals and a final." : ""}${x.winner ? ` &middot; winner <b>${natLink(x.winner)}</b>, runner-up ${natLink(x.runner_up)}` : ""}</div>
+  } else if (x.kind === "wc" || x.kind === "ct" || x.kind === "nl" || x.kind === "cwc") {
+    const lk = x.clubs ? clubLink : natLink, unit = x.clubs ? "Club" : "Nation";
+    const gname = (g, i) => (g.label ? g.label : "Group " + String.fromCharCode(65 + (i % 26)) + (i >= 26 ? i : ""));
+    // W / D / L come from the group's own results
+    const wdl = (g, n) => { let w = 0, d = 0, l = 0; for (const m of g.matches) { if (m.a !== n && m.b !== n) continue; const f = m.a === n ? m.sa - m.sb : m.sb - m.sa; if (f > 0) w++; else if (f < 0) l++; else d++; } return [w, d, l]; };
+    const gtable = (g) => `<table class="gt"><thead><tr><th class="l">${unit}</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GD</th><th>Pts</th></tr></thead><tbody>${g.teams.map((r, k) => { const [w, d, l] = wdl(g, r.nation); const gd = r.gf - r.ga; return `<tr class="${k < 2 && r.p ? "champ" : ""}"><td class="l">${lk(r.nation)}</td><td>${r.p}</td><td>${w}</td><td>${d}</td><td>${l}</td><td>${gd > 0 ? "+" + gd : gd}</td><td class="pts">${r.pts}</td></tr>`; }).join("")}</tbody></table>`;
+    const gres = (g) => (g.matches.length ? `<details class="gres"><summary class="meta">Results (${g.matches.length})</summary><div class="meta">${g.matches.map((m) => `<a href="#/matchup/${enc(id)}/${enc(m.a)}/${enc(m.b)}">${esc(m.a)} ${m.sa}-${m.sb} ${esc(m.b)}</a>`).join(" &middot; ")}</div></details>` : "");
+    const many = x.groups.length > 4;
+    const chips = many ? `<div class="gchips" id="gchips"><button class="on" data-g="all">All</button>${x.groups.map((g, i) => `<button data-g="${i}">${esc(gname(g, i).replace("Group ", ""))}</button>`).join("")}</div>` : "";
+    const fmt = x.format;
+    const qcard = x.clubs && fmt ? `<div class="card" style="margin-top:14px"><h3>How clubs qualify</h3>
+      <div class="row"><span>Continental champions</span><span class="pos">${Object.keys(fmt.slots).length} guaranteed</span></div>
+      ${Object.entries(fmt.slots).map(([c, n]) => `<div class="row"><span>${esc(c)}</span><span>${n}</span></div>`).join("")}
+      <div class="meta" style="margin-top:6px">Each continent's champion is in. The rest of its places go to the best clubs of the last four seasons: league finishes and continental cup runs. Four pots by that ranking, and never two clubs from one league in a group. Top two in each group reach the round of 16, then single matches on neutral grounds.</div></div>
+      <div class="card"><h3>Prize pool</h3><div class="stack"><i style="width:30%;background:#4aa8ff"></i><i style="width:35%;background:#3ddc84"></i><i style="width:25%;background:#f5c542"></i><i style="width:10%;background:#b48cff"></i></div>
+      <div class="leg"><span><u style="background:#4aa8ff"></u>Entry 30%</span><span><u style="background:#3ddc84"></u>Group results 35%</span><span><u style="background:#f5c542"></u>Knockouts 25%</span><span><u style="background:#b48cff"></u>Champion 10%</span></div>
+      <div class="meta" style="margin-top:8px">${money(fmt.pool)} in total, paid as prize money every fourth season. Clubs plan their budget around a four-year average, so one big payday does not change their wages.</div></div>
+      <div class="card"><h3>What winning is worth</h3><div class="meta">A permanent "World champions" line on the club page, more stature and fans, a better name for its league, and a place on the Club World Cup honours list.</div></div>` : "";
+    body = `<div class="sub">${x.host ? "Host " + esc(x.host) : ""}${x.kind === "nl" ? "Tiers by national ranking; top tier ends with semifinals and a final." : ""}${x.clubs ? "Neutral grounds" : ""}${x.winner ? ` &middot; ${x.clubs ? "world champions" : "winner"} <b>${lk(x.winner)}</b>, runner-up ${lk(x.runner_up)}` : ""}</div>
       <div class="tabs"><button class="on" data-t="ko">Knockout bracket</button><button data-t="grp">Groups</button><button data-t="stats">Stats</button></div>
       <div id="tab-stats" hidden></div>
-      <div id="tab-ko">${x.bracket.rounds.length ? bracketHTML(liveBracket(x.bracket, gm), true, { cid: id, ready: !!(gm && gm.ready) }) : '<div class="empty">The draw is made when the tournament is unlocked.</div>'}</div>
-      <div id="tab-grp" hidden>${x.groups.length ? `<div class="grid g-groups">${x.groups.map((g, i) => groupBox(g.label ? g.label : "Group " + String.fromCharCode(65 + (i % 26)) + (i >= 26 ? i : ""), g.teams.map((r) => r.nation), `<table class="gt"><thead><tr><th class="l">Nation</th><th>P</th><th>GD</th><th>Pts</th></tr></thead><tbody>${g.teams.map((r, k) => `<tr class="${k < 2 && r.p ? "champ" : ""}"><td class="l">${natLink(r.nation)}</td><td>${r.p}</td><td>${r.gf - r.ga}</td><td class="pts">${r.pts}</td></tr>`).join("")}</tbody></table>
-        ${g.matches.length ? `<details class="gres"><summary class="meta">Results (${g.matches.length})</summary><div class="meta">${g.matches.map((m) => `<a href="#/matchup/${enc(id)}/${enc(m.a)}/${enc(m.b)}">${esc(m.a)} ${m.sa}-${m.sb} ${esc(m.b)}</a>`).join(" &middot; ")}</div></details>` : ""}`, i === 0 || window.innerWidth > 700)).join("")}</div>` : '<div class="empty">No draw yet.</div>'}</div>`;
+      <div id="tab-ko">${x.bracket.rounds.length ? bracketHTML(liveBracket(x.bracket, gm), !x.clubs, { cid: id, ready: !!(gm && gm.ready) }) : '<div class="empty">The draw is made when the tournament is unlocked.</div>'}</div>
+      <div id="tab-grp" hidden>${x.groups.length ? `${chips}<div class="grid g-groups" id="gboxes">${x.groups.map((g, i) => `<div class="gwrap" data-gi="${i}">${groupBox(gname(g, i), g.teams.map((r) => r.nation), gtable(g) + gres(g), i === 0 || window.innerWidth > 700)}</div>`).join("")}</div><div class="meta" style="margin-top:6px">Top two of each group advance${x.kind === "wc" ? ", with the best third-placed sides filling the bracket" : ""}.</div>` : '<div class="empty">No draw yet.</div>'}</div>
+      ${qcard}`;
   } else {
     body = `<div class="sub">${x.winner ? `Winner <b>${clubLink(x.winner)}</b>, runner-up ${clubLink(x.runner_up)}` : x.field.length ? `${x.field.length} clubs` : "The field is set when the qualifying cups finish."}</div>
       ${x.field.length ? `<div class="tabs"><button class="on" data-t="ko">Bracket</button><button data-t="res">Results</button><button data-t="fld">Field</button><button data-t="stats">Stats</button></div>
@@ -817,6 +835,11 @@ async function viewComp(id) {
     const wb = want && document.querySelector(`.tabs [data-t="${want}"]`);
     if (wb) wb.click();
   }
+  document.querySelectorAll("#gchips [data-g]").forEach((b) => b.onclick = () => {
+    document.querySelectorAll("#gchips [data-g]").forEach((o) => o.classList.toggle("on", o === b));
+    $("#gboxes").classList.toggle("one", b.dataset.g !== "all");
+    document.querySelectorAll("#gboxes .gwrap").forEach((e) => { e.hidden = b.dataset.g !== "all" && e.dataset.gi !== b.dataset.g; const d = e.querySelector("details"); if (d && b.dataset.g !== "all") d.open = true; });
+  });
   if ($("#k-n")) $("#k-n").onclick = () => simComp(id, { matches: 1 });
   if ($("#k-e")) $("#k-e").onclick = () => simComp(id, { to_end: true });
   if ($("#k-up")) $("#k-up").onclick = () => simComp(id, { upto: true });

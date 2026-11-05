@@ -89,6 +89,16 @@ function team_data(w, comp) {
       }
     }
   }
+  if (!$T(nation) && comp.glog && comp.glog.length) {        // Club World Cup: the group matches count like any other
+    for (const [gi, [md, a, b, sa, sb]] of comp.glog.entries()) {
+      $M.append(MATCHES, [a, sa, sb, ("g" + $str(gi))]);
+      $M.append(MATCHES, [b, sb, sa, ("g" + $str(gi))]);
+      $setidx(gf, a, $idx(gf, a) + sa); $setidx(ga, a, $idx(ga, a) + sb);
+      $setidx(gf, b, $idx(gf, b) + sb); $setidx(ga, b, $idx(ga, b) + sa);
+      if (sb === 0) $setidx(cs, a, $idx(cs, a) + 1);
+      if (sa === 0) $setidx(cs, b, $idx(cs, b) + 1);
+    }
+  }
   if ($T(nation)) {
     for (const $f7 of $iter($enumerate(comp.glog))) {
       ($t2 = $iter($f7), gi = $t2[0], [md, a, b, sa, sb] = $iter($t2[1]));
