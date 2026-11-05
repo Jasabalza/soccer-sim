@@ -43,7 +43,7 @@ class Settings {
     return ($T($t1 = $M.join(", ", diffs)) ? $t1 : "defaults");
   }
   __init__(...$args) {
-    const $v = $bind($args, ["label", "seasons", "target_pool", "cup_size", "cup_prize_scale", "anchor_gain", "league_rise", "dev_pot_growth", "pot_shift", "pot_low", "pot_mode", "poach_base", "spread_gain", "poach_buyers", "poach_max", "poach_contract_max", "poach_min_gain", "coach_match_bonus", "tactician_boost", "club_prestige_budget", "transfer_share", "prestige_decay", "title_pts", "apex_pts", "hot_tolerance", "fire_after", "loyal_resign", "money_resign", "contract_min", "contract_max", "retire_start", "retire_ramp", "outflow_base", "outflow_age_start", "outflow_age_slope", "outflow_max", "release_top_n", "tv_base", "tv_cycle", "gate_k", "rail", "owner_fund_league", "owner_fund_amount", "money_x", "stature_gain", "home_prob", "first_contract", "nat_rate", "nat_expo_gain", "nat_star_gain", "nat_wc_gain", "amateur_base", "nat_supply_pow", "nat_quality_div", "nat_dev_cap", "nat_form_decay", "nat_coach_years", "fee_scale", "funds_share", "sale_to_budget", "xleague_buyers", "xleague_p", "wc_size", "start_year"], [() => "v11 default", () => 40, () => 350, () => 0, () => 1.0, () => 1.0, () => 0.15, () => true, () => 0, () => 54, () => 60, () => 0.8, () => 0.3, () => 3, () => 2, () => 2, () => 3, () => 2.0, () => 3.0, () => 0.03, () => 1.0, () => 0.05, () => 40.0, () => 80.0, () => 5, () => 2, () => 0.92, () => 0.65, () => 2, () => 5, () => 33, () => 0.15, () => 0.1, () => 24, () => 0.03, () => 0.9, () => 25, () => 1.12, () => 3, () => 0.6, () => 0.6, () => "", () => 0.0, () => 3.5, () => 1.0, () => 0.7, () => 3, () => 0.1, () => 0.8, () => 0.4, () => 12.0, () => 40.0, () => 2.5, () => 7.0, () => 20.0, () => 0.85, () => 4, () => 1.0, () => 0.3, () => 0.5, () => 30, () => 0.4, () => 0, () => 2026]);
+    const $v = $bind($args, ["label", "seasons", "target_pool", "cup_size", "cup_prize_scale", "anchor_gain", "league_rise", "dev_pot_growth", "pot_shift", "pot_low", "pot_mode", "poach_base", "spread_gain", "poach_buyers", "poach_max", "poach_contract_max", "poach_min_gain", "coach_match_bonus", "tactician_boost", "club_prestige_budget", "transfer_share", "prestige_decay", "title_pts", "apex_pts", "hot_tolerance", "fire_after", "loyal_resign", "money_resign", "contract_min", "contract_max", "retire_start", "retire_ramp", "outflow_base", "outflow_age_start", "outflow_age_slope", "outflow_max", "release_top_n", "tv_base", "tv_cycle", "gate_k", "rail", "owner_fund_league", "owner_fund_amount", "money_x", "stature_gain", "home_prob", "first_contract", "nat_rate", "nat_expo_gain", "nat_star_gain", "nat_wc_gain", "amateur_base", "nat_supply_pow", "nat_quality_div", "nat_dev_cap", "nat_form_decay", "nat_coach_years", "fee_scale", "funds_share", "sale_to_budget", "xleague_buyers", "xleague_p", "wc_size", "start_year", "wage_cap", "run_cost", "sponsor_share", "debt_rate", "cash_keep"], [() => "v11 default", () => 40, () => 350, () => 0, () => 1.0, () => 1.0, () => 0.15, () => true, () => 0, () => 54, () => 60, () => 0.8, () => 0.3, () => 3, () => 2, () => 2, () => 3, () => 2.0, () => 3.0, () => 0.03, () => 1.0, () => 0.05, () => 40.0, () => 80.0, () => 5, () => 2, () => 0.92, () => 0.65, () => 2, () => 5, () => 33, () => 0.15, () => 0.1, () => 24, () => 0.03, () => 0.9, () => 25, () => 1.12, () => 3, () => 0.6, () => 0.6, () => "", () => 0.0, () => 3.5, () => 1.0, () => 0.7, () => 3, () => 0.1, () => 0.8, () => 0.4, () => 12.0, () => 40.0, () => 2.5, () => 7.0, () => 20.0, () => 0.85, () => 4, () => 1.0, () => 0.3, () => 0.5, () => 30, () => 0.4, () => 0, () => 2026, () => 0.75, () => 0.15, () => 0.25, () => 0.06, () => 0.55]);
     this.label = $v[0];
     this.seasons = $v[1];
     this.target_pool = $v[2];
@@ -108,6 +108,11 @@ class Settings {
     this.xleague_p = $v[61];
     this.wc_size = $v[62];
     this.start_year = $v[63];
+    this.wage_cap = $v[64];
+    this.run_cost = $v[65];
+    this.sponsor_share = $v[66];
+    this.debt_rate = $v[67];
+    this.cash_keep = $v[68];
   }
 }
 $CLS['Settings'] = Settings;
@@ -579,33 +584,48 @@ class World {
     return $add($add($mul(($idx(c, "lprestige") - 50), 4), ($max(0, ($idx(c, "ovr") - 70)) * 1.5)), $mul($idx(c, "cp"), self.cfg.club_prestige_budget));
   }
   money_update(...$args) {
+    // v15: a real P&L. Closes the season just played (revenue, wages, running costs, interest, transfers) into each club's ledger,
+    // then sets up next season's income. `funds` is the club's spendable cash; `debt` is what it owes.
     const self = this;
     let [initial] = $bind($args, ["initial"], [() => false]);
-    let L, avg, c, carry, cfg, f, gate, ln, n, names, owner, size, tv, wgt, $t1, $t2, $t3;
-    cfg = self.cfg;
-    for (const $f23 of $iter($M.items(self.leagues))) {
-      [ln, L] = $iter($f23);
-      names = $idx(L, "clubs");
-      size = $len(names);
-      avg = $mul($mul((cfg.tv_base * 0.95), $pow($max(0.0, ($idx(L, "prestige") - 45)), 1.25)), $idx(L, "tvmult"));
-      for (const $f24 of $iter(names)) {
-        n = $f24;
-        c = $idx(self.clubs, n);
-        f = ($T($t1 = $idx(c, "last_finish")) ? $t1 : Math.floor(size / 2));
-        wgt = (1 + $div((0.6 * $sub((size + 1), $mul(2, f))), (size - 1)));
-        tv = $mul(avg, (0.5 + (0.5 * wgt)));
-        gate = $mul($mul(cfg.gate_k, $idx(c, "stature")), $pow(($idx(L, "prestige") / 90), 0.8));
-        owner = (($eq(cfg.owner_fund_league, ln)) ? cfg.owner_fund_amount : 0.0);
-        $setidx(c, "income", $add($add($add($add(tv, gate), $idx(c, "prize")), owner), $mul(cfg.sale_to_budget, $idx(c, "sales"))));
+    const cfg = self.cfg, sq = initial ? null : self.squads(), r1 = (x) => Math.round(x * 10) / 10;
+    for (const [ln, L] of $M.items(self.leagues)) {
+      const names = $idx(L, "clubs"), size = $len(names);
+      const avg = (cfg.tv_base * 0.95) * Math.pow(Math.max(0.0, $idx(L, "prestige") - 45), 1.25) * $idx(L, "tvmult");
+      for (const n of names) {
+        const c = $idx(self.clubs, n);
+        if (!$in("debt", c)) { $setidx(c, "debt", 0.0); $setidx(c, "ledger", []); $setidx(c, "parts", null); }
+        if (!initial && $T($idx(c, "parts"))) {
+          const pq = $idx(c, "parts"), pt = {"tv": $idx(pq, "tv"), "gate": $idx(pq, "gate"), "sponsor": $idx(pq, "sponsor"), "owner": $idx(pq, "owner")}, prize = $idx(c, "prize"), sales = $idx(c, "sales"), spent = $idx(c, "spent");
+          const wages = $sum((() => { const $r = []; for (const p of $M.get(sq, n, [])) $r.push(p.wage); return $r; })());
+          const revenue = pt.tv + pt.gate + pt.sponsor + pt.owner + prize;
+          const running = cfg.run_cost * (pt.tv + pt.gate + pt.sponsor);
+          const interest = cfg.debt_rate * $idx(c, "debt");
+          const operating = revenue - wages - running - interest;
+          let cash = $idx(c, "funds") + operating, debt = $idx(c, "debt");
+          if (cash < 0) { debt += -cash; cash = 0.0; }
+          else if (debt > 0) { const rep = Math.min(debt, 0.5 * cash); debt -= rep; cash -= rep; }
+          const keep = cash * cfg.cash_keep, payout = cash - keep;
+          $M.append($idx(c, "ledger"), $dict($kw({"season": self.season, "tv": r1(pt.tv), "gate": r1(pt.gate), "sponsor": r1(pt.sponsor), "prize": r1(prize), "sales": r1(sales), "owner": r1(pt.owner),
+            "income": r1(revenue + sales), "wages": r1(wages), "running": r1(running), "interest": r1(interest), "transfers": r1(spent), "academy": 0.0, "stadium": 0.0, "payout": r1(payout),
+            "profit": r1(revenue + sales - wages - running - interest - spent), "cash": r1(keep), "debt": r1(debt)})));
+          if ($len($idx(c, "ledger")) > 12) $setidx(c, "ledger", $slice($idx(c, "ledger"), -12, null, null));
+          $setidx(c, "funds", keep); $setidx(c, "debt", debt);
+        }
+        const f = ($T($idx(c, "last_finish")) ? $idx(c, "last_finish") : Math.floor(size / 2));
+        const wgt = 1 + (0.6 * ((size + 1) - 2 * f)) / (size - 1);
+        const tv = avg * (0.5 + 0.5 * wgt);
+        const gate0 = cfg.gate_k * $idx(c, "stature") * Math.pow($idx(L, "prestige") / 90, 0.8);
+        const gate = gate0 * (1 - cfg.sponsor_share), sponsor = gate0 * cfg.sponsor_share;
+        const owner = (($eq(cfg.owner_fund_league, ln)) ? cfg.owner_fund_amount : 0.0);
+        $setidx(c, "parts", $dict($kw({"tv": tv, "gate": gate, "sponsor": sponsor, "owner": owner})));
+        $setidx(c, "income", tv + gate + sponsor + $idx(c, "prize") + owner + cfg.sale_to_budget * $idx(c, "sales"));
         $setidx(c, "prize_prev", $idx(c, "prize"));
         $setidx(c, "prize", 0.0);
-        ($t2 = $iter([$idx(c, "sales"), $idx(c, "spent")]), $setidx(c, "sales_prev", $t2[0]), $setidx(c, "spent_prev", $t2[1]));
-        $t3 = 0.0;
-        $setidx(c, "sales", $t3);
-        $setidx(c, "spent", $t3);
-        carry = (0.5 * $max(0.0, $idx(c, "funds")));
-        $setidx(c, "funds", $add(carry, $mul(cfg.funds_share, $idx(c, "income"))));
-        $setidx(c, "budget", $max($idx(c, "income"), $mul(cfg.rail, self.old_budget(c))));
+        $setidx(c, "sales_prev", $idx(c, "sales")); $setidx(c, "spent_prev", $idx(c, "spent"));
+        $setidx(c, "sales", 0.0); $setidx(c, "spent", 0.0);
+        if (initial) $setidx(c, "funds", cfg.funds_share * $idx(c, "income"));
+        $setidx(c, "budget", Math.max($idx(c, "income"), cfg.rail * self.old_budget(c)));
       }
     }
   }
@@ -1414,7 +1434,7 @@ class World {
             if (!$mods.market.allow(self, p, b, "league")) continue;
             ask = wage_for(p.ovr, p.age);
             fee = self.fee_for(p);
-            if (($gt($add($idx(payroll, b), ask), $idx($idx(self.clubs, b), "budget")) || $gt(fee, $idx($idx(self.clubs, b), "funds")))) {
+            if (($gt($add($idx(payroll, b), ask), $mul(self.cfg.wage_cap, $idx($idx(self.clubs, b), "budget"))) || $gt(fee, $idx($idx(self.clubs, b), "funds")))) {
               continue;
             }
             seller = p.club;
@@ -1465,7 +1485,7 @@ class World {
         if (!$mods.market.allow(self, p, b, "abroad")) continue;
         ask = wage_for(p.ovr, p.age);
         fee = self.fee_for(p);
-        if (($gt($add($idx(payroll, b), ask), $idx($idx(self.clubs, b), "budget")) || $gt(fee, $idx($idx(self.clubs, b), "funds")))) {
+        if (($gt($add($idx(payroll, b), ask), $mul(self.cfg.wage_cap, $idx($idx(self.clubs, b), "budget"))) || $gt(fee, $idx($idx(self.clubs, b), "funds")))) {
           continue;
         }
         seller = p.club;
@@ -1693,7 +1713,7 @@ class World {
           break;
         }
         ask = wage_for(p.ovr, p.age);
-        if ($gt($add($idx(payroll, cname), ask), $idx(c, "budget"))) {
+        if ($gt($add($idx(payroll, cname), ask), $mul(self.cfg.wage_cap, $idx(c, "budget")))) {
           continue;
         }
         if ($T(($T($t1 = p.pref) ? ($T($t2 = (p.league === "")) ? ($T($t3 = (p.age <= 23)) ? (!$eq(p.pref, $idx(c, "league"))) : $t3) : $t2) : $t1))) {
