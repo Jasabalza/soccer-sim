@@ -1030,41 +1030,134 @@ function awardRow(p, rank, max, extra, unit) {
     <div class="meta">${clubLink(p.club)} &middot; ${stat}${extra ? " &middot; " + extra : ""}</div></div>
     <div class="votes"><div class="vbar"><i style="width:${Math.round((100 * p.pts) / max)}%"></i></div><b>${p.pts}</b><span class="meta"> ${unit || "pts"}${p.first != null ? ` &middot; ${p.first} first places` : ""}</span></div></div>`;
 }
-async function viewCeremony(season) {
+// ---------------------------------------------------------------- awards (v15.1)
+// Results first: #/ceremony/<season> (the whole season at a glance), /ballon (top ten and votes), /team (Team of the Year and cup awards),
+// /watch (the ceremony, one award per screen). Nothing is hidden on the results page.
+const surname = (n) => String(n || "").split(" ").slice(-1)[0];
+const COMP_GROUPS = [["club", "Club cups"], ["world", "World"], ["nations", "Nations"], ["domestic", "Domestic"]];
+const compGroup = (c) => (c.kind === "cup" ? "club" : c.kind === "cwc" || c.kind === "wc" ? "world" : c.nation ? "nations" : "domestic");
+const awStat = (p) => (p.pos === "GK" ? `${p.cs} clean sheets` : `${p.goals} G · ${p.assists} A`);
+const awSub = (p) => `${clubLink(p.club)} · ${esc(p.pos)} · ${p.age} · OVR ${p.ovr}`;
+const awTeam = (c, n) => (c.nation ? natLink(n) : clubLink(n));
+function awSelect(d) {
+  return `<select id="aw-season" class="sel" aria-label="Season">${d.seasons.slice().reverse().map((s) => `<option value="${s}" ${s === d.season ? "selected" : ""}>Season ${s}</option>`).join("")}</select>`;
+}
+function awCompBlock(c) {
+  const sc = c.scorers && c.scorers[0], mv = c.mvp && c.mvp[0], co = c.coach && c.coach[0];
+  return `<div class="comp"><div class="t"><span>${esc(c.name)}</span><span class="gold small">${c.winner ? awTeam(c, c.winner) : ""}</span></div>
+    <div class="grid2"><div>Top scorer<b>${sc ? playerLink(sc, surname(sc.name)) + " · " + sc.goals : "-"}</b></div><div>MVP<b>${mv ? playerLink(mv, surname(mv.name)) : "-"}</b></div>
+    <div>Coach<b>${co ? esc(co.name) : "-"}</b></div><div>Runner-up<b>${c.runner_up ? awTeam(c, c.runner_up) : "-"}</b></div></div></div>`;
+}
+async function viewCeremony(season, sub) {
   const d = await api("/api/awards" + (season ? "?season=" + season : ""));
   if (!d.awards) { $("#view").innerHTML = `<h1>Awards</h1><div class="empty">The first ceremony happens after season 1 finishes.</div>`; return; }
+  const a = d.awards, back = `<a class="crumb" href="#/ceremony/${d.season}">‹ Awards · Season ${d.season}</a>`;
+  const hdr = (title, subt) => `<div class="hd"><div><h1>${title}</h1><div class="sub">${subt}</div></div></div>`;
+  let html;
+  if (sub === "watch") return awWatch(d);
+  if (sub === "ballon") html = awBallon(d, back, hdr);
+  else if (sub === "team") html = awTeamPage(d, back, hdr);
+  else html = awResults(d);
+  $("#view").innerHTML = `<div class="v2">${html}</div>`;
+  const sel = $("#aw-season"); if (sel) sel.onchange = (e) => (location.hash = "#/ceremony/" + e.target.value + (sub ? "/" + sub : ""));
+  document.querySelectorAll("#view [data-go]").forEach((b) => (b.onclick = () => { document.getElementById(b.dataset.go).scrollIntoView({ behavior: "smooth", block: "start" }); document.querySelectorAll("#view .chips [data-go]").forEach((x) => x.classList.toggle("on", x === b)); }));
+  document.querySelectorAll("#view [data-cg]").forEach((b) => (b.onclick = () => { AWCG = b.dataset.cg; viewCeremony(season, sub); }));
+}
+let AWCG = "club";
+function awResults(d) {
+  const a = d.awards, b = a.ballon, w = b[0], bt = a.boot[0], yg = a.young[0], co = a.coach[0];
+  const mx = b[0].pts || 1, S = d.season;
+  const runner = (p, i) => `<div class="row"><span class="l"><span class="rk ${i === 1 ? "s" : "b"}">${i + 1}</span><span>${playerLink(p)} <span class="dim small">${esc(p.club)}</span></span></span><b>${Math.round((100 * p.pts) / mx)}%</b></div>`;
+  const line = (pos) => a.team.filter((p) => p.pos === pos);
+  const cupsShow = Object.values(a.comps || {}).filter((c) => c.kind !== "league").slice(0, 3);
+  const nComps = Object.keys(a.comps || {}).length;
+  return `
+    <div class="hd"><div><h1>Awards</h1><div class="sub">Season ${S} (${esc(d.season_label)}) · ${a.voters} voters</div></div>${awSelect(d)}</div>
+    <div style="display:flex;gap:10px;align-items:center;margin-top:12px;flex-wrap:wrap"><a class="btn pri" href="#/ceremony/${S}/watch">Watch the ceremony</a><span class="dim small">Or read the results below. Nothing is hidden.</span></div>
+    <nav class="chips sticky" aria-label="Jump to an award"><button class="on" data-go="aw-ballon">Ballon d'Or</button><button data-go="aw-boot">Golden Boot</button><button data-go="aw-young">Young player</button><button data-go="aw-coach">Coach</button><button data-go="aw-team">Team of the Year</button><button data-go="aw-cups">Cups</button></nav>
+    <section id="aw-ballon" class="card hero" style="margin-top:4px">
+      <div class="eyebrow gold">Ballon d'Or</div>
+      <div class="big">${playerLink(w)}</div>
+      <div class="dim" style="font-size:13px">${awSub(w)}</div>
+      <div class="statrow">${w.pos === "GK" ? `<div><b>${w.cs}</b><span>clean sheets</span></div>` : `<div><b>${w.goals}</b><span>goals</span></div>`}${w.pos === "GK" ? `<div><b>${w.finish}</b><span>club finish</span></div>` : `<div><b>${w.assists}</b><span>assists</span></div>`}<div><b>${w.share}%</b><span>of max votes</span></div></div>
+      ${b.slice(1, 3).map(runner).join("")}
+      <a class="more" href="#/ceremony/${S}/ballon"><span>Top ten and how the panel voted</span><span>&rsaquo;</span></a>
+    </section>
+    <div class="tiles">
+      <section id="aw-boot" class="tile open"><div class="eyebrow">Golden Boot</div>
+        <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px"><div><b style="font-size:18px">${playerLink(bt)}</b><div class="dim small">${awSub(bt)}</div></div><div style="text-align:right"><b style="font-size:26px" class="gold">${bt.goals}</b><div class="dim small">goals</div></div></div>
+        ${a.boot.slice(1, 3).map((p, i) => `<div class="row" style="margin-top:${i ? 0 : 6}px"><span class="l"><span class="rk ${i ? "b" : "s"}">${i + 2}</span>${playerLink(p)}</span><span class="dim">${p.goals}</span></div>`).join("")}
+      </section>
+      <section id="aw-young" class="tile"><div class="eyebrow">Young Player</div><b>${playerLink(yg)}</b><span class="dim small">${esc(yg.pos)} · ${esc(yg.nat)} · ${yg.age}</span><span class="dim small" style="margin-top:auto">${esc(yg.club)} · OVR ${yg.ovr}</span></section>
+      <section id="aw-coach" class="tile"><div class="eyebrow">Coach of the Year</div><b>${esc(co.name)}</b><span class="dim small">${esc(co.nat)} · prestige ${Math.round(co.prestige)}</span><span class="dim small" style="margin-top:auto">${co.club ? esc(co.club) : esc(co.nation || "")}${co.finish === 1 ? " · champions" : ""}</span></section>
+    </div>
+    <section id="aw-team" class="card"><h3>Team of the Year <small>4-3-3</small></h3>
+      ${["FWD", "MID", "DEF", "GK"].map((pos) => `<div class="row"><span class="l"><span class="p ${pos}">${pos}</span><span>${line(pos).map((p) => playerLink(p, surname(p.name))).join(" · ")}</span></span></div>`).join("")}
+      <a class="more" href="#/ceremony/${S}/team"><span>See it on the pitch</span><span>&rsaquo;</span></a>
+    </section>
+    <section id="aw-cups" class="card"><h3>Cup awards <small>MVPs feed the Ballon d'Or</small></h3>
+      ${cupsShow.map((c) => `<details class="acc"><summary><span>${esc(c.name)}</span><span class="dim">${c.winner ? esc(c.winner) : ""}</span></summary><div class="b">${awCompBlock(c)}</div></details>`).join("")}
+      <a class="more" href="#/ceremony/${S}/team"><span>All ${nComps} competitions</span><span>&rsaquo;</span></a>
+    </section>`;
+}
+function awBallon(d, back, hdr) {
+  const a = d.awards, b = a.ballon, mx = b[0].pts || 1, w = b[0];
+  const grp = { journalist: "Journalists", coach: "National team coaches", fan: "Fans" };
+  const mvps = Object.values(a.comps || {}).filter((c) => c.mvp && c.mvp[0] && c.mvp[0].uid === w.uid).map((c) => c.name);
+  return `${back}${hdr("Ballon d'Or", "Each voter names a top five (6-4-3-2-1). Top ten shown.")}
+    <div class="card" style="padding-top:4px;padding-bottom:4px">${b.map((p, i) => `<div class="vr"><span class="rk ${["g", "s", "b"][i] || ""}">${i + 1}</span><div class="n"><b>${playerLink(p)}</b><span>${esc(p.club)} · ${esc(p.pos)} · ${awStat(p)}</span></div><div class="v"><b>${p.pts}</b><div class="bar ${i ? "" : "gd"}"><i style="width:${Math.round((100 * p.pts) / mx)}%"></i></div></div></div>`).join("")}</div>
+    <div class="card"><h3>How each group voted <small>top three</small></h3>
+      ${Object.entries(a.voter_split).map(([k, v], i) => `<details class="acc" ${i === 0 ? "open" : ""}><summary><span>${grp[k] || esc(k)}</span></summary><div class="b dim small">${v.map((x) => esc(x.name) + " " + x.pts).join(" · ")}</div></details>`).join("")}</div>
+    <div class="card"><h3>Why ${esc(surname(w.name))} won</h3>
+      <div class="row"><span>Club season</span><span class="pos">${w.finish === 1 ? "League title" : "Finished " + w.finish + ordSuffix(w.finish)}</span></div>
+      <div class="row"><span>${w.pos === "GK" ? "Clean sheets" : "Goals and assists"}</span><span>${w.pos === "GK" ? w.cs : w.goals + w.assists + " combined"}</span></div>
+      <div class="row"><span>Competition MVPs</span><span>${mvps.length ? mvps.length + " (" + esc(mvps.slice(0, 2).join(", ")) + ")" : "none"}</span></div></div>`;
+}
+const ordSuffix = (n) => { const t = n % 100; return t >= 11 && t <= 13 ? "th" : ["th", "st", "nd", "rd"][n % 10] || "th"; };
+function awTeamPage(d, back, hdr) {
   const a = d.awards;
-  const q = []; // reveal queue
-  const sec = (title, sub, inner, key) => `<div class="aw-sec"><h2 class="rv" hidden>${key ? emblem(EMB_BY_SECTION[key], 34) + " " : ""}${title}</h2>${sub ? `<div class="sub rv" hidden>${sub}</div>` : ""}${inner}</div>`;
-  const rows = (arr, mk) => arr.map((p, i) => ({ i, html: mk(p, i + 1) })).reverse().map((o) => `<div class="rv" hidden>${o.html}</div>`).join("");
-  const maxB = a.ballon[0].pts, maxC = a.coach[0].pts;
-  const html = `
-    <div class="crumbs"><a href="#/world">World</a> / Awards</div>
-    <h1>Awards ceremony <span class="tag gold">season ${d.season} (${d.season_label})</span></h1>
-    <div class="sub">${a.date.text} &middot; ${a.voters} voters: journalists, national team coaches and fans. Each names a top five (6-4-3-2-1).
-      <select id="aw-season" style="margin-left:10px">${d.seasons.slice().reverse().map((s) => `<option value="${s}" ${s === d.season ? "selected" : ""}>Season ${s}</option>`).join("")}</select></div>
-    <div id="aw-bar"><button id="aw-back">Back</button><button class="pri" id="aw-next">Next</button><button id="aw-skip">Skip to end</button><span class="meta" id="aw-count"></span></div>
-    <div id="aw-pad"></div>
-    ${sec("Golden Boot", "Most league goals in the world", rows(a.boot.slice(0, 3), (p, r) => awardRow({ ...p, pts: p.goals, first: null }, r, a.boot[0].goals, `${p.league}`, "goals")), "boot")}
-    ${sec("Young Player of the Year", "Under 22", rows(a.young, (p, r) => awardRow({ ...p, pts: +p.score.toFixed(1), first: null }, r, a.young[0].score, "", "panel score")), "young")}
-    ${sec("Coach of the Year", "Judged on results against expectations, plus trophies", rows(a.coach, (c, r) => `<div class="aw-row ${MEDAL[r - 1] || ""} ${r === 1 ? "first" : ""}"><div class="rk">${r}</div><div class="who"><b>${esc(c.name)}</b> <span class="meta">${esc(c.nat)} &middot; prestige ${c.prestige}</span><div class="meta">${c.club ? clubLink(c.club) + " &middot; finished " + c.finish + " (expected " + c.expected + ")" : "National team: " + natLink(c.nation)}</div></div><div class="votes"><div class="vbar"><i style="width:${Math.round((100 * c.pts) / maxC)}%"></i></div><b>${c.pts}</b><span class="meta"> pts &middot; ${c.first} first places</span></div></div>`), "coach")}
-    ${sec("Team of the Year", "Best XI by position, 4-3-3, from the panel's scores", `<div class="rv" hidden><div class="pitch-wrap">${pitchSVG(a.team)}</div></div>`, "team")}
-    ${sec("Ballon d'Or", "Top ten, counted up to the winner", rows(a.ballon, (p, r) => awardRow(p, r, maxB, `${p.share}% of the maximum`)), "ballon")}
-    <div class="rv" hidden><div class="card" style="margin-top:16px"><h3>How the panel voted <small>top three by voter group</small></h3>
-      ${Object.entries(a.voter_split).map(([k, v]) => `<div class="row"><span><b>${k === "journalist" ? "Journalists" : k === "coach" ? "National team coaches" : "Fans"}</b></span><span class="meta">${v.map((x) => esc(x.name) + " " + x.pts).join(" &middot; ")}</span></div>`).join("")}</div></div>
-    <div class="rv" hidden><div class="card" style="margin-top:16px"><h3>Competition awards <small>MVPs feed into the Ballon d'Or vote</small></h3><div class="scroll"><table><thead><tr><th class="l">Competition</th><th class="l">Winner</th><th class="l">Top scorer</th><th class="l">MVP</th><th class="l">Coach</th></tr></thead><tbody>
-      ${Object.values(a.comps || {}).map((c) => { const tm = (n) => (c.nation ? natLink(n) : clubLink(n)); return `<tr><td class="l">${esc(c.name)}</td><td class="l">${c.winner ? tm(c.winner) : ""}</td><td class="l">${c.scorers && c.scorers[0] ? playerLink(c.scorers[0]) + ` <span class="meta">${c.scorers[0].goals}</span>` : ""}</td><td class="l">${c.mvp && c.mvp[0] ? playerLink(c.mvp[0]) : ""}</td><td class="l">${c.coach && c.coach[0] ? esc(c.coach[0].name) : ""}</td></tr>`; }).join("")}</tbody></table></div></div></div>
-    <p class="rv" hidden style="margin-top:16px"><a href="#/world">Back to the world</a> &middot; <a href="#/ledger">Transfers</a></p>`;
-  $("#view").innerHTML = html;
-  const items = [...document.querySelectorAll("#view .rv")];
-  let idx = 0;
-  const upd = () => { $("#aw-count").textContent = idx >= items.length ? "That's everything." : idx + " / " + items.length; $("#aw-next").disabled = idx >= items.length; $("#aw-back").disabled = idx <= 0; };
-  $("#aw-back").onclick = () => { if (idx > 0) { idx--; items[idx].hidden = true; if (idx > 0) items[idx - 1].scrollIntoView({ block: "center", behavior: "smooth" }); } upd(); };
-  const next = () => { if (idx < items.length) { items[idx].hidden = false; items[idx].scrollIntoView({ block: "center", behavior: "smooth" }); idx++; } upd(); };
-  $("#aw-next").onclick = next;
-  $("#aw-skip").onclick = () => { items.forEach((e) => (e.hidden = false)); idx = items.length; upd(); };
-  $("#aw-season").onchange = (e) => (location.hash = "#/ceremony/" + e.target.value);
-  upd();
+  const have = COMP_GROUPS.filter(([k]) => Object.values(a.comps || {}).some((c) => compGroup(c) === k));
+  if (!have.some(([k]) => k === AWCG) && have.length) AWCG = have[0][0];
+  const list = Object.values(a.comps || {}).filter((c) => compGroup(c) === AWCG);
+  return `${back}${hdr("Team of the Year", "Best XI by position from the panel's scores")}
+    <div class="pitch-wrap" style="margin-top:10px">${pitchSVG(a.team)}</div>
+    <nav class="chips" aria-label="Cup awards">${have.map(([k, t]) => `<button data-cg="${k}" class="${k === AWCG ? "on" : ""}">${t}</button>`).join("")}</nav>
+    <div class="card" style="margin-top:2px;padding-top:2px;padding-bottom:2px">${list.map(awCompBlock).join("") || `<div class="dim small" style="padding:10px 0">Nothing in this group this season.</div>`}</div>`;
+}
+// ceremony mode: one award per screen. Winners are only shown when you get to them.
+function awWatch(d) {
+  const a = d.awards, S = d.season, rn = (arr, f) => arr.slice(1, 3).map((p, i) => `<div class="row"><span class="l"><span class="rk ${i ? "b" : "s"}">${i + 2}</span>${f(p)}</span><span class="dim">${p._v}</span></div>`).join("");
+  const player = (title, arr, val, tags) => {
+    const w = arr[0], runners = arr.slice(1, 3).map((p) => ({ ...p, _v: val(p) }));
+    return { title, html: `<div class="eyebrow gold">${title}</div><div class="medal">1</div><div class="big">${playerLink(w)}</div><div class="dim" style="font-size:13px">${awSub(w)}</div><div style="margin-top:12px">${tags(w)}</div>
+      <div class="runners">${rn([w, ...runners], (p) => `${playerLink(p)} <span class="dim small">${esc(p.club)}</span>`)}</div>` };
+  };
+  const co = a.coach;
+  const steps = [
+    player("Golden Boot", a.boot, (p) => p.goals, (w) => `<span class="tag gold">${w.goals} league goals</span>`),
+    player("Young Player of the Year", a.young, (p) => p.score.toFixed(1), (w) => `<span class="tag green">Age ${w.age}</span> <span class="tag">${awStat(w)}</span>`),
+    { title: "Coach of the Year", html: `<div class="eyebrow gold">Coach of the Year</div><div class="medal">1</div><div class="big">${esc(co[0].name)}</div><div class="dim" style="font-size:13px">${co[0].club ? clubLink(co[0].club) : esc(co[0].nation || "")} · ${esc(co[0].nat)} · prestige ${Math.round(co[0].prestige)}</div>
+      <div style="margin-top:12px">${co[0].finish === 1 ? `<span class="tag green">Won the league</span> ` : ""}${co[0].finish < co[0].expected ? `<span class="tag">Beat expectations by ${co[0].expected - co[0].finish} places</span>` : ""}</div>
+      <div class="runners">${co.slice(1, 3).map((c, i) => `<div class="row"><span class="l"><span class="rk ${i ? "b" : "s"}">${i + 2}</span>${esc(c.name)} <span class="dim small">${esc(c.club || c.nation || "")}</span></span><span class="dim">${Math.round(c.pts)}</span></div>`).join("")}</div>` },
+    { title: "Team of the Year", html: `<div class="eyebrow gold">Team of the Year</div><div class="pitch-wrap" style="margin-top:10px">${pitchSVG(a.team)}</div>` },
+    { title: "Cup awards", html: `<div class="eyebrow gold">Cup awards</div><div style="text-align:left;margin-top:8px">${Object.values(a.comps || {}).filter((c) => c.kind !== "league").map((c) => `<div class="row"><span>${esc(c.name)}</span><b class="gold small">${c.winner ? awTeam(c, c.winner) : ""}</b></div>`).join("")}</div>` },
+    player("Ballon d'Or", a.ballon, (p) => Math.round((100 * p.pts) / (a.ballon[0].pts || 1)) + "%", (w) => `<span class="tag gold">${awStat(w)}</span> <span class="tag green">${w.share}% of max votes</span>`),
+  ];
+  let i = 0;
+  const draw = () => {
+    const last = i === steps.length - 1, st = steps[i];
+    $("#view").innerHTML = `<div class="v2">
+      <div class="hd"><div><h1>Ceremony</h1><div class="sub">Season ${S} · one award at a time</div></div><a class="btn sm" href="#/ceremony/${S}">Skip to results</a></div>
+      <div class="prog"><span>Award ${i + 1} of ${steps.length}</span><span>${esc(st.title)}</span></div>
+      <div class="dots" aria-label="Progress">${steps.map((_, k) => `<i class="${k < i ? "done" : k === i ? "on" : ""}"></i>`).join("")}</div>
+      <div class="stage">${st.html}</div>
+      <div class="foot"><button class="btn" id="aw-back" ${i ? "" : "disabled"}>Back</button><button class="btn pri" id="aw-next">${last ? "See all results" : "Next: " + esc(steps[i + 1].title)}</button></div>
+      <h2 class="lbl2">Order</h2>
+      <div class="card" style="margin-top:0">${steps.map((s, k) => `<div class="row"><span class="l"><span class="rk ${k < i ? "g" : ""}">${k < i ? "✓" : k + 1}</span>${k === i ? "<b>" + esc(s.title) + "</b>" : esc(s.title)}</span><span class="${k === i ? "pos" : "dim"} small">${k === i ? "now" : k === i + 1 ? "next" : ""}</span></div>`).join("")}</div></div>`;
+    $("#aw-back").onclick = () => { if (i > 0) { i--; draw(); window.scrollTo(0, 0); } };
+    $("#aw-next").onclick = () => { if (last) location.hash = "#/ceremony/" + S; else { i++; draw(); window.scrollTo(0, 0); } };
+  };
+  draw();
 }
 async function viewTrophies(key, tab) {
   tab = tab || "winners";
@@ -1528,7 +1621,7 @@ async function routeInner(r, a, b) {
     if (r === "players") return await viewPlayers();
     if (r === "player") return await viewPlayer(a);
     if (r === "map") { location.replace("#/world"); return; }               // the league map was removed
-    if (r === "ceremony") return await viewCeremony(a ? +a : null);
+    if (r === "ceremony") return await viewCeremony(a ? +a : null, b);
     if (r === "trophies") return a === "winners" ? await viewTrophies(b, "winners") : await viewTrophies(null, a || "winners");
     if (r === "money") return await viewMoney();
     if (r === "ledger") return await viewLedger(a);
