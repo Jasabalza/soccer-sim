@@ -1,0 +1,1004 @@
+{
+ "nations": [
+  {
+   "name": "England",
+   "confed": "UEFA",
+   "sub": "BRI",
+   "base": 92,
+   "ties": {}
+  },
+  {
+   "name": "Scotland",
+   "confed": "UEFA",
+   "sub": "BRI",
+   "base": 66,
+   "ties": {}
+  },
+  {
+   "name": "Wales",
+   "confed": "UEFA",
+   "sub": "BRI",
+   "base": 60,
+   "ties": {
+    "Premier League": 0.65
+   }
+  },
+  {
+   "name": "Northern Ireland",
+   "confed": "UEFA",
+   "sub": "BRI",
+   "base": 48,
+   "ties": {
+    "Premier League": 0.6,
+    "Scottish Premiership": 0.5
+   }
+  },
+  {
+   "name": "Ireland",
+   "confed": "UEFA",
+   "sub": "BRI",
+   "base": 56,
+   "ties": {
+    "Premier League": 0.65,
+    "Scottish Premiership": 0.4
+   }
+  },
+  {
+   "name": "France",
+   "confed": "UEFA",
+   "sub": "WEU",
+   "base": 93,
+   "ties": {}
+  },
+  {
+   "name": "Belgium",
+   "confed": "UEFA",
+   "sub": "WEU",
+   "base": 78,
+   "ties": {}
+  },
+  {
+   "name": "Netherlands",
+   "confed": "UEFA",
+   "sub": "WEU",
+   "base": 82,
+   "ties": {}
+  },
+  {
+   "name": "Luxembourg",
+   "confed": "UEFA",
+   "sub": "WEU",
+   "base": 26,
+   "ties": {
+    "Bundesliga": 0.35,
+    "Ligue 1": 0.35
+   }
+  },
+  {
+   "name": "Spain",
+   "confed": "UEFA",
+   "sub": "IBE",
+   "base": 90,
+   "ties": {}
+  },
+  {
+   "name": "Portugal",
+   "confed": "UEFA",
+   "sub": "IBE",
+   "base": 82,
+   "ties": {}
+  },
+  {
+   "name": "Andorra",
+   "confed": "UEFA",
+   "sub": "IBE",
+   "base": 10,
+   "ties": {
+    "La Liga": 0.5,
+    "Ligue 1": 0.4
+   }
+  },
+  {
+   "name": "Gibraltar",
+   "confed": "UEFA",
+   "sub": "IBE",
+   "base": 8,
+   "ties": {
+    "Premier League": 0.4,
+    "La Liga": 0.4
+   }
+  },
+  {
+   "name": "Germany",
+   "confed": "UEFA",
+   "sub": "CEU",
+   "base": 88,
+   "ties": {}
+  },
+  {
+   "name": "Austria",
+   "confed": "UEFA",
+   "sub": "CEU",
+   "base": 66,
+   "ties": {}
+  },
+  {
+   "name": "Switzerland",
+   "confed": "UEFA",
+   "sub": "CEU",
+   "base": 70,
+   "ties": {}
+  },
+  {
+   "name": "Liechtenstein",
+   "confed": "UEFA",
+   "sub": "CEU",
+   "base": 8,
+   "ties": {
+    "Bundesliga": 0.45
+   }
+  },
+  {
+   "name": "Czechia",
+   "confed": "UEFA",
+   "sub": "CEU",
+   "base": 64,
+   "ties": {}
+  },
+  {
+   "name": "Slovakia",
+   "confed": "UEFA",
+   "sub": "CEU",
+   "base": 54,
+   "ties": {}
+  },
+  {
+   "name": "Hungary",
+   "confed": "UEFA",
+   "sub": "CEU",
+   "base": 58,
+   "ties": {}
+  },
+  {
+   "name": "Poland",
+   "confed": "UEFA",
+   "sub": "CEU",
+   "base": 70,
+   "ties": {}
+  },
+  {
+   "name": "Denmark",
+   "confed": "UEFA",
+   "sub": "NOR",
+   "base": 70,
+   "ties": {}
+  },
+  {
+   "name": "Sweden",
+   "confed": "UEFA",
+   "sub": "NOR",
+   "base": 68,
+   "ties": {}
+  },
+  {
+   "name": "Norway",
+   "confed": "UEFA",
+   "sub": "NOR",
+   "base": 66,
+   "ties": {}
+  },
+  {
+   "name": "Finland",
+   "confed": "UEFA",
+   "sub": "NOR",
+   "base": 48,
+   "ties": {}
+  },
+  {
+   "name": "Iceland",
+   "confed": "UEFA",
+   "sub": "NOR",
+   "base": 40,
+   "ties": {
+    "Eredivisie": 0.25
+   }
+  },
+  {
+   "name": "Estonia",
+   "confed": "UEFA",
+   "sub": "NOR",
+   "base": 28,
+   "ties": {}
+  },
+  {
+   "name": "Latvia",
+   "confed": "UEFA",
+   "sub": "NOR",
+   "base": 28,
+   "ties": {}
+  },
+  {
+   "name": "Lithuania",
+   "confed": "UEFA",
+   "sub": "NOR",
+   "base": 30,
+   "ties": {}
+  },
+  {
+   "name": "Faroe Islands",
+   "confed": "UEFA",
+   "sub": "NOR",
+   "base": 14,
+   "ties": {
+    "Scottish Premiership": 0.3
+   }
+  },
+  {
+   "name": "Serbia",
+   "confed": "UEFA",
+   "sub": "BAL",
+   "base": 68,
+   "ties": {
+    "Bundesliga": 0.3,
+    "Süper Lig": 0.3
+   }
+  },
+  {
+   "name": "Croatia",
+   "confed": "UEFA",
+   "sub": "BAL",
+   "base": 74,
+   "ties": {
+    "Bundesliga": 0.3,
+    "Serie A": 0.3
+   }
+  },
+  {
+   "name": "Slovenia",
+   "confed": "UEFA",
+   "sub": "BAL",
+   "base": 50,
+   "ties": {}
+  },
+  {
+   "name": "Bosnia and Herzegovina",
+   "confed": "UEFA",
+   "sub": "BAL",
+   "base": 54,
+   "ties": {
+    "Bundesliga": 0.35,
+    "Süper Lig": 0.35
+   }
+  },
+  {
+   "name": "Montenegro",
+   "confed": "UEFA",
+   "sub": "BAL",
+   "base": 42,
+   "ties": {}
+  },
+  {
+   "name": "North Macedonia",
+   "confed": "UEFA",
+   "sub": "BAL",
+   "base": 44,
+   "ties": {}
+  },
+  {
+   "name": "Albania",
+   "confed": "UEFA",
+   "sub": "BAL",
+   "base": 48,
+   "ties": {
+    "Serie A": 0.45
+   }
+  },
+  {
+   "name": "Kosovo",
+   "confed": "UEFA",
+   "sub": "BAL",
+   "base": 46,
+   "ties": {
+    "Bundesliga": 0.4,
+    "Süper Lig": 0.3
+   }
+  },
+  {
+   "name": "Romania",
+   "confed": "UEFA",
+   "sub": "BAL",
+   "base": 58,
+   "ties": {}
+  },
+  {
+   "name": "Bulgaria",
+   "confed": "UEFA",
+   "sub": "BAL",
+   "base": 48,
+   "ties": {}
+  },
+  {
+   "name": "Greece",
+   "confed": "UEFA",
+   "sub": "MED",
+   "base": 62,
+   "ties": {}
+  },
+  {
+   "name": "Italy",
+   "confed": "UEFA",
+   "sub": "MED",
+   "base": 85,
+   "ties": {}
+  },
+  {
+   "name": "Malta",
+   "confed": "UEFA",
+   "sub": "MED",
+   "base": 24,
+   "ties": {
+    "Serie A": 0.25,
+    "Premier League": 0.25
+   }
+  },
+  {
+   "name": "San Marino",
+   "confed": "UEFA",
+   "sub": "MED",
+   "base": 8,
+   "ties": {
+    "Serie A": 0.5
+   }
+  },
+  {
+   "name": "Cyprus",
+   "confed": "UEFA",
+   "sub": "MED",
+   "base": 32,
+   "ties": {
+    "Süper Lig": 0.2
+   }
+  },
+  {
+   "name": "Turkey",
+   "confed": "UEFA",
+   "sub": "TCA",
+   "base": 74,
+   "ties": {
+    "Bundesliga": 0.5,
+    "Eredivisie": 0.35
+   }
+  },
+  {
+   "name": "Georgia",
+   "confed": "UEFA",
+   "sub": "TCA",
+   "base": 48,
+   "ties": {
+    "Süper Lig": 0.3
+   }
+  },
+  {
+   "name": "Armenia",
+   "confed": "UEFA",
+   "sub": "TCA",
+   "base": 36,
+   "ties": {}
+  },
+  {
+   "name": "Azerbaijan",
+   "confed": "UEFA",
+   "sub": "TCA",
+   "base": 36,
+   "ties": {
+    "Süper Lig": 0.4
+   }
+  },
+  {
+   "name": "Israel",
+   "confed": "UEFA",
+   "sub": "TCA",
+   "base": 50,
+   "ties": {
+    "Belgian Pro League": 0.3
+   }
+  },
+  {
+   "name": "Kazakhstan",
+   "confed": "UEFA",
+   "sub": "TCA",
+   "base": 40,
+   "ties": {
+    "Süper Lig": 0.2
+   }
+  },
+  {
+   "name": "Ukraine",
+   "confed": "UEFA",
+   "sub": "EEU",
+   "base": 68,
+   "ties": {}
+  },
+  {
+   "name": "Russia",
+   "confed": "UEFA",
+   "sub": "EEU",
+   "base": 68,
+   "ties": {}
+  },
+  {
+   "name": "Belarus",
+   "confed": "UEFA",
+   "sub": "EEU",
+   "base": 44,
+   "ties": {}
+  },
+  {
+   "name": "Moldova",
+   "confed": "UEFA",
+   "sub": "EEU",
+   "base": 28,
+   "ties": {}
+  },
+  {
+   "name": "Brazil",
+   "confed": "CONMEBOL",
+   "sub": "SAS",
+   "base": 95,
+   "ties": {
+    "Primeira Liga": 0.55,
+    "J1 League": 0.4,
+    "Saudi Pro League": 0.35
+   }
+  },
+  {
+   "name": "Argentina",
+   "confed": "CONMEBOL",
+   "sub": "SAS",
+   "base": 91,
+   "ties": {
+    "La Liga": 0.45,
+    "Serie A": 0.45,
+    "Liga MX": 0.35
+   }
+  },
+  {
+   "name": "Uruguay",
+   "confed": "CONMEBOL",
+   "sub": "SAS",
+   "base": 76,
+   "ties": {
+    "La Liga": 0.4,
+    "Serie A": 0.4,
+    "Brazil Série A": 0.5
+   }
+  },
+  {
+   "name": "Paraguay",
+   "confed": "CONMEBOL",
+   "sub": "SAS",
+   "base": 58,
+   "ties": {
+    "Argentina Liga Profesional": 0.5,
+    "Brazil Série A": 0.5
+   }
+  },
+  {
+   "name": "Chile",
+   "confed": "CONMEBOL",
+   "sub": "SAS",
+   "base": 64,
+   "ties": {
+    "Argentina Liga Profesional": 0.4
+   }
+  },
+  {
+   "name": "Bolivia",
+   "confed": "CONMEBOL",
+   "sub": "SAS",
+   "base": 40,
+   "ties": {
+    "Argentina Liga Profesional": 0.35,
+    "Brazil Série A": 0.35
+   }
+  },
+  {
+   "name": "Colombia",
+   "confed": "CONMEBOL",
+   "sub": "SAN",
+   "base": 78,
+   "ties": {
+    "Liga MX": 0.35,
+    "La Liga": 0.3
+   }
+  },
+  {
+   "name": "Ecuador",
+   "confed": "CONMEBOL",
+   "sub": "SAN",
+   "base": 66,
+   "ties": {
+    "Liga MX": 0.3
+   }
+  },
+  {
+   "name": "Peru",
+   "confed": "CONMEBOL",
+   "sub": "SAN",
+   "base": 56,
+   "ties": {
+    "Argentina Liga Profesional": 0.3
+   }
+  },
+  {
+   "name": "Venezuela",
+   "confed": "CONMEBOL",
+   "sub": "SAN",
+   "base": 50,
+   "ties": {
+    "La Liga": 0.3
+   }
+  },
+  {
+   "name": "USA",
+   "confed": "CONCACAF",
+   "sub": "NAM",
+   "base": 72,
+   "ties": {
+    "Premier League": 0.25,
+    "Bundesliga": 0.25
+   }
+  },
+  {
+   "name": "Mexico",
+   "confed": "CONCACAF",
+   "sub": "NAM",
+   "base": 74,
+   "ties": {}
+  },
+  {
+   "name": "Canada",
+   "confed": "CONCACAF",
+   "sub": "NAM",
+   "base": 58,
+   "ties": {
+    "MLS": 0.8,
+    "Premier League": 0.3
+   }
+  },
+  {
+   "name": "Costa Rica",
+   "confed": "CONCACAF",
+   "sub": "CAM",
+   "base": 54,
+   "ties": {}
+  },
+  {
+   "name": "Panama",
+   "confed": "CONCACAF",
+   "sub": "CAM",
+   "base": 50,
+   "ties": {}
+  },
+  {
+   "name": "Honduras",
+   "confed": "CONCACAF",
+   "sub": "CAM",
+   "base": 46,
+   "ties": {}
+  },
+  {
+   "name": "El Salvador",
+   "confed": "CONCACAF",
+   "sub": "CAM",
+   "base": 40,
+   "ties": {}
+  },
+  {
+   "name": "Guatemala",
+   "confed": "CONCACAF",
+   "sub": "CAM",
+   "base": 36,
+   "ties": {}
+  },
+  {
+   "name": "Jamaica",
+   "confed": "CONCACAF",
+   "sub": "CAR",
+   "base": 52,
+   "ties": {
+    "Premier League": 0.5,
+    "MLS": 0.4
+   }
+  },
+  {
+   "name": "Haiti",
+   "confed": "CONCACAF",
+   "sub": "CAR",
+   "base": 40,
+   "ties": {
+    "Ligue 1": 0.4,
+    "MLS": 0.35
+   }
+  },
+  {
+   "name": "Trinidad and Tobago",
+   "confed": "CONCACAF",
+   "sub": "CAR",
+   "base": 34,
+   "ties": {
+    "MLS": 0.4,
+    "Premier League": 0.3
+   }
+  },
+  {
+   "name": "Curaçao",
+   "confed": "CONCACAF",
+   "sub": "CAR",
+   "base": 34,
+   "ties": {
+    "Eredivisie": 0.6
+   }
+  },
+  {
+   "name": "Morocco",
+   "confed": "CAF",
+   "sub": "NAF",
+   "base": 74,
+   "ties": {
+    "Ligue 1": 0.6,
+    "La Liga": 0.5,
+    "Eredivisie": 0.4,
+    "Belgian Pro League": 0.4
+   }
+  },
+  {
+   "name": "Algeria",
+   "confed": "CAF",
+   "sub": "NAF",
+   "base": 68,
+   "ties": {
+    "Ligue 1": 0.65
+   }
+  },
+  {
+   "name": "Tunisia",
+   "confed": "CAF",
+   "sub": "NAF",
+   "base": 60,
+   "ties": {
+    "Ligue 1": 0.5
+   }
+  },
+  {
+   "name": "Egypt",
+   "confed": "CAF",
+   "sub": "NAF",
+   "base": 66,
+   "ties": {
+    "Premier League": 0.35,
+    "Saudi Pro League": 0.4
+   }
+  },
+  {
+   "name": "Senegal",
+   "confed": "CAF",
+   "sub": "WAF",
+   "base": 72,
+   "ties": {
+    "Ligue 1": 0.55,
+    "Premier League": 0.35
+   }
+  },
+  {
+   "name": "Nigeria",
+   "confed": "CAF",
+   "sub": "WAF",
+   "base": 76,
+   "ties": {
+    "Premier League": 0.45,
+    "Süper Lig": 0.3,
+    "Serie A": 0.3
+   }
+  },
+  {
+   "name": "Ivory Coast",
+   "confed": "CAF",
+   "sub": "WAF",
+   "base": 72,
+   "ties": {
+    "Ligue 1": 0.55,
+    "Premier League": 0.35
+   }
+  },
+  {
+   "name": "Ghana",
+   "confed": "CAF",
+   "sub": "WAF",
+   "base": 68,
+   "ties": {
+    "Premier League": 0.45,
+    "Bundesliga": 0.3
+   }
+  },
+  {
+   "name": "Mali",
+   "confed": "CAF",
+   "sub": "WAF",
+   "base": 62,
+   "ties": {
+    "Ligue 1": 0.55
+   }
+  },
+  {
+   "name": "Burkina Faso",
+   "confed": "CAF",
+   "sub": "WAF",
+   "base": 55,
+   "ties": {
+    "Ligue 1": 0.5,
+    "Belgian Pro League": 0.35
+   }
+  },
+  {
+   "name": "Cape Verde",
+   "confed": "CAF",
+   "sub": "WAF",
+   "base": 48,
+   "ties": {
+    "Primeira Liga": 0.65,
+    "Eredivisie": 0.4
+   }
+  },
+  {
+   "name": "Guinea",
+   "confed": "CAF",
+   "sub": "WAF",
+   "base": 52,
+   "ties": {
+    "Ligue 1": 0.5
+   }
+  },
+  {
+   "name": "Cameroon",
+   "confed": "CAF",
+   "sub": "CAFC",
+   "base": 68,
+   "ties": {
+    "Ligue 1": 0.45,
+    "Premier League": 0.3
+   }
+  },
+  {
+   "name": "DR Congo",
+   "confed": "CAF",
+   "sub": "CAFC",
+   "base": 62,
+   "ties": {
+    "Belgian Pro League": 0.55,
+    "Ligue 1": 0.4
+   }
+  },
+  {
+   "name": "Gabon",
+   "confed": "CAF",
+   "sub": "CAFC",
+   "base": 44,
+   "ties": {
+    "Ligue 1": 0.45
+   }
+  },
+  {
+   "name": "South Africa",
+   "confed": "CAF",
+   "sub": "SAF",
+   "base": 56,
+   "ties": {
+    "Premier League": 0.3
+   }
+  },
+  {
+   "name": "Zambia",
+   "confed": "CAF",
+   "sub": "SAF",
+   "base": 46,
+   "ties": {
+    "Premier League": 0.25
+   }
+  },
+  {
+   "name": "Japan",
+   "confed": "AFC",
+   "sub": "EAS",
+   "base": 72,
+   "ties": {}
+  },
+  {
+   "name": "South Korea",
+   "confed": "AFC",
+   "sub": "EAS",
+   "base": 72,
+   "ties": {
+    "J1 League": 0.5,
+    "Saudi Pro League": 0.3
+   }
+  },
+  {
+   "name": "China",
+   "confed": "AFC",
+   "sub": "EAS",
+   "base": 52,
+   "ties": {
+    "J1 League": 0.4
+   }
+  },
+  {
+   "name": "Indonesia",
+   "confed": "AFC",
+   "sub": "EAS",
+   "base": 40,
+   "ties": {
+    "Eredivisie": 0.35,
+    "J1 League": 0.3
+   }
+  },
+  {
+   "name": "Australia",
+   "confed": "AFC",
+   "sub": "EAS",
+   "base": 64,
+   "ties": {
+    "J1 League": 0.35,
+    "MLS": 0.3
+   }
+  },
+  {
+   "name": "Saudi Arabia",
+   "confed": "AFC",
+   "sub": "GUL",
+   "base": 60,
+   "ties": {}
+  },
+  {
+   "name": "Qatar",
+   "confed": "AFC",
+   "sub": "GUL",
+   "base": 44,
+   "ties": {
+    "Saudi Pro League": 0.45
+   }
+  },
+  {
+   "name": "United Arab Emirates",
+   "confed": "AFC",
+   "sub": "GUL",
+   "base": 44,
+   "ties": {
+    "Saudi Pro League": 0.45
+   }
+  },
+  {
+   "name": "Oman",
+   "confed": "AFC",
+   "sub": "GUL",
+   "base": 34,
+   "ties": {
+    "Saudi Pro League": 0.45
+   }
+  },
+  {
+   "name": "Bahrain",
+   "confed": "AFC",
+   "sub": "GUL",
+   "base": 32,
+   "ties": {
+    "Saudi Pro League": 0.45
+   }
+  },
+  {
+   "name": "Iraq",
+   "confed": "AFC",
+   "sub": "GUL",
+   "base": 46,
+   "ties": {
+    "Saudi Pro League": 0.4
+   }
+  },
+  {
+   "name": "Jordan",
+   "confed": "AFC",
+   "sub": "GUL",
+   "base": 44,
+   "ties": {
+    "Saudi Pro League": 0.45
+   }
+  },
+  {
+   "name": "Iran",
+   "confed": "AFC",
+   "sub": "GUL",
+   "base": 68,
+   "ties": {
+    "Saudi Pro League": 0.35,
+    "Süper Lig": 0.25
+   }
+  },
+  {
+   "name": "Uzbekistan",
+   "confed": "AFC",
+   "sub": "CAS",
+   "base": 54,
+   "ties": {
+    "Süper Lig": 0.25,
+    "Saudi Pro League": 0.25
+   }
+  },
+  {
+   "name": "New Zealand",
+   "confed": "OFC",
+   "sub": "OCE",
+   "base": 42,
+   "ties": {
+    "Premier League": 0.25,
+    "MLS": 0.25
+   }
+  },
+  {
+   "name": "New Caledonia",
+   "confed": "OFC",
+   "sub": "OCE",
+   "base": 20,
+   "ties": {
+    "Ligue 1": 0.5
+   }
+  }
+ ],
+ "world_cup": {
+  "size": 48,
+  "slots": {
+   "UEFA": 16,
+   "CAF": 9,
+   "AFC": 8,
+   "CONMEBOL": 6,
+   "CONCACAF": 6,
+   "OFC": 1
+  },
+  "host_order": [
+   "USA",
+   "England",
+   "Brazil",
+   "Germany",
+   "Japan",
+   "Spain",
+   "France",
+   "Argentina",
+   "Mexico",
+   "Italy",
+   "Morocco",
+   "South Korea",
+   "Netherlands",
+   "Portugal",
+   "Saudi Arabia",
+   "Canada",
+   "Australia",
+   "Nigeria"
+  ],
+  "ic_spots": 2,
+  "qualifying_groups": {
+   "UEFA": 11,
+   "CAF": 5,
+   "AFC": 3,
+   "CONMEBOL": 1,
+   "CONCACAF": 3,
+   "OFC": 1
+  },
+  "qualifying_direct": {
+   "UEFA": 11,
+   "CAF": 5,
+   "AFC": 3,
+   "CONMEBOL": 6,
+   "CONCACAF": 3,
+   "OFC": 1
+  }
+ }
+}

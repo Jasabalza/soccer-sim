@@ -1,0 +1,13 @@
+dist/
+node_modules/
+# club logos are third-party trademarks: never commit them
+logos_pack/
+*logos*.json
+soccersim_personal.html
+*_logos.html
+# screenshots, saves, scratch
+*.png
+!docs/icons/*.png
+*.sav
+*.log
+.DS_Store
