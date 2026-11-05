@@ -451,64 +451,6 @@ class CupComp extends Comp {
 }
 CupComp.prototype.kind = "cup";
 $CLS['CupComp'] = CupComp;
-class ClubWorldCup extends CupComp {
-  __init__(world) {
-    const self = this;
-    let left, r, wk, $t1;
-    Comp.prototype.__init__.call(self, world, ("CWC:" + $str(world.season)), "Club World Cup", "WORLD");
-    self.confed = "WORLD";
-    self.two_leg = false;
-    self.neutral_all = true;
-    self.requires = (() => { const $r = []; let c; for (const $c0 of $iter(world.cups)) { c = $c0; $r.push(("C:" + $str(c))); } return $r; })();
-    self.field = [];
-    self.eff = new $Dict();
-    self.reached = new $Dict();
-    self.ties = [];
-    $t1 = null;
-    self.winner = $t1;
-    self.runner_up = $t1;
-    self.size = pow2_floor($sum((() => { const $r = []; let c; for (const $c0 of $iter($M.values(world.cups))) { c = $c0; $r.push($idx(c, "cwc_slots")); } return $r; })()));
-    self.rounds_total = $int(math.log2(self.size));
-    self.current = [];
-    for (const $f7 of $iter($range(self.rounds_total))) {
-      r = $f7;
-      left = $shr(self.size, r);
-      wk = $add(SUMMER_START, r);
-      self.ev(wk, $M.capitalize(round_name(left)), $kw({"rnd": r, "leg": 0}));
-    }
-  }
-  prepare() {
-    const self = this;
-    let comp, confed, cup, e, field, i, ranked, size, skip, w;
-    w = self.w;
-    field = [];
-    for (const $f8 of $iter($M.items(w.cups))) {
-      [confed, cup] = $iter($f8);
-      comp = $M.get(w.comps, ("C:" + $str(confed)));
-      if (((comp == null) || (!$T(comp.field)))) {
-        continue;
-      }
-      ranked = $sorted(comp.field, $kw({"key": ((n) => [(-$idx(comp.reached, n)), (-$idx(comp.eff, n))])}));
-      field = $iadd(field, $slice(ranked, null, $idx(cup, "cwc_slots"), null));
-    }
-    size = pow2_floor($len(field));
-    self.eff = (() => { const $r = new $Dict(); let n; for (const $c0 of $iter(field)) { n = $c0; $r.set(n, $idx($idx(w.clubs, n), "eff")); } return $r; })();
-    self.field = $slice($sorted(field, $kw({"key": ((n) => (-$idx(self.eff, n)))})), null, size, null);
-    self.reached = (() => { const $r = new $Dict(); let n; for (const $c0 of $iter(self.field)) { n = $c0; $r.set(n, 0); } return $r; })();
-    self.current = $list(self.field);
-    if ($lt(size, self.size)) {
-      skip = $sub($int(math.log2(self.size)), $int(math.log2($max(size, 1))));
-      self.events = ($lt(skip, $len(self.events)) ? $slice(self.events, skip, null, null) : []);
-      self.rounds_total = ((size > 1) ? $int(math.log2(size)) : 0);
-      for (const $f9 of $iter($enumerate(self.events))) {
-        [i, e] = $iter($f9);
-        $setidx(e, "rnd", i);
-      }
-    }
-  }
-}
-ClubWorldCup.prototype.kind = "cwc";
-$CLS['ClubWorldCup'] = ClubWorldCup;
 class QualComp extends Comp {
   __init__(world, confed, host) {
     const self = this;
@@ -764,17 +706,11 @@ class WorldCup extends Comp {
     $M.sort(field, $kw({"key": ((n) => [(-$idx(self.rank, n)), n])}));
     self._setup(field, ng, (() => { const $r = new $Dict(); let n; for (const $c0 of $iter(field)) { n = $c0; $r.set(n, $idx(eff, n)); } return $r; })());
   }
-  _setup(field, ng, eff) {
+  _draw(pots, ng) {
+    // nations: the host sits in group 1, each pot is dealt at random into the groups
     const self = this;
-    let base, e, gi, grp, i, kos, nat, nko, pi, pot, pots, rest, tp;
-    if (($in(self.host, field))) {
-      $M.remove(field, self.host);
-      $M.insert(field, 0, self.host);
-    }
-    self.field = field;
-    self.eff = $dict(eff);
-    pots = (() => { const $r = []; let i; for (const $c0 of $iter($range(0, $len(field), ng))) { i = $c0; $r.push($slice(field, i, $add(i, ng), null)); } return $r; })();
-    self.groups = (() => { const $r = []; let _; for (const $c0 of $iter($range(ng))) { _ = $c0; $r.push([]); } return $r; })();
+    let gi, nat, pi, pot, rest;
+    const groups = (() => { const $r = []; let _; for (const $c0 of $iter($range(ng))) { _ = $c0; $r.push([]); } return $r; })();
     for (const $f26 of $iter($enumerate(pots))) {
       [pi, pot] = $iter($f26);
       if ((pi === 0)) {
@@ -786,9 +722,22 @@ class WorldCup extends Comp {
       }
       for (const $f27 of $iter($enumerate(pot))) {
         [gi, nat] = $iter($f27);
-        $M.append($idx(self.groups, gi), nat);
+        $M.append($idx(groups, gi), nat);
       }
     }
+    return groups;
+  }
+  _setup(field, ng, eff) {
+    const self = this;
+    let base, e, gi, grp, i, kos, nat, nko, pi, pot, pots, rest, tp;
+    if (($in(self.host, field))) {
+      $M.remove(field, self.host);
+      $M.insert(field, 0, self.host);
+    }
+    self.field = field;
+    self.eff = $dict(eff);
+    pots = (() => { const $r = []; let i; for (const $c0 of $iter($range(0, $len(field), ng))) { i = $c0; $r.push($slice(field, i, $add(i, ng), null)); } return $r; })();
+    self.groups = self._draw(pots, ng);
     self.gsched = (() => { const $r = []; let g; for (const $c0 of $iter(self.groups)) { g = $c0; $r.push(circle_rounds(g, self.rng)); } return $r; })();
     self.gtab = (() => { const $r = new $Dict(); let g, n; for (const $c0 of $iter(self.groups)) { g = $c0; for (const $c1 of $iter(g)) { n = $c1; $r.set(n, $dict($kw({"p": 0, "pts": 0, "gf": 0, "ga": 0}))); } } return $r; })();
     tp = pow2_floor($mul(ng, 3));
@@ -855,9 +804,10 @@ class WorldCup extends Comp {
     for (const [g, res] of list) {
       const { a, b } = g, { sa, sb, w, l, how } = res;
       self.ties.push([round_name(n), a, b, (sa + "-" + sb + how), w]);
-      self.log_tie(ev, n, a, b, [[sa, sb]], [sa, sb], how, w, l, $kw({ "nation": true }));
+      self.log_tie(ev, n, a, b, [[sa, sb]], [sa, sb], how, w, l, $kw({ "nation": self.is_nat }));
       winners.push(w);
       $setidx(self.perf, w, 0.15 + (0.85 * (r + 1)) / self.ko_rounds);
+      self._won(w, r);
       if (n > 4 && ($idx(eff, l) - $idx(eff, w)) >= 14) {
         self.w.news("upset", self.title + " " + round_name(n) + ": " + w + " (rating " + $fmt($idx(eff, w), ".0f") + ") beat " + l + " (rating " + $fmt($idx(eff, l), ".0f") + ")", $idx(ev, "week"));
       }
@@ -865,6 +815,7 @@ class WorldCup extends Comp {
     }
     self.ko_current = $sorted(winners, $kw({ "key": ((x) => self.seed_key(x)) }));
   }
+  _won(n, r) {}
   seed_key(n) {
     const self = this;
     return (-$idx(self.eff, n));
@@ -890,13 +841,139 @@ class WorldCup extends Comp {
     for (const $f33 of $iter(adv)) {
       n = $f33;
       $setidx(self.perf, n, 0.15);
+      self._won(n, -1);
     }
     $M.sort(adv, $kw({"key": ((n) => [(-$idx($idx(self.gtab, n), "pts")), (-$sub($idx($idx(self.gtab, n), "gf"), $idx($idx(self.gtab, n), "ga"))), (-$idx($idx(self.gtab, n), "gf")), (-$idx(self.eff, n))])}));
     self.ko_current = adv;
   }
 }
 WorldCup.prototype.kind = "wc";
+WorldCup.prototype.is_nat = true;
 WorldCup.prototype.RANK_K = 100.0;
 $CLS['WorldCup'] = WorldCup;
+// ---------------------------------------------------------------------------------------------------------------
+// v15 Club World Cup: 32 clubs, 8 groups of 4, top two into a round of 16, single-match knockouts, neutral grounds.
+// Built on the World Cup machinery (groups, tables, knockout rounds); the field is clubs instead of nations.
+// Qualification: each continent's champion is guaranteed, the rest of its places go to the best clubs of the last four seasons.
+// ---------------------------------------------------------------------------------------------------------------
+class ClubWorldCup extends WorldCup {
+  __init__(world) {
+    const self = this;
+    Comp.prototype.__init__.call(self, world, ("CWC:" + $str(world.season)), "Club World Cup", "WORLD");
+    self.confed = "WORLD";
+    self.host = null;
+    self.requires = (() => { const $r = []; let c; for (const $c0 of $iter(world.cups)) { c = $c0; $r.push(("C:" + $str(c))); } return $r; })();
+    self.field = [];
+    self.groups = [];
+    self.gtab = new $Dict();
+    self.perf = new $Dict();
+    self.reached = new $Dict();
+    self.winner = null;
+    self.runner_up = null;
+    self.ko_current = [];
+    self.glog = [];
+    self.ties = [];
+    self.qual = new $Dict();          // club -> how it got in ("champion" / "ranking")
+    self.score = new $Dict();         // club -> four-season ranking score
+    self.ko_rounds = 4;
+    self.rounds_total = 5;
+    for (let i = 0; i < 3; i++) self.ev(SUMMER_START + i, "Group matchday " + (i + 1), $kw({ "phase": "grp", "md": i }));
+    self.ko_weeks = [0, 1, 2, 3].map((i) => SUMMER_START + 3 + i);
+    for (let r = 0; r < 4; r++) self.ev(self.ko_weeks[r], "KO", $kw({ "phase": "ko", "rnd": r }));
+  }
+  // four-season record: league positions and continental cup runs of the last three finished seasons plus this season's cups
+  club_scores() {
+    const w = this.w, sc = new Map(), add = (n, v) => sc.set(n, (sc.get(n) || 0) + v);
+    const hist = w.hist.slice(-3), wts = [0.7, 0.85, 1.0].slice(3 - hist.length);
+    hist.forEach((r, k) => {
+      const wt = wts[k], tf = $M.get(r, "tables_full");
+      if (tf) for (const [ln, rows] of $M.items(tf)) {
+        const L = $idx(w.leagues, ln), n = $len(rows);
+        for (const row of rows) add($idx(row, "club"), wt * 10 * Math.pow(1 - ($idx(row, "pos") - 1) / n, 2) * ($idx(L, "prestige") / 80));
+      }
+      const cd = $M.get(r, "cup_detail");
+      if (cd) for (const [cf, d] of $M.items(cd)) {
+        const cup = $idx(w.cups, cf), rt = Math.max(1, Math.round(Math.log2($M.get(cup, "size", 16)))), cw = $M.get(cup, "weight", 1.0);
+        for (const [n, rch] of $M.items($idx(d, "reached"))) add(n, wt * 16 * cw * Math.pow(rch / rt, 2));
+      }
+    });
+    for (const [cf, cup] of $M.items(w.cups)) {
+      const comp = $M.get(w.comps, "C:" + cf);
+      if (!comp || !comp.field || !comp.rounds_total) continue;
+      for (const [n, rch] of $M.items(comp.reached)) add(n, 1.2 * 16 * $M.get(cup, "weight", 1.0) * Math.pow(rch / comp.rounds_total, 2));
+    }
+    for (const [n, c] of $M.items(w.clubs)) add(n, 0.08 * $idx(c, "eff"));          // strength settles ties between clubs with the same record
+    return sc;
+  }
+  prepare() {
+    const self = this, w = self.w, sc = self.club_scores(), field = [];
+    for (const [confed, cup] of $M.items(w.cups)) {
+      const comp = $M.get(w.comps, "C:" + confed), slots = $M.get(cup, "cwc_slots", 0);
+      const pool = [];
+      for (const [n, c] of $M.items(w.clubs)) if ($idx(c, "confed") === confed) pool.push(n);
+      pool.sort((x, y) => (sc.get(y) - sc.get(x)) || (x < y ? -1 : 1));
+      const take = [];
+      if (comp && comp.winner) { take.push(comp.winner); self.qual.set(comp.winner, "champion"); sc.set(comp.winner, sc.get(comp.winner) + 30); }
+      for (const n of pool) { if (take.length >= slots) break; if (!take.includes(n)) { take.push(n); self.qual.set(n, "ranking"); } }
+      for (const n of take) field.push(n);
+    }
+    const ng = Math.max(1, Math.floor(field.length / 4));
+    field.sort((x, y) => (sc.get(y) - sc.get(x)) || (x < y ? -1 : 1));
+    const f = field.slice(0, ng * 4);
+    self.score = new $Dict(); for (const n of f) self.score.set(n, Math.round(sc.get(n) * 10) / 10);
+    self.rank = self.score;
+    const eff = new $Dict(); for (const n of f) eff.set(n, $idx($idx(w.clubs, n), "eff"));
+    self._setup(f, ng, eff);
+  }
+  // four pots by ranking, never two clubs of one league in a group (re-dealt until the draw is clean), continents spread where possible
+  _draw(pots, ng) {
+    const self = this, w = self.w, C = (n) => $idx(w.clubs, n);
+    let best = null, bestBad = 1e9;
+    for (let attempt = 0; attempt < 400 && bestBad > 0; attempt++) {
+      const groups = []; for (let i = 0; i < ng; i++) groups.push([]);
+      pots.forEach((pot) => {
+        pot = pot.slice(); self.rng.shuffle(pot);
+        const open = groups.map((_, i) => i);
+        for (const n of pot) {
+          const lg = $idx(C(n), "league"), cf = $idx(C(n), "confed");
+          let pick = -1, bs = 1e9;
+          for (const gi of open) {
+            const g = groups[gi];
+            const s = g.filter((m) => $idx(C(m), "league") === lg).length * 100 + g.filter((m) => $idx(C(m), "confed") === cf).length * (cf === "UEFA" ? 4 : 10) + self.rng.random();
+            if (s < bs) { bs = s; pick = gi; }
+          }
+          groups[pick].push(n); open.splice(open.indexOf(pick), 1);
+        }
+      });
+      let bad = 0;
+      for (const g of groups) { const seen = {}; for (const n of g) { const l = $idx(C(n), "league"); if (seen[l]) bad++; seen[l] = 1; } }
+      if (bad < bestBad) { bestBad = bad; best = groups; }
+    }
+    return best;
+  }
+  _setup(field, ng, eff) {
+    super._setup(field, ng, eff);
+    this.reached = new $Dict(); for (const n of this.field) this.reached.set(n, 0);
+    this.rounds_total = 1 + this.ko_rounds;
+  }
+  _won(n, r) { this.reached.set(n, r + 2); }
+  // the prize pool (internal money; cfg.cwc_pool x cup prize scale): entry 30%, group results 35%, knockout wins 25%, champion 10%
+  prizes() {
+    const w = this.w, cfg = w.cfg, pool = cfg.cwc_pool * cfg.cup_prize_scale, out = new $Dict();
+    const n = this.field.length; if (!n) return out;
+    let gp = 0, kt = 0; for (const t of this.field) { gp += $idx($idx(this.gtab, t), "pts"); const k = Math.max(0, this.reached.get(t) - 1); kt += k * (k + 1) / 2; }
+    for (const t of this.field) {
+      const wins = Math.max(0, this.reached.get(t) - 1);
+      let v = 0.30 * pool / n + 0.35 * pool * ($idx($idx(this.gtab, t), "pts") / Math.max(1, gp));
+      v += 0.25 * pool * (wins * (wins + 1) / 2) / Math.max(1, kt);
+      if (t === this.winner) v += 0.10 * pool;
+      out.set(t, v);
+    }
+    return out;
+  }
+}
+ClubWorldCup.prototype.kind = "cwc";
+ClubWorldCup.prototype.is_nat = false;
+$CLS['ClubWorldCup'] = ClubWorldCup;
 return {CUP_WEEKS: CUP_WEEKS, ClubWorldCup: ClubWorldCup, Comp: Comp, CupComp: CupComp, DOMESTIC_WEEKS: DOMESTIC_WEEKS, IntercontinentalPlayoff: IntercontinentalPlayoff, LeagueComp: LeagueComp, QualComp: QualComp, SEASON_WEEKS: SEASON_WEEKS, SUMMER_START: SUMMER_START, WINDOW_WEEKS: WINDOW_WEEKS, WorldCup: WorldCup, circle_rounds: circle_rounds, defaultdict: defaultdict, double_rounds: double_rounds, fclamp: fclamp, math: math, pair_score: pair_score, poisson: poisson, pow2_floor: pow2_floor, round_name: round_name, score: score, settle: settle};
 })();

@@ -43,7 +43,7 @@ class Settings {
     return ($T($t1 = $M.join(", ", diffs)) ? $t1 : "defaults");
   }
   __init__(...$args) {
-    const $v = $bind($args, ["label", "seasons", "target_pool", "cup_size", "cup_prize_scale", "anchor_gain", "league_rise", "dev_pot_growth", "pot_shift", "pot_low", "pot_mode", "poach_base", "spread_gain", "poach_buyers", "poach_max", "poach_contract_max", "poach_min_gain", "coach_match_bonus", "tactician_boost", "club_prestige_budget", "transfer_share", "prestige_decay", "title_pts", "apex_pts", "hot_tolerance", "fire_after", "loyal_resign", "money_resign", "contract_min", "contract_max", "retire_start", "retire_ramp", "outflow_base", "outflow_age_start", "outflow_age_slope", "outflow_max", "release_top_n", "tv_base", "tv_cycle", "gate_k", "rail", "owner_fund_league", "owner_fund_amount", "money_x", "stature_gain", "home_prob", "first_contract", "nat_rate", "nat_expo_gain", "nat_star_gain", "nat_wc_gain", "amateur_base", "nat_supply_pow", "nat_quality_div", "nat_dev_cap", "nat_form_decay", "nat_coach_years", "fee_scale", "funds_share", "sale_to_budget", "xleague_buyers", "xleague_p", "wc_size", "start_year", "wage_cap", "run_cost", "sponsor_share", "debt_rate", "cash_keep", "acad_cost", "acad_gain", "acad_decay", "acad_share", "invest_rate", "stad_cost", "stad_upkeep", "comfort", "bid_lots", "bid_max"], [() => "v11 default", () => 40, () => 350, () => 0, () => 1.0, () => 1.0, () => 0.15, () => true, () => 0, () => 54, () => 60, () => 0.8, () => 0.3, () => 3, () => 2, () => 2, () => 3, () => 2.0, () => 3.0, () => 0.03, () => 1.0, () => 0.05, () => 40.0, () => 80.0, () => 5, () => 2, () => 0.92, () => 0.65, () => 2, () => 5, () => 33, () => 0.15, () => 0.1, () => 24, () => 0.03, () => 0.9, () => 25, () => 1.12, () => 3, () => 0.6, () => 0.6, () => "", () => 0.0, () => 3.5, () => 1.0, () => 0.7, () => 3, () => 0.1, () => 0.8, () => 0.4, () => 12.0, () => 40.0, () => 2.5, () => 7.0, () => 20.0, () => 0.85, () => 4, () => 1.0, () => 0.3, () => 0.5, () => 30, () => 0.4, () => 0, () => 2026, () => 0.75, () => 0.10, () => 0.25, () => 0.06, () => 0.7, () => 0.3, () => 0.2, () => 0.3, () => 0.35, () => 0.3, () => 4.0, () => 0.08, () => 2.0, () => 240, () => 4]);
+    const $v = $bind($args, ["label", "seasons", "target_pool", "cup_size", "cup_prize_scale", "anchor_gain", "league_rise", "dev_pot_growth", "pot_shift", "pot_low", "pot_mode", "poach_base", "spread_gain", "poach_buyers", "poach_max", "poach_contract_max", "poach_min_gain", "coach_match_bonus", "tactician_boost", "club_prestige_budget", "transfer_share", "prestige_decay", "title_pts", "apex_pts", "hot_tolerance", "fire_after", "loyal_resign", "money_resign", "contract_min", "contract_max", "retire_start", "retire_ramp", "outflow_base", "outflow_age_start", "outflow_age_slope", "outflow_max", "release_top_n", "tv_base", "tv_cycle", "gate_k", "rail", "owner_fund_league", "owner_fund_amount", "money_x", "stature_gain", "home_prob", "first_contract", "nat_rate", "nat_expo_gain", "nat_star_gain", "nat_wc_gain", "amateur_base", "nat_supply_pow", "nat_quality_div", "nat_dev_cap", "nat_form_decay", "nat_coach_years", "fee_scale", "funds_share", "sale_to_budget", "xleague_buyers", "xleague_p", "wc_size", "start_year", "wage_cap", "run_cost", "sponsor_share", "debt_rate", "cash_keep", "acad_cost", "acad_gain", "acad_decay", "acad_share", "invest_rate", "stad_cost", "stad_upkeep", "comfort", "bid_lots", "bid_max", "cwc_pool"], [() => "v11 default", () => 40, () => 350, () => 0, () => 1.0, () => 1.0, () => 0.15, () => true, () => 0, () => 54, () => 60, () => 0.8, () => 0.3, () => 3, () => 2, () => 2, () => 3, () => 2.0, () => 3.0, () => 0.03, () => 1.0, () => 0.05, () => 40.0, () => 80.0, () => 5, () => 2, () => 0.92, () => 0.65, () => 2, () => 5, () => 33, () => 0.15, () => 0.1, () => 24, () => 0.03, () => 0.9, () => 25, () => 1.12, () => 3, () => 0.6, () => 0.6, () => "", () => 0.0, () => 3.5, () => 1.0, () => 0.7, () => 3, () => 0.1, () => 0.8, () => 0.4, () => 12.0, () => 40.0, () => 2.5, () => 7.0, () => 20.0, () => 0.85, () => 4, () => 1.0, () => 0.3, () => 0.5, () => 30, () => 0.4, () => 0, () => 2026, () => 0.75, () => 0.10, () => 0.25, () => 0.06, () => 0.7, () => 0.3, () => 0.2, () => 0.3, () => 0.35, () => 0.3, () => 4.0, () => 0.08, () => 2.0, () => 240, () => 4, () => 340.0]);
     this.label = $v[0];
     this.seasons = $v[1];
     this.target_pool = $v[2];
@@ -123,6 +123,7 @@ class Settings {
     this.comfort = $v[76];
     this.bid_lots = $v[77];
     this.bid_max = $v[78];
+    this.cwc_pool = $v[79];
   }
 }
 $CLS['Settings'] = Settings;
@@ -667,7 +668,14 @@ class World {
         const gate = gate0 * (1 - cfg.sponsor_share) * fill / Math.max(0.3, $idx(c, "fill0")), sponsor = gate0 * cfg.sponsor_share;
         const owner = (($eq(cfg.owner_fund_league, ln)) ? cfg.owner_fund_amount : 0.0);
         $setidx(c, "parts", $dict($kw({"tv": tv, "gate": gate, "sponsor": sponsor, "owner": owner})));
-        $setidx(c, "income", tv + gate + sponsor + $idx(c, "prize") + owner + cfg.sale_to_budget * $idx(c, "sales"));
+        // the Club World Cup pays every fourth season: the budget counts a quarter of what the last four paid, not the lump
+        let ch = $M.get(c, "cwc_hist", []); const cp = $M.get(c, "cwc_prize", 0.0);
+        if (cp > 0) ch = ch.concat([[self.season, cp]]);
+        ch = ch.filter((e) => e[0] > self.season - 4);
+        const smooth = ch.reduce((a, e) => a + e[1], 0) / 4;
+        $setidx(c, "cwc_hist", ch); $setidx(c, "cwc_smooth", smooth);
+        $setidx(c, "income", tv + gate + sponsor + ($idx(c, "prize") - cp) + smooth + owner + cfg.sale_to_budget * $idx(c, "sales"));
+        $setidx(c, "cwc_prize", 0.0);
         $setidx(c, "prize_prev", $idx(c, "prize"));
         $setidx(c, "prize", 0.0);
         $setidx(c, "sales_prev", $idx(c, "sales")); $setidx(c, "spent_prev", $idx(c, "spent"));
@@ -1159,15 +1167,21 @@ class World {
     }
     if ($T(($T($t3 = cwc) ? cwc.winner : $t3))) {
       $idx($idx(self.clubs, cwc.winner), "coach").cwc = $idx($idx(self.clubs, cwc.winner), "coach").cwc + 1;
-      self._reward(cwc.winner, 30, 3);
-      self._reward(cwc.runner_up, 10, 1);
-      $setidx($idx(self.clubs, cwc.winner), "stature", $min(100.0, ($idx($idx(self.clubs, cwc.winner), "stature") + 3.0)));
-      for (const $f61 of $iter(cwc.field)) {
-        n = $f61;
-        $t4 = $idx(self.clubs, n), $setidx($t4, "prize", $iadd($idx($t4, "prize"), $mul($add((4.0 + (3.0 * $idx(cwc.reached, n))), (($eq(n, cwc.winner)) ? 6.0 : 0)), cfg.cup_prize_scale)));
+      self._reward(cwc.winner, 40, 4);
+      self._reward(cwc.runner_up, 15, 1.5);
+      // v15: 32-club tournament. Prize money by results; stature and league standing follow how far a club went
+      const pz = cwc.prizes();
+      for (const nme of cwc.field) {
+        const cl = $idx(self.clubs, nme), rch = cwc.reached.get(nme), amt = pz.get(nme);
+        $setidx(cl, "prize", $idx(cl, "prize") + amt);
+        $setidx(cl, "cwc_prize", $M.get(cl, "cwc_prize", 0.0) + amt);
+        const gain = nme === cwc.winner ? 5.0 : nme === cwc.runner_up ? 3.0 : rch >= 4 ? 1.5 : rch >= 2 ? 0.6 : rch >= 1 ? 0.3 : 0.1;
+        $setidx(cl, "stature", $min(100.0, $idx(cl, "stature") + gain * cfg.stature_gain));
+        const L = $idx(self.leagues, $idx(cl, "league"));
+        $setidx(L, "cwc_pts", $M.get(L, "cwc_pts", 0.0) + (rch >= 2 ? rch - 1 : 0) + (nme === cwc.winner ? 3 : 0));
       }
       $M.append(self.cwc_history, [self.season, cwc.winner, cwc.runner_up]);
-      self.news("cup", ("Club World Cup: " + $str(cwc.winner) + " beat " + $str(cwc.runner_up) + " in the final"));
+      self.news("cup", ("Club World Cup: " + $str(cwc.winner) + " beat " + $str(cwc.runner_up) + " in the final and are world champions"));
     }
     if ($T(($T($t5 = wc) ? wc.winner : $t5))) {
       $M.append(self.wc_history, [self.season, wc.winner, wc.runner_up, wc.host]);

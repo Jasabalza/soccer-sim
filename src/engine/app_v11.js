@@ -404,7 +404,7 @@ function bracket_upcoming(w, x) {
     return [];
   }
   ev = $idx(x.events, x.ptr);
-  if (($in(x.kind, ["cup", "cwc"]))) {
+  if ((x.kind === "cup")) {
     cur = x.current;
     if (($M.get(ev, "leg") === 2)) {
       return (() => { const $r = []; let a, b; for (const $c0 of $iter(x.pairs)) { [a, b] = $iter($c0); if (!($in([a, b], x.leg1))) continue; $r.push($dict($kw({"a": a, "b": b, "legs": [$list($idx(x.leg1, [a, b]))], "name": round_name_($len(cur))}))); } return $r; })();
@@ -416,7 +416,7 @@ function bracket_upcoming(w, x) {
     pairs = (($M.get(ev, "phase") === "sf") ? x.sf : (($len(x.ko_current) > 1) ? [[$idx(x.ko_current, 0), $idx(x.ko_current, 1)]] : []));
     return (() => { const $r = []; let a, b; for (const $c0 of $iter(pairs)) { [a, b] = $iter($c0); $r.push($dict($kw({"a": a, "b": b, "legs": [], "name": round_name_((($M.get(ev, "phase") === "sf") ? 4 : 2))}))); } return $r; })();
   }
-  if ($T(($T($t2 = ($in(x.kind, ["wc", "ct"]))) ? ($T($t3 = ($M.get(ev, "phase") === "ko")) ? x.ko_current : $t3) : $t2))) {
+  if ($T(($T($t2 = ($in(x.kind, ["wc", "ct", "cwc"]))) ? ($T($t3 = ($M.get(ev, "phase") === "ko")) ? x.ko_current : $t3) : $t2))) {
     cur = x.ko_current;
     n = $len(cur);
     return (() => { const $r = []; let i; for (const $c0 of $iter($range(Math.floor(n / 2)))) { i = $c0; $r.push($dict($kw({"a": $idx(cur, i), "b": $idx(cur, $sub((n - 1), i)), "legs": [], "name": round_name_(n)}))); } return $r; })();
@@ -439,7 +439,7 @@ function v_comp(cid) {
   out = $dict($kw({"id": cid, "title": x.title, "kind": x.kind, "header": header(w), "progress": comp_progress(w, x)}));
   $setidx(out, "emblem", ((x.kind === "cup") ? T.spec_cup(x.confed) : ((x.kind === "cwc") ? T.SPEC_CWC : ((x.kind === "wc") ? T.SPEC_WC : ((x.kind === "ct") ? T.spec_ct(x.confed) : ((x.kind === "nl") ? T.spec_nl(x.confed) : $dict($kw({"kind": "cup_eared", "color": $M.get(T.CONF_COLOR, $getattr(x, "confed", "WORLD"), "#cfd8dc")}))))))));
   $setidx(out, "past_finals", $slice((() => { const $r = []; let f; for (const $c0 of $iter($getattr(w, "finals", []))) { f = $c0; if (!($eq($idx(f, "title"), x.title))) continue; $r.push(f); } return $r; })(), null, null, (-1)));
-  if (($in(x.kind, ["cup", "cwc"]))) {
+  if ((x.kind === "cup")) {
     $setidx(out, "field", (() => { const $r = []; let n; for (const $c0 of $iter(x.field)) { n = $c0; $r.push($dict($kw({"club": n, "ovr": $idx($idx(w.clubs, n), "ovr"), "league": $idx($idx(w.clubs, n), "league"), "reached": $M.get(x.reached, n, 0)}))); } return $r; })());
     $setidx(out, "ties", (() => { const $r = []; let t; for (const $c0 of $iter(x.ties)) { t = $c0; $r.push($dict($kw({"round": $idx(t, 0), "a": $idx(t, 1), "b": $idx(t, 2), "text": $idx(t, 3), "winner": $idx(t, 4)}))); } return $r; })());
     ($t1 = $iter([x.winner, x.runner_up]), $setidx(out, "winner", $t1[0]), $setidx(out, "runner_up", $t1[1]));
@@ -453,8 +453,13 @@ function v_comp(cid) {
     $setidx(out, "qualified", $list(x.qualified));
     $setidx(out, "spots", x.spots);
     $setidx(out, "field", $list(x.field));
-  } else if (($in(x.kind, ["wc", "ct", "nl"]))) {
+  } else if (($in(x.kind, ["wc", "ct", "nl", "cwc"]))) {
     $setidx(out, "host", $getattr(x, "host", null));
+    if ((x.kind === "cwc")) {
+      $setidx(out, "clubs", true);
+      $setidx(out, "format", $dict($kw({"clubs": $len(x.field), "groups": $len(x.groups), "pool": x.w.cfg.cwc_pool * x.w.cfg.cup_prize_scale * x.w.cfg.money_x, "slots": (() => { const $r = new $Dict(); for (const [cf, cup] of $M.items(x.w.cups)) $r.set(cf, $M.get(cup, "cwc_slots", 0)); return $r; })()})));
+      $setidx(out, "qual", (() => { const $r = new $Dict(); for (const [n, h] of $M.items(x.qual)) $r.set(n, h); return $r; })());
+    }
     if ((x.kind === "nl")) {
       $setidx(out, "has_finals", x.has_finals);
     }
