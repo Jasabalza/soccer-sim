@@ -746,6 +746,11 @@ button.wide { width: 100%; min-height: 44px; margin-top: 10px; }
 .mvheat { display: flex; align-items: center; gap: 10px; margin-top: 6px; } .mvheat .hbar { flex: 1; margin: 0; }
 .linkbtn { background: none; border: 0; color: #7cc0ff; font-size: 14px; min-height: 44px; padding: 0 14px; }
 .stp span[data-c] { cursor: pointer; }
+.mvsum { margin: 8px 2px 4px; }
+.mvd > summary { list-style: none; cursor: pointer; display: block; } .mvd > summary::-webkit-details-marker { display: none; }
+.mvd[open] { background: var(--panel2); } .mvdet { padding: 6px 4px 8px 40px; }
+.mvwar { color: var(--accent2); font-weight: 600; }
+.hd .btn.sm { min-height: 36px; padding: 0 12px; align-self: center; }
 
 </style>
 
@@ -2111,6 +2116,7 @@ $mods["bids"] = (function () {
       const X = cfg.money_x, e1 = (x) => Math.round(x * X * 10) / 10;
       tl.set("detail", $dict($kw({ "base": e1(ask0), "asking": e1(ask0 * demand * win.prem), "demand": Math.round(demand * 100) / 100, "premium": win.prem, "traits": $dict($kw({ "money": T.money, "loyal": T.loyal, "ambition": T.ambition, "trophies": T.trophies })),
         "bids": bidders.map((c) => $dict($kw({ "club": c.b, "bid": e1(c.bid), "wage": e1(c.wage), "score": Math.round(c.score * 100) / 100, "rival": c.R > 0 }))), "comp": e1(comp), "trainer": trainer })));
+      $mods.moves.detail(w, tl.get_("detail"));
       by[seller] = by[seller].filter((x) => x !== p); by[win.b].push(p); pay[seller] -= p.wage; pay[win.b] += win.wage;
       p.club = win.b; p.league = win.B.get_("league"); p.wage = win.wage; p.contract = rng.randint(2, 4); p.prot = 0; done.add(p); moves++;
       if (fee >= 25) w._bid_news(p, win.b, seller, fee);
@@ -7772,7 +7778,7 @@ $mods["hof"] = (function () {
 // Plain JS (not generated).
 $mods["moves"] = (function () {
   const KEEP = 10;                                           // seasons of detail kept
-  const CAP = { t: 320, f: 160, p: 160, c: 200 };
+  const CAP = { t: 320, f: 160, p: 160, c: 200, bd: 80 };
   let CUR = null;                                            // { w, buf, rel: Map(player -> club it was released by) }
   const ensure = (w) => w.mv || (w.mv = { v: 1, s: {} });
   const att = (w, n) => { try { return n && w.clubs.has(n) ? Math.round(w.attr(n) * 10) / 10 : null; } catch (e) { return null; } };
@@ -7784,8 +7790,17 @@ $mods["moves"] = (function () {
   function begin(w) { ensure(w); try { w.ensure_uids(); } catch (e) { } CUR = { w, buf: [], rel: new Map() }; }
   function transfer(w, p, seller, buyer, fee, kind, rival) {
     if (!on(w)) return;
-    const a0 = att(w, seller), a1 = att(w, buyer);
-    CUR.buf.push(Object.assign(base(w, p), { k: "t", f: seller, t: buyer, fl: lg(w, seller), tl: lg(w, buyer), fee: r1(fee), kd: kind, a: a0 == null || a1 == null ? null : r1(a1 - a0), rv: rival ? 1 : 0, wg: r1(p.wage || 0) }));
+    const a0 = att(w, seller), a1 = att(w, buyer), tl = w.transfers[w.transfers.length - 1], why = tl ? $idx(tl, "why") : null;
+    CUR.buf.push(Object.assign(base(w, p), { why: why || undefined, k: "t", f: seller, t: buyer, fl: lg(w, seller), tl: lg(w, buyer), fee: r1(fee), kd: kind, a: a0 == null || a1 == null ? null : r1(a1 - a0), rv: rival ? 1 : 0, wg: r1(p.wage || 0) }));
+  }
+  // the bidding war behind the transfer that was just logged (called by the bids module right after it logs it)
+  function detail(w, d) {
+    if (!on(w)) return;
+    const e = CUR.buf[CUR.buf.length - 1]; if (!e || e.k !== "t") return;
+    const tr = $idx(d, "traits");
+    e.bd = { b: $idx(d, "base"), a: $idx(d, "asking"), d: $idx(d, "demand"), pm: $idx(d, "premium"), c: $idx(d, "comp"), tn: $idx(d, "trainer") || null,
+      tr: [$idx(tr, "money"), $idx(tr, "loyal"), $idx(tr, "ambition"), $idx(tr, "trophies")].map((x) => Math.round(x * 100) / 100),
+      bids: $idx(d, "bids").map((c) => [$idx(c, "club"), $idx(c, "bid"), $idx(c, "wage"), $idx(c, "score"), $idx(c, "rival") ? 1 : 0]) };
   }
   function released(w, p, club) { if (on(w) && club) CUR.rel.set(p, club); }
   function signed(w, p, club, wage, first) {
@@ -7835,6 +7850,7 @@ $mods["moves"] = (function () {
     const out = [];
     const keep = (kinds, cap, score) => { const L = buf.filter((e) => kinds.includes(e.k)).sort((a, b) => score(b) - score(a)); for (const e of L.slice(0, cap)) out.push(e); return L.length; };
     const cnt = {};
+    { const big = buf.filter((e) => e.k === "t" && e.bd).sort((a, b) => b.fee - a.fee); for (const e of big.slice(CAP.bd)) delete e.bd; }
     cnt.t = keep(["t"], CAP.t, (e) => e.fee + e.ovr);
     cnt.f = keep(["f", "r"], CAP.f, (e) => e.ovr * 2 + e.pot * (e.age <= 21 ? 1 : 0.3));
     cnt.p = keep(["p"], CAP.p, (e) => e.pr + e.pk * 3);
@@ -7850,7 +7866,7 @@ $mods["moves"] = (function () {
     const hit = PARSED.get(M); if (hit && hit.s === s && hit.season === season) return hit.d;
     const d = JSON.parse(s); PARSED.set(M, { s, season, d }); return d;
   }
-  return { ensure, begin, transfer, released, signed, retired, coachOut, coachRetired, coachIn, natCycle, finish, dataOf, KEEP };
+  return { ensure, begin, transfer, detail, released, signed, retired, coachOut, coachRetired, coachIn, natCycle, finish, dataOf, KEEP };
 })();
 
 // v16 Hall of Fame pages: plain reads over the cards and results in w.hof. Nothing here changes the simulation
@@ -8077,7 +8093,7 @@ $mods["movepages"] = (function () {
   function rowOf(w, e, i, ctx, who) {
     const r = { i, k: e.k, kind: KIND[e.k], hot: hotOf(e, ctx), name: e.n, nat: e.nat, age: e.age, mv: null, a: e.a == null ? null : e.a };
     if (e.k === "t" || e.k === "f" || e.k === "r" || e.k === "p") Object.assign(r, { uid: e.u || 0, pos: e.pos, ovr: e.ovr, pot: e.pot, pk: e.pk || null });
-    if (e.k === "t") Object.assign(r, { from: e.f, to: e.t, fromL: e.fl, toL: e.tl, fee: Math.round(e.fee * kx(w) * 10) / 10, why: e.kd, rival: !!e.rv, pay: e.fee, mv: mvOf(e.a), abroad: e.fl !== e.tl });
+    if (e.k === "t") Object.assign(r, { from: e.f, to: e.t, fromL: e.fl, toL: e.tl, fee: Math.round(e.fee * kx(w) * 10) / 10, kd: e.kd, why: e.why || null, bid: e.bd ? { base: e.bd.b, asking: e.bd.a, demand: e.bd.d, premium: e.bd.pm, comp: e.bd.c, trainer: e.bd.tn, traits: e.bd.tr, bids: e.bd.bids.map((c) => ({ club: c[0], bid: c[1], wage: c[2], score: c[3], rival: !!c[4] })) } : null, rival: !!e.rv, pay: e.fee, mv: mvOf(e.a), abroad: e.fl !== e.tl });
     if (e.k === "f") Object.assign(r, { from: e.f, to: e.t, fromL: e.fl, toL: e.tl, wage: Math.round(e.wg * kx(w) * 10) / 10, pay: e.wg * 3, mv: mvOf(e.a), first: !!e.first, abroad: !!(e.fl && e.fl !== e.tl) });
     if (e.k === "r") Object.assign(r, { from: e.f, fromL: e.fl, wage: Math.round(e.wg * kx(w) * 10) / 10, pay: e.wg * 3 });
     if (e.k === "p") Object.assign(r, { club: e.c, clubL: e.cl, prestige: e.pr, seasons: e.ss, honours: e.tn, hid: e.hid });
@@ -8088,7 +8104,7 @@ $mods["movepages"] = (function () {
     if (e.k === "n") Object.assign(r, { nation: e.t, prev: e.prev, home: !!e.home, src: e.src });
     return r;
   }
-  const inLeague = (e, lg) => !lg || e.fl === lg || e.tl === lg || e.cl === lg;
+  const inLeague = (e, lg) => { if (!lg) return true; const L = lg.indexOf("|") >= 0 ? lg.split("|") : [lg]; return L.includes(e.fl) || L.includes(e.tl) || L.includes(e.cl); };
   const SORTS = {
     hot: (a, b) => b.hot - a.hot,
     pay: (a, b) => (b.pay || 0) - (a.pay || 0),
@@ -10200,8 +10216,8 @@ async function viewAcademies(scope, name) {
 // managers getting their shot, national jobs) and Retired (players and coaches ranked by prestige or peak level).
 // Loaded before app.js; the helpers it uses (api, esc, enc, flag, crest, money, ovr, leagueLink, FAVS, STATUS, ...) are only touched when a page is drawn.
 
-const MV = { kind: "all", mv: "all", sort: "", league: "", who: "p", limit: 60, cokind: "all" };
-const MV_TABS = [["highlights", "Highlights"], ["players", "Players"], ["coaches", "Coaches"], ["retired", "Retired"], ["money", "Money"]];
+const MV = { kind: "t", mv: "all", sorts: { players: "pay", coaches: "hot", retired: "prestige" }, league: "", who: "p", limit: 60, cokind: "all" };
+const MV_TABS = [["players", "Players"], ["coaches", "Coaches"], ["retired", "Retired"], ["money", "Money"]];
 const mvChips = (attr, list, cur) => `<div class="mchips" role="group">${list.map(([k, t]) => `<button ${attr}="${esc(k)}" class="${k === cur ? "on" : ""}">${t}</button>`).join("")}</div>`;
 const mvTag = (m) => m === "up" ? `<span class="tag green">&#9650; Step up</span>` : m === "down" ? `<span class="tag red">&#9660; Step down</span>` : m === "side" ? `<span class="tag">&#9644; Lateral</span>` : "";
 const mvAgo = (n) => (n === 1 ? "a year" : n + " years");
@@ -10244,75 +10260,84 @@ function mvRight(r) {
   return `<span class="tag blue">National</span>`;
 }
 // a two-line row: emblem, name with rating, a short line, and the money or tag on the right
+// the bidding war behind a transfer, like the old Transfers page: how the price was set and every club's bid
+function mvBid(r) {
+  const b = r.bid, tr = b ? b.traits || [] : [], tn = (k, v) => v >= 3 ? k + ": high" : v <= 1 ? k + ": low" : null;
+  const traits = b ? [tn("Money", tr[0]), tn("Loyalty", tr[1]), tn("Ambition", tr[2]), tn("Trophies", tr[3])].filter(Boolean).join(", ") : "";
+  return `<div class="mvdet">${r.why ? `<div class="meta" style="margin-bottom:6px">${esc(r.why)}</div>` : ""}${b ? `
+    <div class="row"><span>Base value</span><b>${money(b.base)}</b></div>
+    <div class="row"><span>Asking price after demand ${b.demand}x${b.premium > 1.001 ? ` and a ${Math.round((b.premium - 1) * 100)}% rival premium` : ""}</span><b>${money(b.asking)}</b></div>
+    <div class="row"><span>Paid</span><b>${money(r.fee)}</b></div>
+    ${b.comp > 0 ? `<div class="row"><span>Training compensation to ${clubLink(b.trainer)}</span><b>${money(b.comp)}</b></div>` : ""}
+    ${traits ? `<div class="meta" style="margin:4px 0">Player: ${traits}</div>` : ""}
+    <h4 class="sh" style="margin-top:6px">Bids</h4>
+    ${b.bids.map((c, k) => `<div class="row"><span>${k === 0 ? "&#127942; " : ""}${clubLink(c.club)}${c.rival ? ' <span class="tag red">rival</span>' : ""}</span><span class="meta">bid ${money(c.bid)} &middot; wage ${money(c.wage)} &middot; score ${c.score}</span></div>`).join("")}` : ""}</div>`;
+}
 function mvRow(r, i, attrs) {
   const star = (r.k === "t" || r.k === "f" || r.k === "r" || r.k === "p") && r.ovr ? " " + ovr(r.k === "p" ? (r.pk || r.ovr) : r.ovr) : "";
   const hot = r.hot >= 70 ? `<span class="mvhot" title="hot move">&#128293;</span>` : "";
-  return `<div class="hr mvr" ${attrs || ""}><div class="hr-a"><span class="mvb">${mvBadge(r)}</span><div class="hr-m"><b>${r.nat ? flag(r.nat, 16) + " " : ""}${mvWho(r)}${star}${hot}</b><span class="dim small">${mvLine(r)}${r.k === "p" && r.hofFrom ? ` &middot; Hall of Fame from ${esc(r.hofFrom)}` : ""}</span></div><span class="hr-r mvR">${mvRight(r)}</span></div></div>`;
+  const nb = r.bid ? r.bid.bids.length : 0, war = nb > 1 ? ` &middot; <span class="mvwar">${nb} clubs bid</span>` : "";
+  const inner = `<div class="hr-a"><span class="mvb">${mvBadge(r)}</span><div class="hr-m"><b>${r.nat ? flag(r.nat, 16) + " " : ""}${mvWho(r)}${star}${hot}</b><span class="dim small">${mvLine(r)}${war}${r.k === "p" && r.hofFrom ? ` &middot; Hall of Fame from ${esc(r.hofFrom)}` : ""}</span></div><span class="hr-r mvR">${mvRight(r)}</span></div>`;
+  if (r.bid || r.why) return `<details class="hr mvr mvd" ${attrs || ""}><summary>${inner}</summary>${mvBid(r)}</details>`;
+  return `<div class="hr mvr" ${attrs || ""}>${inner}</div>`;
 }
 const mvSeasonLabel = (d) => `Season ${d.season} &middot; ${esc(d.label)}`;
 
 // ---------------------------------------------------------------- the page
 async function viewMoves(season, tab) {
-  tab = MV_TABS.some((t) => t[0] === tab) || tab === "walk" ? tab : "highlights";
+  tab = tab === "walk" || MV_TABS.some((t) => t[0] === tab) ? tab : "players";
   if (tab === "money") { location.replace("#/ledger/" + (season || "")); return; }
   const walking = tab === "walk";
+  const favL = (FAVS || []).filter((k) => k.startsWith("L:")).map((k) => k.slice(2));
+  const lgq = MV.league === "@favs" ? (favL.length ? favL.join("|") : "") : MV.league;
   const q = new URLSearchParams();
   if (season) q.set("season", season);
   q.set("tab", walking ? "highlights" : tab);
-  if (MV.league) q.set("league", MV.league);
+  if (lgq) q.set("league", lgq);
   if (tab === "players") { if (MV.kind !== "all") q.set("kind", MV.kind); if (MV.mv !== "all") q.set("mv", MV.mv); }
   if (tab === "coaches") { if (MV.cokind !== "all") q.set("kind", MV.cokind); if (MV.mv !== "all") q.set("mv", MV.mv); }
   if (tab === "retired") q.set("who", MV.who);
-  if (MV.sort) q.set("sort", MV.sort);
+  if (!walking) q.set("sort", MV.sorts[tab]);
   q.set("limit", MV.limit);
   const d = await api("/api/moves?" + q.toString());
   if (!d.season) { $("#view").innerHTML = `<div class="v2"><div class="hd"><div><h1>Off-season moves</h1></div></div><div class="card dim small">No completed season yet. Transfers, new coaches and retirements appear here once a season is over.</div></div>`; return; }
   if (walking) return mvWalk(d);
-  const S = d.season, favL = (FAVS || []).filter((k) => k.startsWith("L:")).map((k) => k.slice(2));
-  const lgOpt = (l) => `<option value="${esc(l)}" ${l === d.league ? "selected" : ""}>${esc(l)}</option>`;
-  const head = `<div class="hd"><div><h1>Off-season moves</h1><div class="sub">${mvSeasonLabel(d)}</div></div></div>
+  const S = d.season, c = d.counts;
+  const lgOpt = (l) => `<option value="${esc(l)}" ${l === MV.league ? "selected" : ""}>${esc(l)}</option>`;
+  const head = `<div class="hd"><div><h1>Off-season moves</h1><div class="sub">${mvSeasonLabel(d)}</div></div>${d.recorded ? `<a class="btn sm" href="#/moves/${S}/walk">Walk-through</a>` : ""}</div>
     <p class="filters"><select id="mv-s" aria-label="Season">${Array.from({ length: d.seasons }, (_, i) => d.seasons - i).map((s) => `<option value="${s}" ${s === S ? "selected" : ""}>Season ${s}</option>`).join("")}</select>
-    <select id="mv-l" aria-label="League"><option value="">All leagues</option>${favL.length ? `<optgroup label="Favourites">${favL.map(lgOpt).join("")}</optgroup><optgroup label="All leagues">` : ""}${d.leagues.map(lgOpt).join("")}${favL.length ? "</optgroup>" : ""}</select></p>
-    <div class="seg mtabs" role="tablist">${MV_TABS.map(([k, t]) => `<button data-t="${k}" class="${k === tab ? "on" : ""}">${t}</button>`).join("")}</div>`;
-  const c = d.counts;
+    <select id="mv-l" aria-label="League"><option value="">Whole world</option>${favL.length ? `<option value="@favs" ${MV.league === "@favs" ? "selected" : ""}>My favourite leagues</option>` : ""}${d.leagues.map(lgOpt).join("")}</select></p>
+    <div class="seg mtabs" role="tablist">${MV_TABS.map(([k, t]) => `<button data-t="${k}" class="${k === tab ? "on" : ""}">${t}</button>`).join("")}</div>
+    <div class="dim small mvsum">${c.transfers} transfers &middot; ${c.free} free agents signed &middot; ${c.hired + c.fired + c.left} coach moves &middot; ${c.retired} retired</div>`;
   let body = "";
-  if (!d.recorded && tab !== "highlights" && tab !== "players") body = `<div class="card dim small">Coach moves and retirements were not written down for this season. Transfers were: see the Players tab.</div>`;
-  else if (tab === "highlights") {
-    const w = d.walk, hotRows = w.slice().sort((a, b) => b.hot - a.hot).slice(0, 6);
-    body = `<div class="mtiles"><a data-t="players"><b>${c.transfers}</b><span>transfers</span></a><a data-t="players" data-k="f"><b>${c.free}</b><span>free agents signed</span></a><a data-t="coaches"><b>${c.hired + c.fired + c.left}</b><span>coach moves</span></a><a data-t="retired"><b>${c.retired}</b><span>players retired</span></a></div>
-      ${c.academy ? `<div class="dim small" style="margin:6px 2px">${c.academy} academy manager${c.academy > 1 ? "s" : ""} got a first-team job. ${c.fired ? c.fired + " coaches were sacked." : ""}</div>` : ""}
-      ${w.length ? `<a class="btn pri mvgo" href="#/moves/${S}/walk">Start the walk-through <small>${w.length} moves, hottest first</small></a>
-      <h2 class="lbl2">Hottest moves</h2><div class="hlist">${hotRows.map((r) => mvRow(r, 0, `data-w="${w.indexOf(r)}"`)).join("")}</div>` : `<div class="card dim small">Nothing noteworthy was recorded${d.league ? " for " + esc(d.league) : ""}.</div>`}
-      ${!d.recorded ? `<div class="dim small" style="margin:8px 2px">This season was played before moves were written down, so only transfers show up.</div>` : ""}`;
-  } else if (tab === "players") {
+  if (!d.recorded && tab !== "players") body = `<div class="card dim small">Coach moves and retirements were not written down for this season. Transfers were: see the Players tab.</div>`;
+  else if (tab === "players") {
     const mc = d.mvCounts || { up: 0, side: 0, down: 0 };
-    body = `<div class="dim small" style="margin:8px 2px 4px">Kind</div>${mvChips("data-k", [["all", "All"], ["t", "Transfers"], ["f", "Free agents"], ["r", "Released"]], MV.kind)}
+    body = `${mvChips("data-k", [["t", "Transfers"], ["f", "Free agents"], ["r", "Released"], ["all", "All"]], MV.kind)}
       <div class="dim small" style="margin:8px 2px 4px">Move</div>${mvChips("data-m", [["all", "All"], ["up", "&#9650; Up " + mc.up], ["side", "&#9644; Lateral " + mc.side], ["down", "&#9660; Down " + mc.down]], MV.mv)}
-      <p class="filters" style="margin:8px 0"><select id="mv-o" aria-label="Sort">${[["hot", "Hottest"], ["pay", "Highest paid"], ["level", "Best player"], ["jump", "Biggest jump"], ["young", "Youngest"]].map(([k, t]) => `<option value="${k}" ${(d.sort || "hot") === k ? "selected" : ""}>Sort: ${t}</option>`).join("")}</select><span class="dim small">${d.total} moves</span></p>`;
+      <p class="filters" style="margin:8px 0"><select id="mv-o" aria-label="Sort">${[["pay", "Highest paid"], ["hot", "Hottest"], ["level", "Best player"], ["jump", "Biggest jump"], ["young", "Youngest"]].map(([k, t]) => `<option value="${k}" ${d.sort === k ? "selected" : ""}>Sort: ${t}</option>`).join("")}</select><span class="dim small">${d.total} moves${MV.kind === "t" ? " &middot; tap one for the bidding war" : ""}</span></p>`;
   } else if (tab === "coaches") {
     body = `${mvChips("data-ck", [["all", "All"], ["h", "Hired"], ["acad", "Academy shot"], ["x", "Sacked"], ["q", "Left"], ["cr", "Retired"], ["n", "National"]], MV.cokind)}
       <div class="dim small" style="margin:8px 2px 4px">Move</div>${mvChips("data-m", [["all", "All"], ["up", "&#9650; Up"], ["side", "&#9644; Lateral"], ["down", "&#9660; Down"]], MV.mv)}
-      <p class="filters" style="margin:8px 0"><select id="mv-o" aria-label="Sort">${[["hot", "Hottest"], ["name", "Biggest name"], ["jump", "Biggest jump"]].map(([k, t]) => `<option value="${k}" ${(d.sort || "hot") === k ? "selected" : ""}>Sort: ${t}</option>`).join("")}</select><span class="dim small">${d.total} moves</span></p>`;
+      <p class="filters" style="margin:8px 0"><select id="mv-o" aria-label="Sort">${[["hot", "Hottest"], ["name", "Biggest name"], ["jump", "Biggest jump"]].map(([k, t]) => `<option value="${k}" ${d.sort === k ? "selected" : ""}>Sort: ${t}</option>`).join("")}</select><span class="dim small">${d.total} moves</span></p>`;
   } else {
     body = `${mvChips("data-w", [["p", "Players"], ["c", "Coaches"]], MV.who)}
-      <p class="filters" style="margin:8px 0"><select id="mv-o" aria-label="Sort">${[["prestige", "Prestige"], ["peak", "Peak level"], ["age", "Oldest"]].map(([k, t]) => `<option value="${k}" ${(d.sort || "prestige") === k ? "selected" : ""}>Rank by: ${t}</option>`).join("")}</select><span class="dim small">${d.total} retired</span></p>`;
+      <p class="filters" style="margin:8px 0"><select id="mv-o" aria-label="Sort">${[["prestige", "Prestige"], ["peak", "Peak level"], ["age", "Oldest"]].map(([k, t]) => `<option value="${k}" ${d.sort === k ? "selected" : ""}>Rank by: ${t}</option>`).join("")}</select><span class="dim small">${d.total} retired</span></p>`;
   }
-  if (tab !== "highlights" && (d.recorded || tab === "players")) {
+  if (d.recorded || tab === "players") {
     body += d.rows.length ? `<div class="hlist">${d.rows.map((r) => mvRow(r, 0)).join("")}</div>${d.total > d.rows.length ? `<button class="btn mvmore" id="mv-more">Show more (${d.total - d.rows.length} left)</button>` : ""}`
       : `<div class="card dim small">Nothing matches these filters.</div>`;
   }
   $("#view").innerHTML = `<div class="v2 mvp">${head}${body}</div>`;
-  const go = (t, extra) => { if (extra) extra(); MV.limit = 60; if (location.hash === "#/moves/" + S + "/" + t) route(); else location.hash = "#/moves/" + S + "/" + t; };
+  const go = (t) => { MV.limit = 60; if (location.hash === "#/moves/" + S + "/" + t) route(); else location.hash = "#/moves/" + S + "/" + t; };
   document.querySelectorAll(".mtabs [data-t]").forEach((b) => b.onclick = () => go(b.dataset.t));
-  document.querySelectorAll(".mtiles [data-t]").forEach((b) => b.onclick = () => go(b.dataset.t, () => { if (b.dataset.k) MV.kind = b.dataset.k; }));
   $("#mv-s").onchange = (e) => { location.hash = "#/moves/" + e.target.value + "/" + tab; };
   $("#mv-l").onchange = (e) => { MV.league = e.target.value; MV.limit = 60; route(); };
-  const o = $("#mv-o"); if (o) o.onchange = (e) => { MV.sort = e.target.value; route(); };
-  document.querySelectorAll("[data-k]:not(.mtiles *)").forEach((b) => b.onclick = () => { MV.kind = b.dataset.k; MV.limit = 60; route(); });
+  const o = $("#mv-o"); if (o) o.onchange = (e) => { MV.sorts[tab] = e.target.value; MV.limit = 60; route(); };
+  document.querySelectorAll(".mchips [data-k]").forEach((b) => b.onclick = () => { MV.kind = b.dataset.k; MV.sorts.players = b.dataset.k === "all" ? "hot" : "pay"; MV.limit = 60; route(); });
   document.querySelectorAll("[data-ck]").forEach((b) => b.onclick = () => { MV.cokind = b.dataset.ck; MV.limit = 60; route(); });
   document.querySelectorAll(".mchips [data-m]").forEach((b) => b.onclick = () => { MV.mv = b.dataset.m; MV.limit = 60; route(); });
-  document.querySelectorAll(".mchips [data-w]").forEach((b) => b.onclick = () => { MV.who = b.dataset.w; MV.sort = ""; route(); });
-  document.querySelectorAll(".hlist [data-w]").forEach((b) => b.onclick = (e) => { if (e.target.closest("a")) return; sessionStorage.setItem("mvStart", b.dataset.w); location.hash = "#/moves/" + S + "/walk"; });
+  document.querySelectorAll(".mchips [data-w]").forEach((b) => b.onclick = () => { MV.who = b.dataset.w; MV.sorts.retired = "prestige"; route(); });
   const more = $("#mv-more"); if (more) more.onclick = () => { MV.limit += 60; route(); };
 }
 
@@ -10361,13 +10386,13 @@ function mvSlide(r, n, total) {
 }
 function mvWalk(d) {
   const S = d.season, w = d.walk;
-  if (!w || !w.length) { location.replace("#/moves/" + S + "/highlights"); return; }
+  if (!w || !w.length) { location.replace("#/moves/" + S + "/players"); return; }
   let i = Math.min(w.length - 1, Math.max(0, +sessionStorage.getItem("mvStart") || 0)); try { sessionStorage.removeItem("mvStart"); } catch (e) { }
   const chapters = []; w.forEach((r, k) => { if (!chapters.length || chapters[chapters.length - 1][0] !== r.chapter) chapters.push([r.chapter, k]); });
   const inFlow = STATUS.header.phase === "transfers";
   const draw = () => {
     const done = i >= w.length, r = w[i];
-    const head = `<a class="crumb" href="#/moves/${S}/highlights">&lsaquo; Off-season moves</a><div class="hd"><div><div class="dim small">${mvSeasonLabel(d)}</div><h1>${done ? "That was the off-season" : esc(r.chapter)}</h1></div></div>
+    const head = `<a class="crumb" href="#/moves/${S}/players">&lsaquo; Off-season moves</a><div class="hd"><div><div class="dim small">${mvSeasonLabel(d)}</div><h1>${done ? "That was the off-season" : esc(r.chapter)}</h1></div></div>
       <div class="stp">${chapters.map(([c, k], x) => `<span class="${!done && r.chapter === c ? "on" : ""}" data-c="${k}">${esc(c)}</span>`).join("")}</div>
       <div class="mvprog"><i style="width:${Math.round((Math.min(i, w.length)) / w.length * 100)}%"></i></div>`;
     let body;

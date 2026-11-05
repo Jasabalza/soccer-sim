@@ -42,7 +42,7 @@ $mods["movepages"] = (function () {
   function rowOf(w, e, i, ctx, who) {
     const r = { i, k: e.k, kind: KIND[e.k], hot: hotOf(e, ctx), name: e.n, nat: e.nat, age: e.age, mv: null, a: e.a == null ? null : e.a };
     if (e.k === "t" || e.k === "f" || e.k === "r" || e.k === "p") Object.assign(r, { uid: e.u || 0, pos: e.pos, ovr: e.ovr, pot: e.pot, pk: e.pk || null });
-    if (e.k === "t") Object.assign(r, { from: e.f, to: e.t, fromL: e.fl, toL: e.tl, fee: Math.round(e.fee * kx(w) * 10) / 10, why: e.kd, rival: !!e.rv, pay: e.fee, mv: mvOf(e.a), abroad: e.fl !== e.tl });
+    if (e.k === "t") Object.assign(r, { from: e.f, to: e.t, fromL: e.fl, toL: e.tl, fee: Math.round(e.fee * kx(w) * 10) / 10, kd: e.kd, why: e.why || null, bid: e.bd ? { base: e.bd.b, asking: e.bd.a, demand: e.bd.d, premium: e.bd.pm, comp: e.bd.c, trainer: e.bd.tn, traits: e.bd.tr, bids: e.bd.bids.map((c) => ({ club: c[0], bid: c[1], wage: c[2], score: c[3], rival: !!c[4] })) } : null, rival: !!e.rv, pay: e.fee, mv: mvOf(e.a), abroad: e.fl !== e.tl });
     if (e.k === "f") Object.assign(r, { from: e.f, to: e.t, fromL: e.fl, toL: e.tl, wage: Math.round(e.wg * kx(w) * 10) / 10, pay: e.wg * 3, mv: mvOf(e.a), first: !!e.first, abroad: !!(e.fl && e.fl !== e.tl) });
     if (e.k === "r") Object.assign(r, { from: e.f, fromL: e.fl, wage: Math.round(e.wg * kx(w) * 10) / 10, pay: e.wg * 3 });
     if (e.k === "p") Object.assign(r, { club: e.c, clubL: e.cl, prestige: e.pr, seasons: e.ss, honours: e.tn, hid: e.hid });
@@ -53,7 +53,7 @@ $mods["movepages"] = (function () {
     if (e.k === "n") Object.assign(r, { nation: e.t, prev: e.prev, home: !!e.home, src: e.src });
     return r;
   }
-  const inLeague = (e, lg) => !lg || e.fl === lg || e.tl === lg || e.cl === lg;
+  const inLeague = (e, lg) => { if (!lg) return true; const L = lg.indexOf("|") >= 0 ? lg.split("|") : [lg]; return L.includes(e.fl) || L.includes(e.tl) || L.includes(e.cl); };
   const SORTS = {
     hot: (a, b) => b.hot - a.hot,
     pay: (a, b) => (b.pay || 0) - (a.pay || 0),

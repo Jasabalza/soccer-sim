@@ -16,10 +16,18 @@ const URL='http://localhost:8791/test_artifact.html';
  await p.evaluate(async()=>{ for(let i=0;i<8;i++) await api('/api/years',{n:1}); });
  const S=await p.evaluate(()=>STATUS.header.season-1);
  await p.evaluate(async()=>{ await refreshStatus(); }); 
- await go('#/moves/'+S,1500); await ox('highlights'); await shot('highlights');
+ await go('#/moves/'+S,1500); await ox('landing'); await shot('landing');
  ok(/Off-season moves/.test(await p.innerText('#view h1')),'title');
  ok((await p.$$('#nav a.on')).length===1 && /Off-season/.test(await p.innerText('#nav a.on')),'nav highlights Off-season');
- ok(await p.$('.mvgo')!==null,'walk-through button');
+ ok(await p.$('.mtabs [data-t="players"].on')!==null,'lands on the list (Players)');
+ { const rs=await p.$$('#view .mvr'); ok(rs.length>=20,'list has rows'); }
+ ok(await p.$('a[href$="/walk"]')!==null,'walk-through is a small optional button');
+ // biggest fees first
+ { const fees=await p.$$eval('#view .mvr .mvR b',e=>e.slice(0,6).map(x=>x.textContent)); ok(fees.length>=3,'fees shown: '+fees); }
+ // tap a transfer: the bidding war opens
+ { const d=await p.$('#view details.mvd'); ok(d!==null,'transfers open for their bidding war'); if(d){ await p.click('#view details.mvd summary'); await p.waitForTimeout(300); const t=await p.innerText('#view details.mvd[open]'); ok(/Bids/i.test(t)&&/Base value/i.test(t),'bid detail: '+t.slice(0,120)); await ox('bid open'); await shot('bid_open'); } }
+ // whole world / one league
+ { const n1=(await p.$$('#view .mvr')).length; await p.selectOption('#mv-l',{index:2}); await p.waitForTimeout(700); const n2=(await p.$$('#view .mvr')).length; ok(n2>0&&n2<=n1,'league switch narrows the list '+n1+' -> '+n2); await p.selectOption('#mv-l',''); await p.waitForTimeout(600); }
  for(const t of ['players','coaches','retired']){ await p.click(`.mtabs [data-t="${t}"]`); await p.waitForTimeout(900); await ox('tab '+t); await shot(t); ok((await p.$$('#view .mvr')).length>=3,t+' has rows'); }
  // players: filters and sorts
  await p.click('.mtabs [data-t="players"]'); await p.waitForTimeout(700);

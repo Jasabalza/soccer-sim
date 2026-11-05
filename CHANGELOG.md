@@ -7,12 +7,12 @@
 - **Hall of Fame tab:** World / Country / League / Club, Players | Coaches, Favourites, and Inductees / Ballot / Watch / Snubs / Records. The old league Hall of Fame moved to the league page's Honours tab, and the league page has a new Hall of Fame tab. Player pages show the four-tier chain; coach pages show their career path.
 - **Legacy chasers.** Some borderline Hall-of-Fame players keep playing longer, dropping to smaller leagues for more stats, like old club legends do. Poor late years lower their odds.
 - **Academies.** Each club has an academy prestige built from what its graduates became (and who is in a hall). A new Academies ranking (World / Continent / League; Top, Rising, Underachievers) and an Academy tab on every club page. The academy manager is a real person who can be promoted to first-team manager; the replacement is a fresh draw whose odds depend on prestige and spend, and the manager adds a modifier to youth development.
-- **Off-season moves** (replaces the Transfers screen): one page for everything that changes hands between two seasons.
-  - **Highlights** with a walk-through: 26 moves, hottest first, in four chapters (Transfers, Free agents, Coaches, Retirements), one at a time, with a heat meter, step up / lateral / step down, rivals, and the academy manager getting his shot. Skip a chapter, go back, or stop and open any tab.
-  - **Players:** transfers, free agents signed (with who released them), released players still looking. Filter by league, kind and move type; sort by hottest, highest paid, best player, biggest jump or youngest.
+- **Off-season moves** (replaces the Transfers screen): one page for everything that changes hands between two seasons. It opens on a list, like the old Transfers page.
+  - **Players** (the landing list): transfers with the biggest fees first, free agents signed (with who released them) and released players still looking. Switch between the whole world, any league or your favourite leagues. Tap a transfer to open its bidding war: how the price was set and every club's bid. Filter by step up / lateral / step down; sort by highest paid, hottest, best player, biggest jump or youngest.
   - **Coaches:** hired, academy shot, sacked, left, retired and national team jobs, with move type and sorts.
   - **Retired:** players and coaches ranked by prestige, peak level or age, with the Hall of Fame year they become eligible.
-  - **Money:** the old transfer money view (fees by league, biggest fees).
+  - **Money:** the old transfer money view (fees by league).
+  - **Walk-through** (small optional button): 26 of the hottest moves one at a time in four chapters (transfers, free agents, coaches, retirements), with a heat meter.
   - The stepper and nav say Off-season. A season's moves are one compact record (last 10 seasons); older saves show transfers only for seasons played before this update. API: `/api/moves`.
 - Engine: new modules `hof`, `hofpages`, `moves`, `movepages`. The move log writes down what happens and never changes it: all golden files are unchanged by it.
 - Known: new worlds see their first inductions around season 13 to 16; older saves get a founding class.

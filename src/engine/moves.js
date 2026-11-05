@@ -5,7 +5,7 @@
 // Plain JS (not generated).
 $mods["moves"] = (function () {
   const KEEP = 10;                                           // seasons of detail kept
-  const CAP = { t: 320, f: 160, p: 160, c: 200 };
+  const CAP = { t: 320, f: 160, p: 160, c: 200, bd: 80 };
   let CUR = null;                                            // { w, buf, rel: Map(player -> club it was released by) }
   const ensure = (w) => w.mv || (w.mv = { v: 1, s: {} });
   const att = (w, n) => { try { return n && w.clubs.has(n) ? Math.round(w.attr(n) * 10) / 10 : null; } catch (e) { return null; } };
@@ -17,8 +17,17 @@ $mods["moves"] = (function () {
   function begin(w) { ensure(w); try { w.ensure_uids(); } catch (e) { } CUR = { w, buf: [], rel: new Map() }; }
   function transfer(w, p, seller, buyer, fee, kind, rival) {
     if (!on(w)) return;
-    const a0 = att(w, seller), a1 = att(w, buyer);
-    CUR.buf.push(Object.assign(base(w, p), { k: "t", f: seller, t: buyer, fl: lg(w, seller), tl: lg(w, buyer), fee: r1(fee), kd: kind, a: a0 == null || a1 == null ? null : r1(a1 - a0), rv: rival ? 1 : 0, wg: r1(p.wage || 0) }));
+    const a0 = att(w, seller), a1 = att(w, buyer), tl = w.transfers[w.transfers.length - 1], why = tl ? $idx(tl, "why") : null;
+    CUR.buf.push(Object.assign(base(w, p), { why: why || undefined, k: "t", f: seller, t: buyer, fl: lg(w, seller), tl: lg(w, buyer), fee: r1(fee), kd: kind, a: a0 == null || a1 == null ? null : r1(a1 - a0), rv: rival ? 1 : 0, wg: r1(p.wage || 0) }));
+  }
+  // the bidding war behind the transfer that was just logged (called by the bids module right after it logs it)
+  function detail(w, d) {
+    if (!on(w)) return;
+    const e = CUR.buf[CUR.buf.length - 1]; if (!e || e.k !== "t") return;
+    const tr = $idx(d, "traits");
+    e.bd = { b: $idx(d, "base"), a: $idx(d, "asking"), d: $idx(d, "demand"), pm: $idx(d, "premium"), c: $idx(d, "comp"), tn: $idx(d, "trainer") || null,
+      tr: [$idx(tr, "money"), $idx(tr, "loyal"), $idx(tr, "ambition"), $idx(tr, "trophies")].map((x) => Math.round(x * 100) / 100),
+      bids: $idx(d, "bids").map((c) => [$idx(c, "club"), $idx(c, "bid"), $idx(c, "wage"), $idx(c, "score"), $idx(c, "rival") ? 1 : 0]) };
   }
   function released(w, p, club) { if (on(w) && club) CUR.rel.set(p, club); }
   function signed(w, p, club, wage, first) {
@@ -68,6 +77,7 @@ $mods["moves"] = (function () {
     const out = [];
     const keep = (kinds, cap, score) => { const L = buf.filter((e) => kinds.includes(e.k)).sort((a, b) => score(b) - score(a)); for (const e of L.slice(0, cap)) out.push(e); return L.length; };
     const cnt = {};
+    { const big = buf.filter((e) => e.k === "t" && e.bd).sort((a, b) => b.fee - a.fee); for (const e of big.slice(CAP.bd)) delete e.bd; }
     cnt.t = keep(["t"], CAP.t, (e) => e.fee + e.ovr);
     cnt.f = keep(["f", "r"], CAP.f, (e) => e.ovr * 2 + e.pot * (e.age <= 21 ? 1 : 0.3));
     cnt.p = keep(["p"], CAP.p, (e) => e.pr + e.pk * 3);
@@ -83,5 +93,5 @@ $mods["moves"] = (function () {
     const hit = PARSED.get(M); if (hit && hit.s === s && hit.season === season) return hit.d;
     const d = JSON.parse(s); PARSED.set(M, { s, season, d }); return d;
   }
-  return { ensure, begin, transfer, released, signed, retired, coachOut, coachRetired, coachIn, natCycle, finish, dataOf, KEEP };
+  return { ensure, begin, transfer, detail, released, signed, retired, coachOut, coachRetired, coachIn, natCycle, finish, dataOf, KEEP };
 })();

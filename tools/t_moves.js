@@ -31,6 +31,8 @@ vm.runInThisContext(fs.readFileSync(__dirname + "/../dist/bundle_engine.js", "ut
   const rc = await call("/api/moves?season=" + S + "&tab=retired&who=c"); if (rc.rows.some((r) => r.k !== "cr")) fail("retired coaches");
   const lg = w.leagues.keysArr()[0], pll = await call("/api/moves?season=" + S + "&tab=players&league=" + encodeURIComponent(lg));
   if (!pll.rows.length || pll.rows.some((r) => r.fromL !== lg && r.toL !== lg)) fail("league filter");
+  { const withBid = tr.rows.find((r) => r.bid && r.bid.bids.length >= 2); if (!withBid) fail("no transfer with a bidding war"); if (!(withBid.bid.asking > 0) || !withBid.bid.bids[0].club) fail("bid detail shape"); }
+  { const two = w.leagues.keysArr().slice(0, 2), both = await call("/api/moves?season=" + S + "&tab=players&league=" + encodeURIComponent(two.join("|"))); if (!both.rows.length || both.rows.some((r) => ![r.fromL, r.toL].some((l) => two.includes(l)))) fail("league list filter"); }
   // seasons before the log existed fall back to the transfer list
   delete w.mv.s[1]; const old = await call("/api/moves?season=1&tab=players"); if (old.recorded || !old.rows.length) fail("fallback " + JSON.stringify([old.recorded, old.rows.length, w.transfers.filter((t) => t.season === 1).length, w.transfers.map((t) => t.season).slice(0, 3)]));
   // the store stays small: one string per season, only the last KEEP seasons
