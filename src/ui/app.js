@@ -1034,7 +1034,7 @@ async function viewNations(confed) {
     let rows = d.rows.filter((r) => !q || r.name.toLowerCase().includes(q));
     rows = srt[2] ? rows.slice().sort((a, b) => srt[2](b) - srt[2](a) || a.rank - b.rank) : rows.slice().sort((a, b) => a.name.localeCompare(b.name));
     const shown = rows.slice(0, NV.show);
-    $("#nl-list").innerHTML = shown.length ? shown.map((r) => `<a class="nr" href="#/nation/${enc(r.name)}"><span class="no">${r.rank}</span>${natBadge(r.name, 34)}<span class="nm"><b>${esc(r.name)}</b>${r.titles ? titleStars(r.titles, 9, "World Cup title") : ""}<span>${r.confed} · coach ${esc(r.coach)}</span></span><span class="rt"><b>${srt[2] ? srt[2](r) : r.rating}</b><span>${srt[2] ? srt[1].toLowerCase() : "rating"}</span></span><span class="chev">›</span></a>`).join("") : `<div class="dim small" style="padding:14px">No nation matches.</div>`;
+    $("#nl-list").innerHTML = shown.length ? shown.map((r) => `<a class="nr" href="#/nation/${enc(r.name)}"><span class="no">${r.rank}</span>${natBadge(r.name, 34)}<span class="nm"><b>${esc(r.name)}${r.titles ? titleStars(r.titles, 9, "World Cup title") : ""}</b><span>${r.confed} · coach ${esc(r.coach)}</span></span><span class="rt"><b>${srt[2] ? srt[2](r) : r.rating}</b><span>${srt[2] ? srt[1].toLowerCase() : "rating"}</span></span><span class="chev"></span></a>`).join("") : `<div class="dim small" style="padding:14px">No nation matches.</div>`;
     const left = rows.length - shown.length, mb = $("#nl-more");
     mb.hidden = left <= 0; mb.textContent = `Show ${Math.min(25, left)} more`;
   };

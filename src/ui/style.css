@@ -609,7 +609,7 @@ button.wide { width: 100%; min-height: 44px; margin-top: 10px; }
 .v2 .nr .no { flex: none; width: 24px; text-align: center; font-size: 13px; font-weight: 700; color: var(--dim); }
 .v2 .nr .nm { flex: 1; min-width: 0; } .v2 .nr .nm b { display: block; font-size: 15px; } .v2 .nr .nm span { font-size: 12px; color: var(--dim); }
 .v2 .nr .rt { flex: none; text-align: right; } .v2 .nr .rt b { display: block; font-size: 17px; color: var(--accent); } .v2 .nr .rt span { font-size: 11px; color: var(--dim); }
-.v2 .nr .chev { color: var(--dim); font-size: 18px; }
+.v2 .nr .chev { margin-left: 2px; } .v2 .nr .nm b .tstars { margin-left: 7px; vertical-align: middle; }
 .v2 input.search { display: flex; align-items: center; min-height: 44px; padding: 0 12px; border-radius: 9px; background: var(--bg); border: 1px solid var(--line); color: var(--text); font-size: 16px; width: 100%; }
 .v2 .pr { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid #223629; min-height: 54px; font-size: 13px; }
 .v2 .pr:last-child { border-bottom: 0; } .v2 .pr .nm { flex: 1; min-width: 0; } .v2 .pr .nm b { display: block; font-size: 14px; } .v2 .pr .nm span { display: block; font-size: 12px; color: var(--dim); }
