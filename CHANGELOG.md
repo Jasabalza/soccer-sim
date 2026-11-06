@@ -1,6 +1,6 @@
 # Changelog
 
-## v16.1: stars and logos
+## v16.1: Show Your Worth (stars and logos)
 - **Title stars.** One gold star per World Cup title on a nation page (above the badge), five gold fold into one blue, five blue into one ice star, so a nation never shows more than four of each. Club pages show the same ladder for Club World Cup titles beside the name. The Nations list shows small stars.
 - **Star moments** under the trophy on the champion screen: a new gold star, the fold into a blue star on the fifth title, and the Club World Cup. The compstats API now returns `star_n` for those.
 - **Federation badges instead of flags** on nation pages, the Nations list, national team links and national jobs (player flags stay flags).

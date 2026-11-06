@@ -11041,7 +11041,7 @@ function wireSaves(inGame) {
 
 // ---------------------------------------------------------------- favorites
 // A favorite is a key: "L:<league>" or "<kind>:<confed>" (cup, ct, nl, qual). The list is kept inside the world, so it travels with every save.
-const APP_VERSION = "v16", APP_TAG = "Hall of Fame";
+const APP_VERSION = "v16.1", APP_TAG = "Show Your Worth";
 let FAVS = null, PICK_ASKED = false;                    // FAVS: null until the player has chosen, then an array of keys
 const CT_NAMES = { UEFA: "European Championship", CONMEBOL: "Copa America", CONCACAF: "Gold Cup", CAF: "Africa Cup of Nations", AFC: "Asian Cup", OFC: "OFC Nations Cup" };
 const NL_NAMES = { UEFA: "UEFA Nations League", CONMEBOL: "CONMEBOL Nations League", CONCACAF: "CONCACAF Nations League", CAF: "CAF Nations League", AFC: "AFC Nations League", OFC: "OFC Nations League" };
@@ -11198,7 +11198,7 @@ async function viewStart() {
       <details class="opts"><summary>Storage, logos and importing</summary><div id="store-note"></div>${saveTools()}${logoPanel()}</details></div>`;
   $("#view").innerHTML = `<div class="start">
     <div class="start-head"><h1>Soccer Sim <span class="ver">${APP_VERSION}</span></h1>
-      <div class="start-tag">${starSvg(14)} ${APP_TAG}<span>Halls of Fame, academy managers and every off-season move</span></div>
+      <div class="start-tag">${starSvg(14)} ${APP_TAG}<span>Title stars, federation badges, league and competition logos</span></div>
       <div class="sub">Commissioner mode: no lineups, no relegation, one worldwide player market.</div></div>
     ${hasSaves ? loadCard + newCard : newCard + loadCard}</div>`;
   $("#rules-on").onchange = (e) => ($("#rules").hidden = !e.target.checked);
