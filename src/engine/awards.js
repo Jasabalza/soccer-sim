@@ -331,7 +331,7 @@ function run(w, rec, sq0, finish, expected, cwc, wc) {
     i = $f34;
     d = $idx(coach_c, i);
     co = $idx(d, "co");
-    $M.append(coach_rank, $dict($kw({"name": co.name, "nat": co.nat, "prestige": $round(co.prestige, 1), "pts": $idx(cvotes, i), "first": $idx(cfirst, i), "club": $idx(d, "club"), "nation": $idx(d, "nation"), "league": $idx(d, "league"), "finish": $idx(d, "finish"), "expected": $idx(d, "expected"), "team": $round($idx(d, "t"), 1)})));
+    $M.append(coach_rank, $dict($kw({"cid": w.coach_id(co), "name": co.name, "nat": co.nat, "prestige": $round(co.prestige, 1), "pts": $idx(cvotes, i), "first": $idx(cfirst, i), "club": $idx(d, "club"), "nation": $idx(d, "nation"), "league": $idx(d, "league"), "finish": $idx(d, "finish"), "expected": $idx(d, "expected"), "team": $round($idx(d, "t"), 1)})));
   }
   coach_winner = $idx($idx(coach_c, $idx(corder, 0)), "co");
   date = $add(cal.date_for(w.cfg.start_year, season, 52, "league"), cal.dt.timedelta($kw({"days": 1})));

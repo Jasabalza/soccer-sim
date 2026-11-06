@@ -290,7 +290,7 @@ function comp_stats(w, cid, squads = null) {
     $M.append(cc, [$add(val, rng.gauss(0, 0.25)), co, n, succ]);
   }
   $M.sort(cc, $kw({"key": ((x) => (-$idx(x, 0)))}));
-  coach = (() => { const $r = []; let c; for (const $c0 of $iter($slice(cc, null, 3, null))) { c = $c0; $r.push($dict($kw({"name": $idx(c, 1).name, "nat": $idx(c, 1).nat, "team": $idx(c, 2)}))); } return $r; })();
+  coach = (() => { const $r = []; let c; for (const $c0 of $iter($slice(cc, null, 3, null))) { c = $c0; $r.push($dict($kw({"cid": w.coach_id($idx(c, 1)), "name": $idx(c, 1).name, "nat": $idx(c, 1).nat, "team": $idx(c, 2)}))); } return $r; })();
   coach_obj = ($T(cc) ? $idx($idx(cc, 0), 1) : null);
   $t7 = null;
   winner = $t7;

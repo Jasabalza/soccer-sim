@@ -58,11 +58,11 @@ function seasonHTML(s, st, o) {
   const live = st.season === "now", lab = live ? `Season ${o.nowSeason} so far` : `Season ${st.season} ${s.done === false ? "" : "final"}`;
   const coach = (s.coach || [])[0];
   const hero = `<div class="card hero"><h3>${lab} <small>Golden Boot${s.mvp && s.mvp.length ? " and MVP" : ""}</small></h3>${t ? `<div style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px"><div><div class="big"><a href="#/player/${t.uid}">${esc(t.name)}</a></div><div class="dim small">${esc(t.nat)} · ${esc(t.team)} · ${esc(t.pos)}</div></div><div style="text-align:right"><div class="big gold">${t.goals}</div><div class="dim small">goals</div></div></div>` : `<div class="dim small">No goals yet.</div>`}
-      <div class="two" style="margin-top:10px"><div>${o.champLabel}<span>${esc(s.winner || "-")}</span></div><div>${o.unit === "season" ? "Coach of the season" : "Coach of the " + o.unit}<span>${coach ? esc(coach.name) : "-"}</span></div></div></div>`;
+      <div class="two" style="margin-top:10px"><div>${o.champLabel}<span>${esc(s.winner || "-")}</span></div><div>${o.unit === "season" ? "Coach of the season" : "Coach of the " + o.unit}<span>${coach ? coachLink(coach.cid, coach.name) : "-"}</span></div></div></div>`;
   const list = (ch === "scorers" ? s.scorers : ch === "assists" ? s.assists : ch === "keepers" ? s.keepers : ch === "mvp" ? s.mvp : s.coach) || [];
   const top = list.length ? Math.max(1, ch === "scorers" ? list[0].goals : ch === "assists" ? list[0].assists : ch === "keepers" ? list[0].cs : ch === "mvp" ? list[0].pts : 1) : 1;
   const rows = list.map((p, i) => {
-    if (ch === "coach") return plRow(0, i + 1, esc(p.name), `${esc(p.nat || "")} · ${tm(p.team)}`, i === 0 ? "Best" : "", "", null);
+    if (ch === "coach") return plRow(0, i + 1, coachLink(p.cid, p.name), `${esc(p.nat || "")} · ${tm(p.team)}`, i === 0 ? "Best" : "", "", null);
     const nm = `<a href="#/player/${p.uid}">${esc(p.name)}</a>`, sub = `${tm(p.team)} · ${esc(p.nat)} · age ${p.age} · <b>${p.ovr}</b>`;
     if (ch === "scorers") return plRow(0, i + 1, nm, sub, p.goals, p.assists + " ast", p.goals / top * 100);
     if (ch === "assists") return plRow(0, i + 1, nm, sub, p.assists, p.goals + " goals", p.assists / top * 100);

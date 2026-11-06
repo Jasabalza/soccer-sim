@@ -1,5 +1,11 @@
 # Changelog
 
+## v16.1.1: coach pages
+- **Every coach has a page** (`#/coach/<id>`), working or retired: job (head coach, academy manager, national team coach, without a job, retired), record, win rate, titles and cups, the career stepper with every spell, honours, and a link to the Hall of Fame page for retired coaches. Before this only retired coaches in the Hall of Fame had one.
+- **Coach names link to it** on the club page, the nation page, the Off-season Coaches tab (hired, sacked, left, academy shots, national jobs, retired), Coach of the Year (results, ceremony, runners-up), and "coach of the competition" lines. Records written down before this patch are matched by name and nation when only one coach fits; finals lists keep plain names.
+- **Engine:** coaches get a permanent id (`cid`, handed out on first use, so old saves are fine; the same object keeps it through jobs, the pool and retirement). It changes no result: the three state goldens are identical. The API golden was re-recorded because the API now returns `cid` (and `winner_coach_cid`); a field-by-field comparison showed no other difference. New endpoint `/api/coach?id=`.
+- Tests: `tools/t_coach_ui.js`.
+
 ## v16.1: Show Your Worth (stars and logos)
 - **Title stars.** One gold star per World Cup title on a nation page (above the badge), five gold fold into one blue, five blue into one ice star, so a nation never shows more than four of each. Club pages show the same ladder for Club World Cup titles beside the name. The Nations list shows small stars.
 - **Star moments** under the trophy on the champion screen: a new gold star, the fold into a blue star on the fifth title, and the Club World Cup. The compstats API now returns `star_n` for those.

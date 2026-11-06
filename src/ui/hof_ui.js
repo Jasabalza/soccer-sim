@@ -96,6 +96,27 @@ const HOF_ST = (it, c) => {
   if (it.status === "ballot") return `On the ballot, year ${it.n || 0} of 10`;
   return `<span class="dim">Fell off the ballot</span>`;
 };
+// the career stepper of a coach: one line per spell at a club, an academy or a nation
+function coachStintsHTML(stints) {
+  return `<div class="hstep">${stints.map((x) => `<div class="hs"><i></i><div><b>${x.kind === "acad" ? "Academy manager, " + clubLink(x.team) : x.kind === "nat" ? natLink(x.team) : clubLink(x.team)}</b><div class="dim small">${x.est ? "earlier career" : (x.from || "") + (x.to ? " to " + x.to : " to now")} &middot; ${x.seasons} seasons${x.titles ? " &middot; " + x.titles + " titles" : ""}${x.cups ? " &middot; " + x.cups + " cups" : ""}${x.wc ? " &middot; World Cup" : ""}</div></div></div>`).join("")}</div>`;
+}
+// the page of any coach, working or retired (#/coach/<id>)
+async function viewCoach(id) {
+  const c = await api("/api/coach?id=" + enc(id)), s = c.stats, j = c.job;
+  const job = j.kind === "club" ? `Head coach, ${clubLink(j.team)}` : j.kind === "acad" ? `Academy manager, ${clubLink(j.team)}` : j.kind === "nation" ? `National team coach, ${natLink(j.team)}` : j.kind === "retired" ? `Retired${j.team ? ", last at " + clubLink(j.team) : ""}` : "Without a job";
+  const grp = {}; c.honours.forEach((h) => { (grp[h.title] = grp[h.title] || []).push(h.label); });
+  const hon = Object.entries(grp);
+  $("#view").innerHTML = `<div class="v2"><a class="crumb" href="#" id="co-back">&lsaquo; Back</a>
+    <div class="hd"><div><h1>${flag(c.nat, 26)} ${esc(c.name)}</h1><div class="sub">${job} &middot; ${natLink(c.nat)} &middot; age ${c.age}</div></div></div>
+    <div class="stat4"><div><b>${s.seasons}</b><span>SEASONS</span></div><div><b>${s.win}%</b><span>WIN RATE</span></div><div><b>${s.titles}</b><span>LEAGUE TITLES</span></div><div><b>${s.cups + s.cwc}</b><span>CUPS</span></div></div>
+    <div class="card"><h3>Profile</h3><div class="row"><span>Record</span><span class="dim">${s.w} W &middot; ${s.d} D &middot; ${s.l} L</span></div>
+      <div class="row"><span>Prestige</span><span class="dim">${c.prestige}</span></div><div class="row"><span>Style</span><span class="dim">${esc(c.personality)}${c.skill && c.skill !== "none" ? " / " + esc(c.skill) : ""}</span></div>
+      ${s.cwc ? `<div class="row"><span>Club World Cups</span><span class="dim">${s.cwc}</span></div>` : ""}</div>
+    <div class="card"><h3>Coaching career <small>${s.seasons} seasons &middot; ${s.titles} league titles &middot; ${s.cups} continental cups</small></h3>${coachStintsHTML(c.stints)}</div>
+    ${hon.length ? `<div class="card"><h3>Honours</h3>${hon.map(([t, ys]) => `<div class="row"><span>${esc(t)}${ys.length > 1 ? " x" + ys.length : ""}</span><span class="meta">${ys.join(", ")}</span></div>`).join("")}</div>` : ""}
+    ${c.hid ? `<a class="more" href="#/hofcard/${esc(c.hid)}"><span>Hall of Fame page</span><span>&rsaquo;</span></a>` : ""}</div>`;
+  $("#co-back").onclick = (e) => { e.preventDefault(); if (history.length > 1) history.back(); else location.hash = "#/hof"; };
+}
 async function viewHofCard(id) {
   const c = await api("/api/hofcard?id=" + enc(id)), ch = c.chain;
   const rows = ["W", "C", "L", "K"].map((t) => {
@@ -116,7 +137,7 @@ async function viewHofCard(id) {
   } else {
     const s = c.stats;
     tail = `<div class="card"><h3>Coaching career <small>${s.seasons} seasons &middot; ${s.titles} league titles &middot; ${s.cups} continental cups</small></h3>
-      <div class="hstep">${c.stints.map((x) => `<div class="hs"><i></i><div><b>${x.kind === "acad" ? "Academy manager, " + clubLink(x.team) : x.kind === "nat" ? natLink(x.team) : clubLink(x.team)}</b><div class="dim small">${x.est ? "earlier career" : (x.from || "") + (x.to ? " to " + x.to : " to now")} &middot; ${x.seasons} seasons${x.titles ? " &middot; " + x.titles + " titles" : ""}${x.cups ? " &middot; " + x.cups + " cups" : ""}${x.wc ? " &middot; World Cup" : ""}</div></div></div>`).join("")}</div></div>`;
+      ${coachStintsHTML(c.stints)}</div></div>`;
   }
   $("#view").innerHTML = `<div class="v2"><a class="crumb" href="#/hof">&lsaquo; Hall of Fame</a>
     <div class="hd"><div><h1>${flag(c.nat, 26)} ${esc(c.name)}</h1><div class="sub">${c.k === "c" ? "Coach" : esc(c.pos || "")} &middot; ${natLink(c.nat)} &middot; retired ${esc(c.retired)}</div></div>${hofBadge(c.badge, 38)}</div>

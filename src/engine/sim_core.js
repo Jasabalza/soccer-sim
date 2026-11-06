@@ -450,6 +450,31 @@ class World {
         p.uid = top;
       }
     }
+    self.ensure_coach_ids();
+  }
+  // every coach object the world knows: club coaches, academy managers, national team coaches, the job pool and the retired lists
+  coach_people() {
+    const self = this, out = [], seen = new Set();
+    const add = (co) => { if (co && !seen.has(co)) { seen.add(co); out.push(co); } };
+    for (const [, c] of self.clubs.itemsArr()) { add($M.get(c, "coach", null)); add($M.get(c, "acad_mgr", null)); }
+    for (const [, n] of self.nations.itemsArr()) add($M.get(n, "coach", null));
+    for (const l of [self.coach_pool, self.retired_coaches, self.retired_all]) for (const co of l) add(co);
+    return out;
+  }
+  // a coach keeps one id for life (the same object moves between clubs, the pool and the retired list). Ids never change RNG or results.
+  coach_id(co) {
+    const self = this;
+    if (co.cid) return co.cid;
+    if (!self.coach_seq) { let top = 0; for (const x of self.coach_people()) if (x.cid && x.cid > top) top = x.cid; self.coach_seq = top; }
+    self.coach_seq = self.coach_seq + 1; co.cid = self.coach_seq;
+    return co.cid;
+  }
+  ensure_coach_ids() {
+    for (const co of this.coach_people()) this.coach_id(co);
+  }
+  coach_by_cid(cid) {
+    for (const co of this.coach_people()) if (co.cid === cid) return co;
+    return null;
   }
   player_by_uid(uid) {
     const self = this;

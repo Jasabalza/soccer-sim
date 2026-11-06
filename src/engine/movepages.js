@@ -39,6 +39,12 @@ $mods["movepages"] = (function () {
   };
   const KIND = { t: "Transfer", f: "Free agent", r: "Released", p: "Retired", h: "Hired", x: "Sacked", q: "Walked away", cr: "Retired", n: "National team" };
 
+  // moves written down before coaches had ids: find the coach by name and nation when only one coach fits
+  let CIDX = null, CIDX_W = null;
+  function coachCid(w, e) {
+    if (CIDX_W !== w || !CIDX) { CIDX_W = w; CIDX = new Map(); for (const co of w.coach_people()) { const k = co.name + "|" + co.nat; CIDX.set(k, CIDX.has(k) ? -1 : w.coach_id(co)); } }
+    const v = CIDX.get(e.n + "|" + e.nat); return v > 0 ? v : null;
+  }
   function rowOf(w, e, i, ctx, who) {
     const r = { i, k: e.k, kind: KIND[e.k], hot: hotOf(e, ctx), name: e.n, nat: e.nat, age: e.age, mv: null, a: e.a == null ? null : e.a };
     if (e.k === "t" || e.k === "f" || e.k === "r" || e.k === "p") Object.assign(r, { uid: e.u || 0, pos: e.pos, ovr: e.ovr, pot: e.pot, pk: e.pk || null });
@@ -46,7 +52,7 @@ $mods["movepages"] = (function () {
     if (e.k === "f") Object.assign(r, { from: e.f, to: e.t, fromL: e.fl, toL: e.tl, wage: Math.round(e.wg * kx(w) * 10) / 10, pay: e.wg * 3, mv: mvOf(e.a), first: !!e.first, abroad: !!(e.fl && e.fl !== e.tl) });
     if (e.k === "r") Object.assign(r, { from: e.f, fromL: e.fl, wage: Math.round(e.wg * kx(w) * 10) / 10, pay: e.wg * 3 });
     if (e.k === "p") Object.assign(r, { club: e.c, clubL: e.cl, prestige: e.pr, seasons: e.ss, honours: e.tn, hid: e.hid });
-    if (e.k === "h" || e.k === "x" || e.k === "q" || e.k === "cr" || e.k === "n") Object.assign(r, { prestige: e.pr, seasons: e.ss, titles: e.ti, cups: e.cu, cwc: e.cwc, pay: e.pr });
+    if (e.k === "h" || e.k === "x" || e.k === "q" || e.k === "cr" || e.k === "n") Object.assign(r, { cid: e.cid || coachCid(w, e), prestige: e.pr, seasons: e.ss, titles: e.ti, cups: e.cu, cwc: e.cwc, pay: e.pr });
     if (e.k === "h") Object.assign(r, { to: e.t, toL: e.tl, from: e.f, src: e.src, mv: e.src === "acad" ? "up" : mvOf(e.a), idle: e.ua });
     if (e.k === "x" || e.k === "q") Object.assign(r, { from: e.f, fromL: e.fl });
     if (e.k === "cr") Object.assign(r, { from: e.f, fromL: e.fl, hid: e.hid });

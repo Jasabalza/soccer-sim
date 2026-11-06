@@ -122,7 +122,7 @@ function player_row(w, p) {
   return $dict($kw({"uid": $getattr(p, "uid", 0), "gls": ($T(ls) ? $idx(ls, 0) : null), "ast": ($T(ls) ? $idx(ls, 1) : null), "cs": ($T(ls) ? $idx(ls, 2) : null), "name": p.name, "pos": p.pos, "age": p.age, "ovr": p.ovr, "pot": p.pot, "nat": p.nat, "club": p.club, "contract": p.contract, "wage": mx(p.wage), "value": mx(w.fee_for(p)), "peak": p.peak}));
 }
 function coach_row(co) {
-  return $dict($kw({"name": co.name, "nat": co.nat, "age": co.age, "prestige": r1(co.prestige), "personality": co.personality, "skill": co.skill, "titles": co.titles, "cups": co.cups, "cwc": co.cwc, "seasons": co.seasons, "win": $round($mul(co.win_pct, 100)), "w": co.w, "d": co.d, "l": co.l}));
+  return $dict($kw({"cid": ST.world.coach_id(co), "name": co.name, "nat": co.nat, "age": co.age, "prestige": r1(co.prestige), "personality": co.personality, "skill": co.skill, "titles": co.titles, "cups": co.cups, "cwc": co.cwc, "seasons": co.seasons, "win": $round($mul(co.win_pct, 100)), "w": co.w, "d": co.d, "l": co.l}));
 }
 function v_status() {
   let w;
@@ -394,6 +394,7 @@ function v_compsum(cid, season = null) {
     $setidx(out, "top3", (() => { const $r = []; let n; for (const $c0 of $iter($slice(st, null, 3, null))) { n = $c0; $r.push($dict($kw({"team": n, "pts": $idx($idx(c.st, n), "pts"), "w": $idx($idx(c.st, n), "w"), "d": $idx($idx(c.st, n), "d"), "l": $idx($idx(c.st, n), "l")}))); } return $r; })());
     co = ($T(st) ? $idx($idx(w.clubs, $idx(st, 0)), "coach") : null);
     $setidx(out, "winner_coach", ($T(co) ? co.name : null));
+    if ($T(co)) $setidx(out, "winner_coach_cid", w.coach_id(co));
   } else {
     fin = (() => { const $r = []; let t; for (const $c0 of $iter(c.tlog)) { t = $c0; if (!($idx(t, "left") === 2)) continue; $r.push(t); } return $r; })();
     if ($T(fin)) {
@@ -938,6 +939,7 @@ POST = $lit_dict([["/api/favs", a_favs],
   GET.set("/api/hofday", (q) => { const w = need_world(); return $dict($kw(HP.v_day(w, $T($M.get(q, "season")) ? $int($idx(q, "season")) : w.season))); });
   GET.set("/api/hofleague", (q) => { const w = need_world(); if (!w.leagues.has($idx(q, "league"))) bad("unknown league"); return $dict($kw(HP.v_leagueday(w, $idx(q, "league"), $T($M.get(q, "season")) ? $int($idx(q, "season")) : null))); });
   GET.set("/api/hof", (q) => { const w = need_world(); return $dict($kw(HP.v_hof(w, { tier: hq(q, "tier", "W"), name: hq(q, "name", null), kind: hq(q, "kind", "p") }))); });
+  GET.set("/api/coach", (q) => { const w = need_world(); w.ensure_uids(); const v = HP.v_coach(w, $int($idx(q, "id"))); if (!v) bad("unknown coach"); return $dict($kw(v)); });
   GET.set("/api/hofcard", (q) => { const w = need_world(); if (!HP.cardOf(w, $idx(q, "id"))) bad("unknown Hall of Fame card"); return $dict($kw(HP.v_card(w, $idx(q, "id")))); });
   GET.set("/api/academy", (q) => { const w = need_world(); if (!w.clubs.has($idx(q, "club"))) bad("unknown club"); const v = $mods.hof.acadView(w, $idx(q, "club")); v.in_halls = v.in_halls.map((id) => HP.row(w, HP.cardOf(w, id))); return $dict($kw(v)); });
   GET.set("/api/academies", (q) => { const w = need_world(), sc = hq(q, "scope", "world"), nm = hq(q, "name", null); const rows = $mods.hof.acadRanking(w, sc, nm); const leagues = w.leagues.keysArr(), conf = []; for (const l of w.leagues.valuesArr()) if (!conf.includes(l.get_("confed"))) conf.push(l.get_("confed")); return $dict($kw({ "rows": rows, "scope": sc, "name": nm, "leagues": leagues, "confeds": conf, "season": w.season })); });

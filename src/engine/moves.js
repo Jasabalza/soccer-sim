@@ -43,7 +43,7 @@ $mods["moves"] = (function () {
     let pr = 0; try { const sc = $mods.hof.pscores(w, p); pr = Math.round(sc.W); } catch (e) { }
     CUR.buf.push(Object.assign(base(w, p), { k: "p", pk: p.peak, c: p.club || null, cl: p.club ? lg(w, p.club) : null, pr, hid: card ? card.id : null, ss: (p.career || []).length, tn: (p.honours || []).length }));
   }
-  const cbase = (co) => ({ n: co.name, nat: co.nat, age: co.age, pr: r1(co.prestige), ss: co.seasons, ti: co.titles, cu: co.cups, cwc: co.cwc });
+  const cbase = (co) => ({ cid: CUR && CUR.w ? CUR.w.coach_id(co) : (co.cid || null), n: co.name, nat: co.nat, age: co.age, pr: r1(co.prestige), ss: co.seasons, ti: co.titles, cu: co.cups, cwc: co.cwc });
   function coachOut(w, co, club, reason) {
     if (!on(w)) return;
     CUR.buf.push(Object.assign(cbase(co), { k: reason === "fired" ? "x" : "q", f: club, fl: lg(w, club) }));

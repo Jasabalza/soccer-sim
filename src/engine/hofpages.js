@@ -163,6 +163,27 @@ $mods["hofpages"] = (function () {
     }
     return out;
   }
+  // ---- the page of any coach, working or retired ------------------------------------------------------------------------
+  function v_coach(w, cid) {
+    const co = w.coach_by_cid(cid); if (!co) return null;
+    let job = { kind: "free", team: null, text: "Without a job" };
+    for (const [n, c] of w.clubs.itemsArr()) {
+      if ($M.get(c, "coach", null) === co) job = { kind: "club", team: n, text: "Head coach, " + n };
+      else if ($M.get(c, "acad_mgr", null) === co) job = { kind: "acad", team: n, text: "Academy manager, " + n };
+    }
+    for (const [n, c] of w.nations.itemsArr()) if ($M.get(c, "coach", null) === co) job = { kind: "nation", team: n, text: "National team coach, " + n };
+    const retired = w.retired_all.includes(co);
+    if (retired) job = { kind: "retired", team: co.last_club || null, text: "Retired" };
+    let card = null; for (const id of Object.keys(st(w).cards)) { const c = st(w).cards[id]; if (c.k === "c" && c.co === co) { card = c; break; } }
+    const sc = H.cscores(w, co), g = co.w + co.d + co.l;
+    return {
+      cid: co.cid, name: co.name, nat: co.nat, age: co.age, job, retired, personality: co.personality, skill: co.skill, prestige: Math.round(co.prestige * 10) / 10,
+      stats: { seasons: co.seasons, w: co.w, d: co.d, l: co.l, win: g ? Math.round((co.w + 0.5 * co.d) / g * 100) : 0, titles: co.titles, cups: co.cups, cwc: co.cwc, best: co.best_finish || null },
+      honours: (co.honours || []).map((r) => ({ season: r[0], label: label(w, r[0]), kind: r[1], title: r[2] })),
+      stints: H.stintsOf(co).map((s) => { const n = H.stintNums(w, co, s); return { kind: s.k, team: s.t, from: s.f ? label(w, s.f) : null, to: s.u === null || s.u === undefined ? null : (s.u ? label(w, s.u) : null), seasons: Math.round(n.s || 0), titles: Math.round(n.ti || 0), cups: Math.round(n.cu || 0), wc: s.wc || 0, ct: s.ct || 0, est: !!s.est }; }),
+      score: sc.W, hid: card ? card.id : null, chain: card ? chain(w, card) : null, line: card ? line(w, card) : null,
+    };
+  }
   // a short chain for the player page (looks the card up by uid, or by name and peak for stars kept before v16)
   function chainFor(w, p) {
     const h = st(w); let card = null;
@@ -175,5 +196,5 @@ $mods["hofpages"] = (function () {
     for (const id of Object.keys(h.cards)) { const c = h.cards[id]; if (c.k !== "p") continue; const s = c.st.W; if (s && s.status === "ballot" && s.n >= H.CFG.window - 2) out.push(row(w, c, { n: s.n, left: H.CFG.window - s.n, pct: s.pct })); }
     out.sort((a, b) => b.pct - a.pct); return out.slice(0, 10);
   }
-  return { TIERS, TIER_NAME, label, badge, chain, row, entryRow, v_day, v_leagueday, v_hof, v_card, chainFor, v_watch, favourites, line, cardOf };
+  return { TIERS, TIER_NAME, label, badge, chain, row, entryRow, v_day, v_leagueday, v_hof, v_card, v_coach, chainFor, v_watch, favourites, line, cardOf };
 })();

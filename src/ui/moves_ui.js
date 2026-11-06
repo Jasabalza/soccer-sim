@@ -18,7 +18,7 @@ function mvBadge(r, size) {
   return club ? crest(club, size) : "";
 }
 function mvWho(r) {
-  const nm = r.uid ? `<a href="#/player/${r.uid}">${esc(r.name)}</a>` : r.hid ? `<a href="#/hofcard/${esc(r.hid)}">${esc(r.name)}</a>` : esc(r.name);
+  const nm = r.uid ? `<a href="#/player/${r.uid}">${esc(r.name)}</a>` : r.cid ? `<a href="#/coach/${r.cid}">${esc(r.name)}</a>` : r.hid ? `<a href="#/hofcard/${esc(r.hid)}">${esc(r.name)}</a>` : esc(r.name);
   return nm;
 }
 // one short phrase for one coach event (a coach with several events gets several phrases and several bubbles)
