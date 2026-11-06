@@ -12,7 +12,7 @@ const mvAgo = (n) => (n === 1 ? "a year" : n + " years");
 const mvPos = (r) => (r.pos ? `<span class="pos-${esc(r.pos)}">${esc(r.pos)}</span>` : "");
 // the one emblem on a row: the club the person ends up at, or the one they leave; a flag for a national job
 function mvBadge(r, size) {
-  size = size || 28;
+  size = size || 22;
   if (r.k === "n") return flag(r.nation, size - 4);
   const club = r.to || r.from || r.club;
   return club ? crest(club, size) : "";
@@ -91,10 +91,9 @@ async function viewMoves(season, tab) {
   if (!d.season) { $("#view").innerHTML = `<div class="v2"><div class="hd"><div><h1>Off-season moves</h1></div></div><div class="card dim small">No completed season yet. Transfers, new coaches and retirements appear here once a season is over.</div></div>`; return; }
   if (walking) return mvWalk(d);
   const S = d.season, c = d.counts;
-  const lgOpt = (l) => `<option value="${esc(l)}" ${l === MV.league ? "selected" : ""}>${esc(l)}</option>`;
   const head = `<div class="hd"><div><h1>Off-season moves</h1><div class="sub">${mvSeasonLabel(d)}</div></div>${d.recorded ? `<a class="btn sm" href="#/moves/${S}/walk">Walk-through</a>` : ""}</div>
     <p class="filters"><select id="mv-s" aria-label="Season">${Array.from({ length: d.seasons }, (_, i) => d.seasons - i).map((s) => `<option value="${s}" ${s === S ? "selected" : ""}>Season ${s}</option>`).join("")}</select>
-    <select id="mv-l" aria-label="League"><option value="">Whole world</option>${favL.length ? `<option value="@favs" ${MV.league === "@favs" ? "selected" : ""}>My favourite leagues</option>` : ""}${d.leagues.map(lgOpt).join("")}</select></p>
+    <select id="mv-l" aria-label="League"><option value="">Whole world</option>${favL.length ? `<option value="@favs" ${MV.league === "@favs" ? "selected" : ""}>My favourite leagues</option>` : ""}${leagueOpts(d.leagues, MV.league)}</select></p>
     <div class="seg mtabs" role="tablist">${MV_TABS.map(([k, t]) => `<button data-t="${k}" class="${k === tab ? "on" : ""}">${t}</button>`).join("")}</div>
     <div class="dim small mvsum">${c.transfers} transfers &middot; ${c.free} free agents signed &middot; ${c.hired + c.fired + c.left} coach moves &middot; ${c.retired} retired</div>`;
   let body = "";
@@ -130,43 +129,29 @@ async function viewMoves(season, tab) {
 }
 
 // ---------------------------------------------------------------- the walk-through
-const MV_FLAVOUR = {
-  up: "A step up: the new club has more pull than the old one.",
-  down: "A step down: the new club has less pull than the old one.",
-  side: "A lateral move: the two clubs are about level."
-};
 function mvStory(r) {
   const nm = esc(r.name);
-  if (r.k === "t") {
-    const bits = [`${nm} (${esc(r.pos || "")}, ${r.age}) moves from ${esc(r.from)} to ${esc(r.to)} for ${money(r.fee)}.`];
-    if (r.abroad) bits.push(`He crosses from the ${esc(r.fromL)} to the ${esc(r.toL)}.`);
-    if (r.rival) bits.push("The two clubs are rivals.");
-    if (r.mv) bits.push(MV_FLAVOUR[r.mv]);
-    return bits.join(" ");
-  }
-  if (r.k === "f") return r.first ? `${nm} (${r.age}) signs a first professional contract with ${esc(r.to)}, ${money(r.wage)} a year.` : `${nm} (${esc(r.pos || "")}, ${r.age}) was out of contract${r.from ? " at " + esc(r.from) : ""} and signs for ${esc(r.to)} on ${money(r.wage)} a year. ${r.mv ? MV_FLAVOUR[r.mv] : ""}`;
-  if (r.k === "r") return `${esc(r.from)} let ${nm} go. He is still looking for a club.`;
+  if (r.k === "t") return `${nm} (${esc(r.pos || "")}, ${r.age}) joins ${esc(r.to)} from ${esc(r.from)} for ${money(r.fee)}.${r.abroad ? ` ${esc(r.fromL)} to ${esc(r.toL)}.` : ""}`;
+  if (r.k === "f") return r.first ? `First pro contract, with ${esc(r.to)}: ${money(r.wage)}/yr.` : `${r.from ? "Out of contract at " + esc(r.from) + ". " : ""}Signs for ${esc(r.to)}: ${money(r.wage)}/yr.`;
+  if (r.k === "r") return `Released by ${esc(r.from)}. Still looking.`;
   if (r.k === "h") {
-    if (r.src === "acad") return `The ${esc(r.from)} academy manager gets his shot: ${nm} (${r.age}) is promoted to first-team manager at ${esc(r.to)}.`;
-    if (r.src === "new") return `${esc(r.to)} give ${nm} (${r.age}) his first head coach job.`;
-    const bits = [r.from ? `${nm} (${r.age}) leaves ${esc(r.from)} and takes over at ${esc(r.to)}.` : `${esc(r.to)} appoint ${nm} (${r.age}).`];
-    if (r.idle > 0) bits.push(`He had been out of work for ${mvAgo(r.idle)}.`);
-    if (r.mv) bits.push(MV_FLAVOUR[r.mv].replace("new club has more pull than the old one", "bigger job than his last").replace("new club has less pull than the old one", "smaller job than his last").replace("the two clubs are about level", "a job of about the same size"));
-    return bits.join(" ");
+    if (r.src === "acad") return `Promoted from the ${esc(r.from)} academy to manage ${esc(r.to)}.`;
+    if (r.src === "new") return `First head coach job, at ${esc(r.to)}.`;
+    return `${r.from ? "Leaves " + esc(r.from) + " for " + esc(r.to) : "Appointed by " + esc(r.to)}.${r.idle > 0 ? ` Out of work for ${mvAgo(r.idle)}.` : ""}`;
   }
-  if (r.k === "x") return `${esc(r.from)} sack ${nm} (${r.age}) after ${r.seasons} season${r.seasons === 1 ? "" : "s"} in management${r.titles ? " and " + r.titles + " league title" + (r.titles === 1 ? "" : "s") : ""}.`;
-  if (r.k === "q") return `${nm} (${r.age}) walks away from ${esc(r.from)}.`;
-  if (r.k === "cr") return `${nm} retires at ${r.age} after ${r.seasons} seasons in management: ${r.titles} league title${r.titles === 1 ? "" : "s"}, ${r.cups} continental cup${r.cups === 1 ? "" : "s"}.`;
-  if (r.k === "n") return `${nm} (${r.age}) is named ${esc(r.nation)} national team coach${r.prev ? ", replacing " + esc(r.prev) : ""}.`;
-  if (r.k === "p") return `${nm} (${esc(r.pos || "")}, ${r.age}) retires${r.club ? " from " + esc(r.club) : ""} after ${r.seasons || "many"} seasons. Peak rating ${r.pk || r.ovr}, prestige ${r.prestige}.${r.hofFrom ? " He becomes eligible for the Hall of Fame in " + esc(r.hofFrom) + "." : ""}`;
+  if (r.k === "x") return `Sacked by ${esc(r.from)} after ${r.seasons} season${r.seasons === 1 ? "" : "s"}${r.titles ? ", " + r.titles + " title" + (r.titles === 1 ? "" : "s") : ""}.`;
+  if (r.k === "q") return `Leaves ${esc(r.from)}.`;
+  if (r.k === "cr") return `Retires after ${r.seasons} seasons: ${r.titles} title${r.titles === 1 ? "" : "s"}, ${r.cups} cup${r.cups === 1 ? "" : "s"}.`;
+  if (r.k === "n") return `Named ${esc(r.nation)} coach${r.prev ? ", replacing " + esc(r.prev) : ""}.`;
+  if (r.k === "p") return `Retires${r.club ? " from " + esc(r.club) : ""}. Peak ${r.pk || r.ovr}, prestige ${r.prestige}.${r.hofFrom ? " Hall of Fame ballot from " + esc(r.hofFrom) + "." : ""}`;
   return "";
 }
 function mvSlide(r, n, total) {
   const money_ = r.k === "t" ? `<div class="mvbig">${money(r.fee)}</div>` : r.k === "f" && r.wage ? `<div class="mvbig">${money(r.wage)}<small>/yr</small></div>` : "";
-  const fromTo = (r.k === "t" || r.k === "f" || r.k === "h") && r.to ? `<div class="mvft"><span>${r.from ? crest(r.from, 44) + `<i>${esc(r.from)}</i>` : `<i>${r.k === "h" ? "" : "free agent"}</i>`}</span><span class="mvar">&rarr;</span><span>${crest(r.to, 44)}<i>${esc(r.to)}</i></span></div>` : r.k === "n" ? `<div class="mvft"><span>${flag(r.nation, 44)}<i>${esc(r.nation)}</i></span></div>` : (r.from || r.club) ? `<div class="mvft"><span>${crest(r.from || r.club, 44)}<i>${esc(r.from || r.club)}</i></span></div>` : "";
+  const fromTo = (r.k === "t" || r.k === "f" || r.k === "h") && r.to ? `<div class="mvft"><span>${r.from ? crest(r.from, 32) + `<i>${esc(r.from)}</i>` : `<i>${r.k === "h" ? "" : "free agent"}</i>`}</span><span class="mvar">&rarr;</span><span>${crest(r.to, 32)}<i>${esc(r.to)}</i></span></div>` : r.k === "n" ? `<div class="mvft"><span>${flag(r.nation, 32)}<i>${esc(r.nation)}</i></span></div>` : (r.from || r.club) ? `<div class="mvft"><span>${crest(r.from || r.club, 32)}<i>${esc(r.from || r.club)}</i></span></div>` : "";
   const rating = r.ovr ? `${ovr(r.ovr)}` : "";
   return `<div class="hrv mvs"><div class="dim small">${esc(r.chapter)} &middot; ${r.n} of ${r.of}</div>
-    <div class="hrv-n">${r.nat ? flag(r.nat, 34) : ""}<div><div class="hrv-name">${mvWho(r)} ${rating}</div><div class="dim small">${r.k === "p" || r.k === "t" || r.k === "f" || r.k === "r" ? mvPos(r) + " &middot; age " + r.age : "Coach &middot; age " + r.age}${r.nat ? " &middot; " + esc(r.nat) : ""}</div></div></div>
+    <div class="hrv-n">${r.nat ? flag(r.nat, 24) : ""}<div><div class="hrv-name">${mvWho(r)} ${rating}</div><div class="dim small">${r.k === "p" || r.k === "t" || r.k === "f" || r.k === "r" ? mvPos(r) + " &middot; age " + r.age : "Coach &middot; age " + r.age}${r.nat ? " &middot; " + esc(r.nat) : ""}</div></div></div>
     ${fromTo}${money_}
     <div class="mvstory">${mvStory(r)}</div>
     <div class="mvtags">${r.k === "h" && r.src === "acad" ? `<span class="tag gold">Academy manager gets his shot</span>` : `<span class="tag">${esc(r.kind)}</span>`}${mvTag(r.mv)}${r.rival ? `<span class="tag red">Rivals</span>` : ""}${r.hid ? `<span class="tag gold">Hall of Fame candidate</span>` : ""}</div>

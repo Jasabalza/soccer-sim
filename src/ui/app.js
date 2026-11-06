@@ -1106,7 +1106,7 @@ async function viewProspects() {
   const h = STATUS && STATUS.header, off = h && h.flow;
   $("#view").innerHTML = `<div class="v2"><div class="hd"><div><h1>Top graduates</h1><div class="sub">${PV.scope === "grads" ? "Latest academy graduates" : "Every player aged 19 or under"}, best potential first</div></div></div>
     <nav class="chips" aria-label="Which players">${[["grads", "Academy graduates"], ["all", "All young talent"]].map(([k, t]) => `<button data-ps="${k}" class="${PV.scope === k ? "on" : ""}">${t}</button>`).join("")}</nav>
-    <select class="sel" id="pv-l" aria-label="League" style="width:100%"><option value="">All leagues</option>${d.leagues.map((l) => `<option ${l === PV.league ? "selected" : ""}>${esc(l)}</option>`).join("")}</select>
+    <select class="sel" id="pv-l" aria-label="League" style="width:100%"><option value="">All leagues</option>${leagueOpts(d.leagues, PV.league)}</select>
     <div class="cols"><span>Player</span><span>OVR</span><span>POT</span></div>
     <div class="card" style="margin-top:6px;padding-top:2px;padding-bottom:2px">${d.rows.length ? d.rows.map(row).join("") : `<div class="dim small" style="padding:14px 0">Nobody here yet. Graduates appear after the first season.</div>`}</div>
     <div class="dim small" style="margin-top:8px">${d.total} players match. POT is the most a player can reach.</div>${off ? `<div style="margin-top:12px"><button class="btn pri" id="pv-next" style="width:100%">${h.phase === "graduates" ? "Start season " + h.season : "Continue"}</button></div>` : ""}</div>`;
@@ -1364,7 +1364,7 @@ async function viewLedger(season) {
     : `${d.n} moves (${d.abroad} between leagues) &middot; ${money(d.total)} paid in fees`;
   $("#view").innerHTML = `<a class="crumb" href="#/moves/${all ? "" : d.season}">&lsaquo; Off-season moves</a><h1>Transfer money - ${all ? "all seasons" : "season " + d.season}${d.league ? ` <small>${esc(d.league)}</small>` : ""}</h1>
     <p class="filters"><select id="t-s"><option value="all" ${all ? "selected" : ""}>All seasons</option>${seasons.map((s) => `<option value="${s}" ${s === d.season ? "selected" : ""}>Season ${s}</option>`).join("")}</select>
-    <select id="t-l"><option value="">All leagues</option>${d.leagues.map((l) => `<option ${l === d.league ? "selected" : ""}>${esc(l)}</option>`).join("")}</select></p>
+    <select id="t-l"><option value="">All leagues</option>${leagueOpts(d.leagues, d.league)}</select></p>
     <div class="sub">${summary}</div>
     ${st ? `<div class="quick" style="margin:8px 0"><div class="stat"><div class="k">Spent on signings</div><div class="v">${money(st.paid)}</div></div><div class="stat"><div class="k">Earned from sales</div><div class="v">${money(st.recv)}</div></div><div class="stat"><div class="k">Net</div><div class="v" style="color:${st.net >= 0 ? "var(--accent)" : "var(--red)"}">${moneyS(st.net)}</div></div></div>` : ""}
     <div class="cols"><div><h2 style="margin-top:0">Biggest fees${d.league ? " involving " + esc(d.league) : ""}${all ? " of all time" : ""}</h2><div class="fees">
@@ -1580,7 +1580,7 @@ async function viewPlayers() {
   const opt = (list, cur, label) => `<option value="">${label}</option>` + list.map((x) => `<option ${x === cur ? "selected" : ""}>${esc(x)}</option>`).join("");
   $("#view").innerHTML = `<h1>Players</h1><div class="sub">${d.total.toLocaleString()} players. Search by name, filter, and click a name for the player page. G/A/CS are this season so far (league).</div>
     <p class="filters"><input id="pf-q" placeholder="Search name..." value="${esc(PF.q)}"> <select id="pf-pos">${opt(["GK", "DEF", "MID", "FWD"], PF.pos, "Any position")}</select>
-    <select id="pf-nat">${opt(d.nations, PF.nat, "Any nation")}</select><select id="pf-league">${opt(d.leagues, PF.league, "Any league")}</select>
+    <select id="pf-nat">${opt(d.nations, PF.nat, "Any nation")}</select><select id="pf-league"><option value="">Any league</option>${leagueOpts(d.leagues, PF.league)}</select>
     <select id="pf-sort">${[["ovr", "Sort: OVR"], ["pot", "Potential"], ["age", "Youngest"], ["value", "Value"], ["wage", "Wage"], ["goals", "Goals"], ["assists", "Assists"], ["name", "Name"]].map(([k, t]) => `<option value="${k}" ${PF.sort === k ? "selected" : ""}>${t}</option>`).join("")}</select>
     <label class="lbl">max age</label> <input id="pf-age" type="number" min="15" max="45" placeholder="Max age" style="width:90px" value="${esc(PF.maxage)}"> <button id="pf-go" class="pri">Search</button></p>
     <div class="scroll"><table class="hof wf nwl"><thead><tr><th class="l">Player</th><th class="l hide-m">Pos</th><th class="hide-m">Age</th><th>OVR</th><th>Pot</th><th class="l hide-m">Club</th><th class="hide-m" title="Goals this season">G</th><th class="hide-m" title="Assists this season">A</th><th class="hide-m" title="Clean sheets this season">CS</th><th class="hide-m">Wage/yr</th><th>Value</th></tr></thead><tbody>

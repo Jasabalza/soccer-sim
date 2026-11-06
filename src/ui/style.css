@@ -748,3 +748,29 @@ button.wide { width: 100%; min-height: 44px; margin-top: 10px; }
 .mvd[open] { background: var(--panel2); } .mvdet { padding: 6px 4px 8px 40px; }
 .mvwar { color: var(--accent2); font-weight: 600; }
 .hd .btn.sm { min-height: 36px; padding: 0 12px; align-self: center; }
+
+/* v16 Off-season moves: a size down (boxes, rows, text) */
+.mvp h1 { font-size: 20px; } .mvp .sub { font-size: 12px; }
+.mvp .filters { gap: 6px; margin: 6px 0; } .mvp .filters select { padding: 2px 6px; font-size: 13px; min-height: 32px; max-width: 48%; }
+.mvp .mtabs { margin-top: 6px; } .mvp .mtabs button { min-height: 34px; font-size: 12.5px; }
+.mvp .mchips { gap: 5px; } .mvp .mchips button { min-height: 30px; padding: 0 10px; font-size: 12px; }
+.mvp .mvsum { font-size: 11px; margin: 6px 2px 2px; }
+.mvp .hr { padding: 5px 10px; min-height: 42px; }
+.mvp .hr-a { gap: 8px; min-height: 30px; }
+.mvp .hr-m b { font-size: 13px; }
+.mvp .hr-m span.small { font-size: 11px; white-space: normal; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.mvp .hr-m b .ovr { font-size: 11px; padding: 0 5px; min-width: 0; }
+.mvp .mvR b { font-size: 12px; } .mvp .tag { font-size: 10px; padding: 0 6px; }
+.mvp .mvb { width: 24px; } .mvp .mvhot { font-size: 11px; }
+.mvp .mvdet { padding: 4px 4px 6px 32px; font-size: 12px; }
+.mvp .mvmore { min-height: 38px; font-size: 13px; }
+.mvp .hd .btn.sm { min-height: 30px; padding: 0 10px; font-size: 12px; }
+.mvp .hrv { padding: 12px; } .mvp .hrv-name { font-size: 18px; }
+.mvp .mvbig { font-size: 26px; margin: 4px 0; } .mvp .mvbig small { font-size: 12px; }
+.mvp .mvstory { font-size: 13px; margin: 8px 0; line-height: 1.4; }
+.mvp .mvft { margin: 8px 0 2px; gap: 10px; } .mvp .mvft i { font-size: 11px; } .mvp .mvar { font-size: 18px; }
+.mvp .mvheat .hbar { height: 5px; }
+.mvp.hday .foot { margin-top: 10px; } .mvp.hday .foot .btn { min-height: 40px; font-size: 14px; }
+.mvp .stp span { font-size: 11px; padding: 4px 6px; }
+.mvp .mtiles { gap: 6px; } .mvp .mtiles a { padding: 8px 10px; min-height: 0; } .mvp .mtiles a b { font-size: 18px; }
+.mvp .linkbtn { min-height: 36px; font-size: 13px; }

@@ -21,6 +21,12 @@ function hofBadge(b, size) {
   const tip = HOF_LBL[b.tier] + " Hall of Fame" + (b.scope ? ": " + b.scope : "");
   return `<span class="hb ${b.tier}" style="width:${size}px;height:${size}px;--hc:${HOF_CLR[b.tier]}" title="${esc(tip)}">${inner}</span>`;
 }
+// <option>s for a long list of leagues: favourite leagues first (in their own group), then every league
+function leagueOpts(list, cur) {
+  const fav = (typeof FAVS !== "undefined" && FAVS ? FAVS : []).filter((k) => k.startsWith("L:")).map((k) => k.slice(2)).filter((n) => list.includes(n));
+  const o = (n) => `<option value="${esc(n)}" ${n === cur ? "selected" : ""}>${esc(n)}</option>`;
+  return fav.length ? `<optgroup label="Favourites">${fav.map(o).join("")}</optgroup><optgroup label="All leagues">${list.map(o).join("")}</optgroup>` : list.map(o).join("");
+}
 const hofPct = (x) => Math.round(x * 100) + "%";
 const hofYrs = (r) => (r.years ? `S${r.years[0]}-S${r.years[1]}` : "");
 function hofSub(r) {
@@ -276,7 +282,7 @@ async function viewAcademies(scope, name) {
   if (ACV.sort === "rising") rows = rows.filter((r) => r.rising > 0).sort((a, b) => b.rising - a.rising);
   else if (ACV.sort === "under") rows = rows.filter((r) => r.under).sort((a, b) => b.level - a.level);
   rows = rows.slice(0, 30);
-  const sel = scope === "world" ? "" : `<select id="ac-sel">${(scope === "league" ? d.leagues : d.confeds).map((n) => `<option ${n === name ? "selected" : ""}>${esc(n)}</option>`).join("")}</select>`;
+  const sel = scope === "world" ? "" : `<select id="ac-sel">${scope === "league" ? leagueOpts(d.leagues, name) : d.confeds.map((n) => `<option ${n === name ? "selected" : ""}>${esc(n)}</option>`).join("")}</select>`;
   $("#view").innerHTML = `<div class="v2"><a class="crumb" href="#/hof">&lsaquo; Hall of Fame</a><h1>Academies</h1><div class="sub">Ranked by prestige: what their graduates became.</div>
     ${hofSeg("data-acs", [["world", "World"], ["continent", "Continent"], ["league", "League"]], scope)}
     <div class="hof-ctl">${sel}${hofSeg("data-acsort", [["prestige", "Top"], ["rising", "Rising"], ["under", "Underachievers"]], ACV.sort)}</div>

@@ -13,6 +13,8 @@
   - **Retired:** players and coaches ranked by prestige, peak level or age, with the Hall of Fame year they become eligible.
   - **Money:** the old transfer money view (fees by league).
   - **Walk-through** (small optional button): 26 of the hottest moves one at a time in four chapters (transfers, free agents, coaches, retirements), with a heat meter.
+  - Smaller boxes, rows and text on this page; short lines wrap instead of being cut off.
+  - Every long league list (Off-season, Players, Graduates, Transfer money, Academies) puts your favourite leagues at the top.
   - The stepper and nav say Off-season. A season's moves are one compact record (last 10 seasons); older saves show transfers only for seasons played before this update. API: `/api/moves`.
 - Engine: new modules `hof`, `hofpages`, `moves`, `movepages`. The move log writes down what happens and never changes it: all golden files are unchanged by it.
 - Known: new worlds see their first inductions around season 13 to 16; older saves get a founding class.
