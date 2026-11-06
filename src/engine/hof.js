@@ -132,6 +132,7 @@ $mods["hof"] = (function () {
     for (const [lg, s] of Object.entries(sc.L)) if (gateOf("L", s)) want.push("L:" + lg);
     for (const [c, s] of Object.entries(sc.K)) if (gateOf("K", s)) want.push("K:" + c);
     if (!want.length) return null;
+    if (!p.uid && w.ensure_uids) w.ensure_uids();                    // a card links to the player page by uid, so he must have one
     const id = "p" + (H.next++);
     const card = { id, k: "p", uid: p.uid || null, name: p.name, nat: p.nat, pos: p.pos, peak: p.peak, ret, trn: p.trn || null, st: {}, vetoed: null, home: null,
       d: JSON.stringify({ cr: p.career.map((r) => [r[0], r[1], r[2]]), hon: p.honours.map((h) => [h[0], h[1], h[2]]), sc: { W: sc.W, C: sc.C, L: sc.L, K: sc.K }, nat_rec: sc.nat }) };
@@ -311,13 +312,15 @@ $mods["hof"] = (function () {
     }
   }
   function prune(w, Y) {
-    const H = ensure(w);
+    const H = ensure(w), gone = new Set();
     for (const id of Object.keys(H.cards)) {
       const c = H.cards[id], keys = Object.keys(c.st);
       if (keys.some((k) => c.st[k].status !== "off")) continue;
       if (c.k === "p" && (c.st.W || c.st[cKey(c.nat)])) { const d = dataOf(c); H.fell.push({ id: c.id, name: c.name, nat: c.nat, pos: c.pos, peak: c.peak, ret: c.ret, y: Y, W: d.sc.W, C: d.sc.C }); if (H.fell.length > 300) H.fell.shift(); }
-      delete H.cards[id];
+      delete H.cards[id]; if (c.k === "p" && c.uid) gone.add(c.uid);
     }
+    // a retired player is kept (so his page works) while he has a card; stars with a peak of 86+ are always kept
+    if (gone.size) w.retired_players = w.retired_players.filter((p) => !(gone.has(p.uid) && p.peak < 86));
   }
 
   // ---- academies: prestige earned from graduates, and the academy manager --------------------------------------------------------

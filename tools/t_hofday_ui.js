@@ -24,7 +24,7 @@ const URL='http://localhost:8791/test_artifact.html';
  const first=await p.$eval('.hrv-pct',e=>e.textContent); ok(await p.$('.hrv.live'),'reveal is animated');
  await p.waitForTimeout(2300); const fin=await p.$eval('.hrv-pct',e=>e.textContent); const want=await p.$eval('.hrv-pct',e=>e.dataset.p+'%');
  ok(fin===want,'vote counted up to '+want+', got '+fin); ok(+await p.$eval('.hrv-v',e=>getComputedStyle(e).opacity)===1,'verdict visible after the count');
- await p.screenshot({path:OUT+'/hd_reveal.png'});
+ ok(await p.$('.hrv-v .hb.K'),'a club-hall reveal shows the club badge, not the league logo'); await p.screenshot({path:OUT+'/hd_reveal.png'});
  let guard=0; while(await p.$('#hl-next') && guard++<80){ n++; await p.click('#hl-next'); await p.waitForTimeout(120); }
  ok(n===info.nL+info.nK,'one reveal per inductee, saw '+n+' of '+(info.nL+info.nK));
  ok(/that is the class/i.test(await p.innerText('#view')),'class summary at the end'); await p.screenshot({path:OUT+'/hd_class.png'});
@@ -41,6 +41,15 @@ const URL='http://localhost:8791/test_artifact.html';
  // with an imported league logo the league badge uses it, not the generic cup
  await p.evaluate((ln)=>{ window.__LOGOS2=Object.assign({nations:{},leagues:{},comps:{},year:{}},window.__LOGOS2||{}); window.__LOGOS2.leagues[ln]='data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="red"/></svg>'; route(); },info.ln); await p.waitForTimeout(900);
  ok(await p.$('.hb.L .lbox img'),'league badge shows the imported league logo'); await p.screenshot({path:OUT+'/hd_card_logo.png'});
+ // the inductee classes: last 10 open by default, with controls
+ await go('#/hof/W',900); ok(await p.$('.hexp [data-hexp="ten"].on') || !(await p.$('.hexp')),'class controls (Last 10 default) or a single class');
+ // halls on the club and nation pages, country halls followed from the World page
+ await go('#/club/Arsenal',900); await p.click('[data-ct="hall"]'); await p.waitForTimeout(900); ok(/Arsenal Hall of Fame/.test(await p.innerText('#ct-hall')) && /Premier League Hall of Fame/.test(await p.innerText('#ct-hall')),'club page Hall of Fame tab has the club and league halls');
+ await go('#/nation/Mexico',900); await p.click('[data-nt="hall"]'); await p.waitForTimeout(900); ok(/Mexico Hall of Fame/.test(await p.innerText('#view')) && await p.$('[data-favn="Mexico"]'),'nation page Hall of Fame tab with a follow star');
+ await p.click('[data-favn="Mexico"]'); await p.waitForTimeout(900);
+ await go('#/world',1400); ok(/Country Halls of Fame/.test(await p.innerText('#w-halls')) && /Mexico/.test(await p.innerText('#w-halls')),'followed Mexico shows on the World page'); await p.screenshot({path:OUT+'/hd_world.png',fullPage:true});
+ await go('#/hof/C',900); ok(/Mexico/.test(await p.$eval('#hof-scope',e=>e.value)),'Country tab opens on the followed country');
+ await p.evaluate(async()=>{ await api('/api/favnations',{set:[]}); });
  // player page
  const pu=await p.evaluate(async(id)=>{ const c=await api('/api/hofcard?id='+id); return c.uid; },card);
  if(pu){ await go('#/player/'+pu,900); const t=await p.innerText('#view'); ok(/Origins/.test(t)&&/Played under/.test(t),'player page has Origins and Played under'); await p.screenshot({path:OUT+'/hd_player.png',fullPage:true}); }

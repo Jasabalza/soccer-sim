@@ -1740,8 +1740,8 @@ class World {
       p = $f85;
       if ($T(self._should_retire(p))) {
         $setidx(rec, "retired", $idx(rec, "retired") + 1);
-        $mods.hof.onRetire(self, p);
-        if ((p.peak >= 86)) {
+        const hofCard = $mods.hof.onRetire(self, p);
+        if ((p.peak >= 86) || hofCard) {            // anyone with a Hall of Fame card keeps a player page
           $M.append(self.retired_players, p);
         }
       } else {

@@ -50,18 +50,22 @@ async function viewHof(tier, name) {
   const d = await api("/api/hof?tier=" + tier + "&kind=" + HOF.kind + (name ? "&name=" + enc(name) : ""));
   const opts = d.options;
   const favLeagues = (FAVS || []).filter((k) => k.startsWith("L:")).map((k) => k.slice(2));
+  if (FAVN === null) await loadFavNations();
+  const favNats = (FAVN || []).filter((n) => opts.nations.includes(n));
   if (tier !== "W" && !name) {
-    const first = tier === "L" ? (favLeagues[0] || opts.leagues[0]) : tier === "C" ? (opts.nations[0] || "") : (opts.clubs[0] || "");
+    const first = tier === "L" ? (favLeagues[0] || opts.leagues[0]) : tier === "C" ? (favNats[0] || opts.nations[0] || "") : (opts.clubs[0] || "");
     if (first) { location.replace("#/hof/" + tier + "/" + enc(first)); return; }
   }
   const scopes = tier === "L" ? opts.leagues : tier === "C" ? opts.nations : tier === "K" ? opts.clubs : [];
-  const scopeSel = tier === "W" ? "" : `<select id="hof-scope" aria-label="${HOF_LBL[tier]}">${tier === "L" && favLeagues.length ? `<optgroup label="Favourites">${favLeagues.map((n) => `<option value="${esc(n)}" ${n === name ? "selected" : ""}>${esc(n)}</option>`).join("")}</optgroup><optgroup label="All leagues">` : ""}${scopes.map((n) => `<option value="${esc(n)}" ${n === name ? "selected" : ""}>${esc(n)}</option>`).join("")}${tier === "L" && favLeagues.length ? "</optgroup>" : ""}</select>`;
+  const favS = tier === "L" ? favLeagues : tier === "C" ? favNats : [];
+  const scopeSel = tier === "W" ? "" : `<select id="hof-scope" aria-label="${HOF_LBL[tier]}">${favS.length ? `<optgroup label="Favourites">${favS.map((n) => `<option value="${esc(n)}" ${n === name ? "selected" : ""}>${esc(n)}</option>`).join("")}</optgroup><optgroup label="All ${tier === "L" ? "leagues" : "countries"}">` : ""}${scopes.map((n) => `<option value="${esc(n)}" ${n === name ? "selected" : ""}>${esc(n)}</option>`).join("")}${favS.length ? "</optgroup>" : ""}</select>`;
   const tabs = [["ind", "Inductees"], ["bal", "Ballot"], ["watch", "Watch"], ["snub", "Snubs"], ["rec", "Records"]];
   const tab = HOF.tab;
   let body = "";
   const people = HOF.kind === "c" ? "coaches" : "players";
   if (tab === "ind") {
-    body = d.classes.length ? d.classes.map((c, i) => `<details class="hcls" ${i < 1 ? "open" : ""}><summary><b>Class of ${esc(c.label)}</b><span class="dim small">${c.rows.length} inducted</span></summary>${c.rows.map((r) => hofRow(r, { right: r.n === 1 ? "first ballot" : "year " + r.n, sub: hofSub(Object.assign({}, r, { n: 0 })) })).join("")}</details>`).join("")
+    const ctl = d.classes.length > 1 ? `<div class="hexp"><span class="dim small">Classes</span>${[["ten", "Last 10"], ["one", "Latest"], ["all", "All"], ["none", "Collapse"]].map(([k, t]) => `<button data-hexp="${k}" class="${(HOF.open || "ten") === k ? "on" : ""}">${t}</button>`).join("")}</div>` : "";
+    body = d.classes.length ? ctl + d.classes.map((c, i) => `<details class="hcls" ${i < (HOF.open === "all" ? 999 : HOF.open === "none" ? 0 : HOF.open === "one" ? 1 : 10) ? "open" : ""}><summary><b>Class of ${esc(c.label)}</b><span class="dim small">${c.rows.length} inducted</span></summary>${c.rows.map((r) => hofRow(r, { right: r.n === 1 ? "first ballot" : "year " + r.n, sub: hofSub(Object.assign({}, r, { n: 0 })) })).join("")}</details>`).join("")
       : `<div class="card dim small">No ${people} in this hall yet. People become eligible ${d.cfg.wait} years after they retire.</div>`;
   } else if (tab === "bal") {
     body = d.ballot.length ? `<div class="dim small" style="margin:0 2px 8px">${esc(d.ballot_label)} vote &middot; ${Math.round(d.cfg.pass * 100)}% to get in &middot; up to ${d.cfg.window} years on the ballot</div><div class="hlist">${d.ballot.map((r) => hofRow(r, { right: hofPct(r.pct), bar: r.pct, tag: r.left <= 1 ? (r.left === 0 ? "last year" : "1 year left") : "", tagc: "red" })).join("")}</div>`
@@ -85,8 +89,53 @@ async function viewHof(tier, name) {
     <a class="more" href="#/academies"><span>Academies ranking</span><span>&rsaquo;</span></a><a class="more" href="#/trophies/players"><span>All-time rankings by points</span><span>&rsaquo;</span></a></div>`;
   document.querySelectorAll("[data-tier]").forEach((b) => (b.onclick = () => (location.hash = "#/hof/" + b.dataset.tier)));
   document.querySelectorAll("[data-kind]").forEach((b) => (b.onclick = () => { HOF.kind = b.dataset.kind; route(); }));
+  document.querySelectorAll("[data-hexp]").forEach((b) => (b.onclick = () => { HOF.open = b.dataset.hexp; document.querySelectorAll("[data-hexp]").forEach((x) => x.classList.toggle("on", x === b)); document.querySelectorAll("details.hcls").forEach((el, i) => { el.open = HOF.open === "all" || (HOF.open === "ten" && i < 10) || (HOF.open === "one" && i < 1); }); }));
   document.querySelectorAll("[data-htab]").forEach((b) => (b.onclick = () => { HOF.tab = b.dataset.htab; route(); }));
   const sel = $("#hof-scope"); if (sel) sel.onchange = () => (location.hash = "#/hof/" + tier + "/" + enc(sel.value));
+}
+
+// ---------------------------------------------------------------- halls on the club, league and nation pages
+// one hall as a card: how many are in, the latest class, a link to the full hall (and the ballot, ceremony results...)
+async function hallCardHTML(tier, name, title, extra) {
+  const q = (kind) => api("/api/hof?tier=" + tier + "&kind=" + kind + "&name=" + enc(name)).catch(() => null);
+  const [p, c] = await Promise.all([q("p"), q("c")]);
+  if (!p) return "";
+  const cls = p.classes[0], ccls = c && c.classes[0];
+  const latest = cls ? `<div class="dim small" style="margin:8px 0 2px">Latest class: ${esc(cls.label)}</div><div class="hlist">${cls.rows.slice(0, 5).map((r) => hofRow(r, { right: r.n === 1 ? "first ballot" : "year " + r.n, sub: hofSub(Object.assign({}, r, { n: 0 })) })).join("")}</div>` : `<div class="dim small" style="margin-top:6px">Nobody has been inducted yet.${p.ballot.length ? " " + p.ballot.length + " on the ballot." : ""}</div>`;
+  const coaches = ccls ? `<div class="dim small" style="margin:8px 0 2px">Latest coach class: ${esc(ccls.label)}</div><div class="hlist">${ccls.rows.slice(0, 2).map((r) => hofRow(r, { right: r.n === 1 ? "first ballot" : "year " + r.n })).join("")}</div>` : "";
+  return `<div class="card"><h3>${hofBadge({ tier, scope: name }, 22)} ${esc(title)} <small>${p.total} players &middot; ${c ? c.total : 0} coaches</small></h3>${extra || ""}${latest}${coaches}
+    <a class="more" href="#/hof/${tier}/${enc(name)}"><span>Full ${esc(title)}</span><span>&rsaquo;</span></a></div>`;
+}
+async function hallPanel(sel, halls) {
+  const el = $(sel); if (!el) return;
+  el.innerHTML = `<div class="dim small" style="padding:14px 2px">Loading...</div>`;
+  const parts = await Promise.all(halls.map((h) => hallCardHTML(h.tier, h.name, h.title, h.extra)));
+  el.innerHTML = parts.join("") || `<div class="card dim small">No Hall of Fame here yet.</div>`;
+}
+// the countries whose Hall of Fame the player follows (the World page card and the star on a nation)
+let FAVN = null;
+async function loadFavNations() { try { FAVN = (await api("/api/favnations")).nations; } catch (e) { FAVN = []; } return FAVN; }
+async function saveFavNations(list) { const r = await api("/api/favnations", { set: list }); FAVN = r.nations; return FAVN; }
+const favNatBtn = (nat, on) => `<button class="star${on ? " on" : ""}" data-favn="${esc(nat)}" aria-pressed="${on}" aria-label="${on ? "Stop following" : "Follow"} the ${esc(nat)} Hall of Fame" title="${on ? "Following this Hall of Fame" : "Follow this Hall of Fame on the World page"}">${starSvg(20)}</button>`;
+function wireFavNat(after) {
+  document.querySelectorAll("[data-favn]").forEach((b) => (b.onclick = async () => {
+    const cur = new Set(FAVN || []), k = b.dataset.favn; if (cur.has(k)) cur.delete(k); else cur.add(k);
+    try { await saveFavNations([...cur]); } catch (e) { toast(e.message); return; }
+    if (after) await after(); else await route();
+  }));
+}
+// World page card: the followed countries, each with its hall at a glance, and a picker to follow more
+async function worldHallsCard(sel) {
+  const el = $(sel); if (!el) return;
+  const [fav, all] = await Promise.all([loadFavNations(), api("/api/nations")]);
+  const names = all.rows.map((r) => r.name).sort();
+  const infos = await Promise.all(fav.map((n) => api("/api/hof?tier=C&kind=p&name=" + enc(n)).then((d) => ({ n, d })).catch(() => ({ n, d: null }))));
+  const row = ({ n, d }) => { const cl = d && d.classes[0]; return `<div class="row prg"><span class="rl">${favNatBtn(n, true)}<span class="rt"><a href="#/hof/C/${enc(n)}">${natBadge(n, 18)} ${esc(n)}</a><div class="meta">${d ? d.total + " inducted" + (cl ? " &middot; latest: " + cl.rows.slice(0, 2).map((r) => esc(r.name)).join(", ") + (cl.rows.length > 2 ? " +" + (cl.rows.length - 2) : "") + " (" + esc(cl.label) + ")" : "") : ""}</div></span></span><a class="dim small" href="#/hof/C/${enc(n)}">open &rsaquo;</a></div>`; };
+  el.innerHTML = `<div class="card"><h3>Country Halls of Fame <small>${fav.length ? "the ones you follow" : "follow the countries you care about"}</small></h3>
+    ${infos.map(row).join("") || `<div class="meta">Nothing followed yet. Each country has its own Hall of Fame; pick the ones you want here so you do not get all ${names.length}.</div>`}
+    <div style="display:flex;gap:8px;margin-top:10px"><select id="wh-add" aria-label="Follow a country" style="flex:1"><option value="">Follow a country...</option>${names.filter((n) => !fav.includes(n)).map((n) => `<option>${esc(n)}</option>`).join("")}</select><a class="btn" href="#/hof/C">Browse all</a></div></div>`;
+  wireFavNat(() => worldHallsCard(sel));
+  const add = $("#wh-add"); if (add) add.onchange = async () => { if (!add.value) return; try { await saveFavNations([...fav, add.value]); } catch (e) { toast(e.message); return; } worldHallsCard(sel); };
 }
 
 // ---------------------------------------------------------------- one person's Hall of Fame page
@@ -143,7 +192,7 @@ async function viewHofCard(id) {
     <div class="hd"><div><h1>${flag(c.nat, 26)} ${esc(c.name)}</h1><div class="sub">${c.k === "c" ? "Coach" : esc(c.pos || "")} &middot; ${natLink(c.nat)} &middot; retired ${esc(c.retired)}</div></div>${hofBadge(c.badge, 38)}</div>
     <div class="dim small" style="margin-bottom:8px">${esc(c.line)}</div>
     <div class="card"><h3>The four halls</h3><div class="hchain">${rows}</div>${more.length ? `<div class="dim small" style="margin-top:8px">Also: ${more.map((x) => `${esc(x.scope)} (${esc(x.label)})`).join(", ")}</div>` : ""}${veto}</div>${tail}
-    ${c.uid ? `<a class="more" href="#/player/${c.uid}"><span>Full player page</span><span>&rsaquo;</span></a>` : ""}</div>`;
+    ${c.uid && c.has_page ? `<a class="more" href="#/player/${c.uid}"><span>Full player page</span><span>&rsaquo;</span></a>` : ""}</div>`;
 }
 // the block on a player's page
 function hofPlayerBlock(h) {
@@ -164,7 +213,7 @@ function hofReveal(e, scopeText, idx, n, icon) {
     <div class="hbar big"><i class="g" style="width:${pc}%"></i><u style="left:75%"></u></div>
     <div class="dim small hrv-need">75% of the votes are needed</div>
     <div class="dim small">${esc(e.line || "")}</div>
-    <div class="hrv-v"><span class="tag gold">Inducted</span> ${hofBadge(e.badge || { tier: e.tier || "W", scope: e.scope || null }, 26)}</div></div>`;
+    <div class="hrv-v"><span class="tag gold">Inducted</span> ${hofBadge(e.tier ? { tier: e.tier, scope: e.scope || null } : (e.badge || { tier: "W" }), 26)}</div></div>`;
 }
 // the vote counts up and the verdict lands last (CSS does the bar and the stamp; this only counts the number)
 function hofCount() {
@@ -208,7 +257,7 @@ function hofDayWatch(d) {
     } else if (step === 1) {
       if (i < ind.length) {
         const e = ind[i];
-        h = head("The vote") + `<div class="dim small" style="margin:8px 2px">${ind.length} inducted, revealed from the lowest vote up.</div>${hofReveal(e, (e.k === "c" ? "World Hall of Fame · coach" : "World Hall of Fame"), i, ind.length, hofBadge({ tier: "W" }, 30))}
+        h = head("The vote") + `<div class="dim small" style="margin:8px 2px">${ind.length} inducted, revealed from the lowest vote up.</div>${hofReveal(Object.assign({}, e, { tier: "W" }), (e.k === "c" ? "World Hall of Fame · coach" : "World Hall of Fame"), i, ind.length, hofBadge({ tier: "W" }, 30))}
           <div class="foot"><button class="btn" id="hd-skip">Skip to summary</button><button class="btn pri" id="hd-next">${i === ind.length - 1 ? "Summary" : "Next"}</button></div>`;
       } else {
         h = head("The vote: summary") + `<h2 class="lbl2">Inducted</h2>${ind.length ? `<div class="hlist">${ind.slice().reverse().map((r) => hofRow(r, { right: hofPct(r.pct), bar: r.pct, gold: true })).join("")}</div>` : '<div class="card dim small">Nobody reached 75% this year.</div>'}
@@ -280,7 +329,7 @@ function hofLeagueWatch(d) {
       foot = `<a class="btn" href="#/hofleague/${enc(lg)}/${d.season}">Skip to results</a><button class="btn pri" id="hl-next">${nxt ? (nxt.main && !it.main ? "The league hall" : "Next") : "The class"}</button>`;
     } else {
       body = `<div class="card" style="text-align:center;padding:22px 14px"><div class="hday-logo">${compEmb(lg, spec, 56)}</div><div class="eyebrow gold">That is the class</div><div style="font-size:18px;font-weight:700;margin:8px 0">${d.nLeague} league and ${d.nClubs} club inductees</div></div>
-        ${items.length ? `<div class="hlist">${items.slice().reverse().map((it) => hofRow(it.e, { right: hofPct(it.e.pct), bar: it.e.pct, gold: true, sub: esc(it.scope) })).join("")}</div>` : ""}
+        ${items.length ? `<div class="hlist">${items.slice().reverse().map((it) => hofRow(Object.assign({}, it.e, { badge: { tier: it.e.tier, scope: it.e.scope } }), { right: hofPct(it.e.pct), bar: it.e.pct, gold: true, sub: esc(it.scope) })).join("")}</div>` : ""}
         ${d.ballot.length ? `<h2 class="lbl2">Still on the league ballot</h2><div class="hlist">${d.ballot.slice(0, 4).map((r) => hofRow(r, { right: hofPct(r.pct), bar: r.pct, tag: r.left <= 1 ? (r.left === 0 ? "last year" : "1 year left") : "", tagc: "red" })).join("")}</div>` : ""}`;
       foot = `<a class="btn" href="#/hof/L/${enc(lg)}">League hall</a><a class="btn pri" href="#/hofleague/${enc(lg)}/${d.season}">Results</a>`;
     }

@@ -20,6 +20,8 @@ for (const [k, v] of Object.entries(h.res)) {
   for (const e of v.off) { if (e.n > cfg.window) fail("on a ballot for " + e.n + " years"); if (e.why === "time" && e.n < cfg.window) fail("timed out early"); }
 }
 if (!nInd) fail("nobody was ever inducted");
+// every hall member keeps a player page (retired players with a card are kept while the card lives)
+{ let miss = 0, n = 0; for (const c of Object.values(h.cards)) { if (c.k !== "p") continue; n++; if (!c.uid || !a.player_by_uid(c.uid)) miss++; } if (miss) fail(miss + " of " + n + " cards have no player page"); }
 // 2. determinism and lazy league days: run each league's day before the rollover in world B, must equal world A
 const b = mk(7); for (let i = 0; i < NS; i++) { while (!b.season_done()) b.step(); for (const ln of b.leagues.keysArr()) H.runLeagueDay(b, ln, b.season); b.rollover(); }
 const same = (x, y) => JSON.stringify(x) === JSON.stringify(y);

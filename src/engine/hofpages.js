@@ -88,6 +88,7 @@ $mods["hofpages"] = (function () {
       if (ln && w.leagues.has(ln)) { const r = h.res["L:" + ln + "|" + Y]; if (r) out.push({ kind: "league", name: ln, inducted: r.ind.map((e) => e.name) }); else out.push({ kind: "league", name: ln, inducted: [] }); }
       else if (nat && w.nations.has(nat)) { const r = h.res["C:" + nat + "|" + Y]; out.push({ kind: "nation", name: nat, inducted: r ? r.ind.map((e) => e.name) : [] }); }
     }
+    for (const nat of (w.fav_nations || [])) if (w.nations.has(nat) && !out.some((o) => o.kind === "nation" && o.name === nat)) { const r = h.res["C:" + nat + "|" + Y]; out.push({ kind: "nation", name: nat, inducted: r ? r.ind.map((e) => e.name) : [] }); }
     return out;
   }
   // ---- a league's Hall of Fame day ---------------------------------------------------------------------------------
@@ -120,11 +121,11 @@ $mods["hofpages"] = (function () {
       if (s.status === "in") members.push({ c, s });
     }
     members.sort((a, b) => b.s.yr - a.s.yr || (a.c.name < b.c.name ? -1 : 1));
-    const classes = []; for (const m of members) { let cl = classes[classes.length - 1]; if (!cl || cl.y !== m.s.yr) { cl = { y: m.s.yr, label: label(w, m.s.yr), rows: [] }; classes.push(cl); } cl.rows.push(row(w, m.c, { yr: m.s.yr, pct: Math.round(m.s.pct * 100) / 100, n: m.s.n, via: m.s.via })); }
+    const classes = []; for (const m of members) { let cl = classes[classes.length - 1]; if (!cl || cl.y !== m.s.yr) { cl = { y: m.s.yr, label: label(w, m.s.yr), rows: [] }; classes.push(cl); } cl.rows.push(row(w, m.c, { yr: m.s.yr, pct: Math.round(m.s.pct * 100) / 100, n: m.s.n, via: m.s.via, badge: { tier, scope: name || null } })); }
     // latest vote's ballot
     let by = null; for (let y = w.season; y > w.season - 4; y--) if (h.res[rk + "|" + y]) { by = y; break; }
     const last = by ? h.res[rk + "|" + by] : null;
-    const ballot = last ? last.bal.slice(0, 20).map((e) => entryRow(w, e, key)) : [];
+    const ballot = last ? last.bal.slice(0, 20).map((e) => Object.assign(entryRow(w, e, key), { badge: { tier, scope: name || null } })) : [];
     const watch = last ? last.bal.filter((e) => e.left <= 2).slice(0, 10).map((e) => entryRow(w, e, key)) : [];
     const snubs = []; if (tier === "W" || tier === "C") {
       if (kind === "p") for (const f of h.fell) if (tier === "W" ? f.W >= H.CFG.W.gate : f.nat === name) snubs.push(Object.assign({ retired: label(w, f.ret) }, f));
@@ -146,12 +147,14 @@ $mods["hofpages"] = (function () {
   function options(w) {
     const nations = new Set(), leagues = w.leagues.keysArr(), clubs = new Set();
     for (const id of Object.keys(st(w).cards)) { const c = st(w).cards[id]; for (const k of Object.keys(c.st)) if (c.st[k].status === "in") { if (k[0] === "C") nations.add(k.slice(2)); else if (k[0] === "K") clubs.add(k.slice(2)); } }
+    for (const n of (w.fav_nations || [])) nations.add(n);
     return { leagues, nations: [...nations].sort(), clubs: [...clubs].sort() };
   }
   // ---- a single person's Hall of Fame page ------------------------------------------------------------------------------
+  const cardByUid = (w, uid) => { const h = st(w); for (const id of Object.keys(h.cards)) if (h.cards[id].k === "p" && h.cards[id].uid === uid) return h.cards[id]; return null; };
   function v_card(w, id) {
     const card = cardOf(w, id); if (!card) throw new Error("unknown card");
-    const ch = chain(w, card), out = { id: card.id, k: card.k, name: card.name, nat: card.nat, pos: card.pos || null, ret: card.ret, retired: label(w, card.ret), chain: ch, badge: badge(card), line: line(w, card), uid: card.uid || null };
+    const ch = chain(w, card), out = { id: card.id, k: card.k, name: card.name, nat: card.nat, pos: card.pos || null, ret: card.ret, retired: label(w, card.ret), chain: ch, badge: badge(card), line: line(w, card), uid: card.uid || null, has_page: !!(card.uid && w.player_by_uid(card.uid)) };
     if (card.k === "p") {
       const d = H.dataOf(card); out.peak = card.peak; out.trn = card.trn; out.home = card.home; out.scores = { W: d.sc.W, C: d.sc.C }; out.nat_rec = d.nat_rec;
       out.clubs = Object.entries(d.sc.K).map(([c, s]) => ({ club: c, score: s })).sort((a, b) => b.score - a.score).slice(0, 4);
@@ -217,5 +220,5 @@ $mods["hofpages"] = (function () {
     return out;
   }
   const extras = (w, p) => ({ academy: p.trn || null, under: underOf(w, p.career) });
-  return { TIERS, TIER_NAME, label, badge, chain, row, entryRow, v_day, v_leagueday, v_hof, v_card, v_coach, chainFor, v_watch, favourites, line, cardOf, underOf, extras };
+  return { TIERS, TIER_NAME, label, badge, chain, row, entryRow, v_day, v_leagueday, v_hof, v_card, v_coach, chainFor, v_watch, favourites, line, cardOf, cardByUid, underOf, extras };
 })();

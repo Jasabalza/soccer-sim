@@ -825,3 +825,6 @@ a + .lbox, .lbox + a { margin-left: 4px; } .lbox { vertical-align: middle; margi
 .hday-logo { display: flex; justify-content: center; margin-bottom: 8px; } .hday-logo .lbox, .hday-logo .emb { flex: none; }
 .hday-n { display: flex; justify-content: center; gap: 28px; margin: 16px 0 12px; } .hday-n b { display: block; font-size: 30px; color: var(--accent2); } .hday-n span { font-size: 12px; color: var(--dim); }
 @media (prefers-reduced-motion: reduce) { .hrv.live .hrv-v { opacity: 1; animation: none; } .hrv.live .hbar i { animation: none; } }
+
+.hexp { display: flex; align-items: center; gap: 6px; margin: 0 2px 10px; flex-wrap: wrap; }
+.hexp button { background: transparent; border: 1px solid var(--line, #2c3b33); color: var(--dim); border-radius: 999px; padding: 5px 11px; font-size: 12px; } .hexp button.on { background: var(--accent2, #f5c542); color: #121a15; border-color: transparent; font-weight: 700; }
