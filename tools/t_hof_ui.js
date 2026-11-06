@@ -25,7 +25,7 @@ const URL='http://localhost:8791/test_artifact.html';
  // a person's page
  await go('#/hof/W',1200); await p.evaluate(()=>{HOF.tab='ind';route();}); await p.waitForTimeout(900);
  const href=await p.$eval('#view .hcls a',a=>a.getAttribute('href')); await go(href,900); await ox('card'); await shot('card');
- { const n=(await p.$$('#view .hch')).length; ok(n===4,'four halls on the card, got '+n+' at '+await p.evaluate(()=>location.hash)+' href '+href); }
+ { const n=(await p.$$('#view .hch')).length; ok(n>=4,'the four halls (one row per hall he is in or up for) on the card, got '+n+' at '+await p.evaluate(()=>location.hash)+' href '+href); }
  // world day
  await go('#/hofday/'+S+'/watch'); await ox('day watch'); await shot('day_watch');
  for(let i=0;i<12;i++){ const nx=await p.$('#hd-next'); if(!nx) break; await nx.click(); await p.waitForTimeout(250); if(i===2) await shot('day_vote'); }

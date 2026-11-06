@@ -326,7 +326,7 @@ function wireSaves(inGame) {
 
 // ---------------------------------------------------------------- favorites
 // A favorite is a key: "L:<league>" or "<kind>:<confed>" (cup, ct, nl, qual). The list is kept inside the world, so it travels with every save.
-const APP_VERSION = "v16.1.3", APP_TAG = "Show Your Worth";
+const APP_VERSION = "v16.1.4", APP_TAG = "Show Your Worth";
 let FAVS = null, PICK_ASKED = false;                    // FAVS: null until the player has chosen, then an array of keys
 const CT_NAMES = { UEFA: "European Championship", CONMEBOL: "Copa America", CONCACAF: "Gold Cup", CAF: "Africa Cup of Nations", AFC: "Asian Cup", OFC: "OFC Nations Cup" };
 const NL_NAMES = { UEFA: "UEFA Nations League", CONMEBOL: "CONMEBOL Nations League", CONCACAF: "CONCACAF Nations League", CAF: "CAF Nations League", AFC: "AFC Nations League", OFC: "OFC Nations League" };
@@ -1770,6 +1770,7 @@ async function routeInner(r, a, b) {
     if (r === "hofcard") return await viewHofCard(a);
     if (r === "coach") return await viewCoach(a);
     if (r === "hofday") return await viewHofDay(a ? +a : null, b);
+    if (r === "hofnation") { const q = location.hash.replace(/^#\/?/, "").split("/").map(decodeURIComponent); return await viewHofNation(a, b ? +b : null, q[3]); }
     if (r === "hofleague") { const q = location.hash.replace(/^#\/?/, "").split("/").map(decodeURIComponent); return await viewHofLeague(a, b ? +b : null, q[3], q[4]); }
     if (r === "trophies") return a === "winners" ? await viewTrophies(b, "winners") : await viewTrophies(null, a || "winners");
     if (r === "money") return await viewMoney();

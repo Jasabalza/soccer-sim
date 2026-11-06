@@ -1997,7 +1997,9 @@ $mods.shim = (function () {
       else if (nd.t === "p" || nd.t === "o") {
         const f = nd.f; for (const k in f) f[k] = rs(f[k]);
         nd.f = keyed(f);
-        const ks = Object.keys(nd.f); if (nd.t === "p" && ks.length > 20 && ks.every((k) => /^[^|]+\|[^|]+$/.test(k))) pairs.push(i);   // rivalry records
+        // rivalry records only: a plain object of "A|B" keys whose values are records with club sides a and b. (This used to match any dict of 21+ "x|y" keys, which re-sorted the Hall of Fame results and "ran" keys on every load.)
+        const isRec = (v) => { const r = typeof v === "string" && v.charCodeAt(0) === 1 ? nodes[+v.slice(1)] : null; return !!(r && r.f && typeof r.f.a === "string" && typeof r.f.b === "string"); };
+        const ks = Object.keys(nd.f); if (nd.t === "p" && ks.length > 20 && ks.every((k) => /^[^|]+\|[^|]+$/.test(k)) && ks.slice(0, 6).every((k) => isRec(nd.f[k]))) pairs.push(i);
       }
     }
     for (const i of pairs) {                      // put each record back under its alphabetical key; a flipped pair swaps sides
@@ -6259,7 +6261,7 @@ class World {
       if (!$in("acad", c)) self._init_v15(c, n, L);
     }
     for (const nm of self.nations.keysArr()) $mods.fed.init($idx(self.nations, nm));
-    $mods.hof.ensure(self); $mods.hof.foundOnce(self);
+    $mods.hof.ensure(self); $mods.hof.fixKeys(self); $mods.hof.foundOnce(self);
     $mods.hof.acadInit(self, (c, g, nat, age) => self._mk_mgr(c, g, nat, age));
     return true;
   }
@@ -7735,7 +7737,12 @@ $mods["hof"] = (function () {
         if (kk !== "p") continue;
         const key = cKey(card.nat), cs = card.st[key];
         if (cs && cs.status === "in") continue;
-        if (natRecordPoor(card)) { card.vetoed = { yr: Y, text: vetoText(card) }; vetoes.push({ id: card.id, name: card.name, nat: card.nat, text: card.vetoed.text }); continue; }
+        if (natRecordPoor(card)) {
+          card.vetoed = { yr: Y, text: vetoText(card) }; vetoes.push({ id: card.id, name: card.name, nat: card.nat, text: card.vetoed.text });
+          // the federation does not honour him, by the world's vote or by its own: he leaves the country ballot too (a veto never sits next to an induction)
+          if (cs && cs.status !== "in") { cs.status = "off"; if (H.bal[key]) { H.bal[key] = H.bal[key].filter((x) => x !== card.id); if (!H.bal[key].length) delete H.bal[key]; } }
+          continue;
+        }
         if (!cs) { card.st[key] = { first: Y, n: 0, low: 0, status: "in", pct: 1, yr: Y, via: "world" }; acadCredit(H, card, key); } else setIn(H, card, key, Y, "world");
       }
     }
@@ -7856,7 +7863,29 @@ $mods["hof"] = (function () {
     return rows;
   }
   // ---- the rollover hook and migration -----------------------------------------------------------------------------------------
-  function rollover(w, Y) { ensure(w); foundOnce(w); return runYearDay(w, Y); }
+  // saves from v16.1.2 and before could show "did not honour" on someone the country hall had inducted on its own vote: the induction stands, the veto note goes
+  function clearStaleVetoes(H) {
+    for (const c of Object.values(H.cards)) if (c.vetoed && c.k === "p" && c.st[cKey(c.nat)] && c.st[cKey(c.nat)].status === "in") {
+      const id = c.id; c.vetoed = null;
+      for (const k of Object.keys(H.res)) if (k.startsWith("VETO|")) { H.res[k] = H.res[k].filter((x) => x.id !== id); if (!H.res[k].length) delete H.res[k]; }
+    }
+  }
+  // Saves loaded by v16.1.2 and earlier had their "KEY|YEAR" result and "ran" keys flipped to "YEAR|KEY" (a loader bug), which hid old Hall of Fame days and ballots and let finished days run again. Put them back.
+  function fixKeys(w) {
+    const H = ensure(w); let n = 0;
+    for (const part of ["res", "ran"]) {
+      const d = H[part]; if (!d) continue;
+      for (const k of Object.keys(d)) {
+        const m = /^(\d+)\|(.+)$/.exec(k); if (!m) continue;
+        const to = m[2] + "|" + m[1], cur = d[to], bad = d[k]; delete d[k]; n++;
+        if (part === "ran") { d[to] = true; continue; }
+        const score = (r) => r ? (r.ind ? r.ind.length : (Array.isArray(r) ? r.length : 0)) * 1000 + (r.bal ? r.bal.length : 0) : -1;
+        d[to] = score(cur) > score(bad) ? cur : bad;      // keep whichever holds the real result (a re-run of a finished day writes an empty one)
+      }
+    }
+    return n;
+  }
+  function rollover(w, Y) { const H = ensure(w); fixKeys(w); clearStaleVetoes(H); foundOnce(w); return runYearDay(w, Y); }
   // a save from before v16 has no cards: the retired stars and retired coaches become a founding class, voted on from now
   function foundOnce(w) {
     const H = ensure(w);
@@ -7875,7 +7904,7 @@ $mods["hof"] = (function () {
   }
   // a fresh World starts founded: nothing to found
   function init(w) { const H = ensure(w); H.founded = true; return H; }
-  return { CFG, HP, ensure, init, pscores, cscores, makePlayerCard, makeCoachCard, onRetire, onCoachRetire, coachHired, coachLeft, natCoachSet, closeStint, openStint,
+  return { CFG, HP, ensure, init, pscores, cscores, makePlayerCard, makeCoachCard, fixKeys, onRetire, onCoachRetire, coachHired, coachLeft, natCoachSet, closeStint, openStint,
     acadTick, acadInit, acadView, acadRanking, mgrPromoted, mgrGrade, mgrOdds, drawGrade, stretch, isChaser, borderline, runScope, dataOf, cKey, runLeagueDay, runYearDay, rollover, foundOnce, prune, scoreOf, pctFor, rnd, nrm, leagueOf, stintsOf, stintNums, rkey, scopeName, scopeKind, quality, natRecordPoor };
 })();
 
@@ -8034,14 +8063,16 @@ $mods["hofpages"] = (function () {
   // ---- the chain: where a person stands in each of the four halls ----------------------------------------------
   const STATUS_RANK = { in: 0, ballot: 1, off: 2 };
   function chain(w, card) {
-    const out = { W: null, C: null, L: null, K: null, all: [], veto: card.vetoed || null };
+    const out = { W: null, C: null, L: null, K: null, all: [], by: { W: [], C: [], L: [], K: [] }, veto: (card.vetoed && !(card.st["C:" + card.nat] && card.st["C:" + card.nat].status === "in")) ? card.vetoed : null };
     for (const [key, s] of Object.entries(card.st)) {
       const t = tierOf(key), scope = nameOf(key);
       const item = { tier: t, scope, status: s.status, yr: s.yr, label: s.yr ? label(w, s.yr) : null, n: s.n, pct: s.pct, first: s.first, left: Math.max(0, H.CFG.window - s.n), via: s.via };
       if (s.status === "in") out.all.push(item);
+      out.by[t].push(item);                                       // every hall he is in or up for: a player can be in several league and club halls
       const cur = out[t];
       if (!cur || STATUS_RANK[s.status] < STATUS_RANK[cur.status] || (STATUS_RANK[s.status] === STATUS_RANK[cur.status] && (s.yr || 0) > (cur.yr || 0) && s.status === "in" && false)) out[t] = item;
     }
+    for (const t of Object.keys(out.by)) out.by[t].sort((a, b) => STATUS_RANK[a.status] - STATUS_RANK[b.status] || (b.yr || 0) - (a.yr || 0) || (a.scope < b.scope ? -1 : 1));
     out.all.sort((a, b) => TIERS.indexOf(a.tier) - TIERS.indexOf(b.tier) || a.yr - b.yr);
     return out;
   }
@@ -8062,15 +8093,30 @@ $mods["hofpages"] = (function () {
       favs: fav, cfg: { window: H.CFG.window, pass: H.CFG.pass, floor: H.CFG.floor, wait: H.CFG.wait } };
   }
   // what the followed leagues and nations did this year
+  // everyone who entered a country's hall in year Y: by its own vote or honoured with a world inductee
+  const natNames = (w, nat, Y) => { const names = []; for (const c of Object.values(st(w).cards)) { const s = c.st["C:" + nat]; if (c.k === "p" && s && s.status === "in" && s.yr === Y) names.push(c.name); } return names.sort(); };
   function favourites(w, Y) {
     const h = st(w), out = [];
     for (const f of (w.favs || [])) {
       const ln = f.startsWith("L:") ? f.slice(2) : null, nat = f.startsWith("nation:") ? f.slice(7) : null;
       if (ln && w.leagues.has(ln)) { const r = h.res["L:" + ln + "|" + Y]; if (r) out.push({ kind: "league", name: ln, inducted: r.ind.map((e) => e.name) }); else out.push({ kind: "league", name: ln, inducted: [] }); }
-      else if (nat && w.nations.has(nat)) { const r = h.res["C:" + nat + "|" + Y]; out.push({ kind: "nation", name: nat, inducted: r ? r.ind.map((e) => e.name) : [] }); }
+      else if (nat && w.nations.has(nat)) out.push({ kind: "nation", name: nat, inducted: natNames(w, nat, Y) });
     }
-    for (const nat of (w.fav_nations || [])) if (w.nations.has(nat) && !out.some((o) => o.kind === "nation" && o.name === nat)) { const r = h.res["C:" + nat + "|" + Y]; out.push({ kind: "nation", name: nat, inducted: r ? r.ind.map((e) => e.name) : [] }); }
+    for (const nat of (w.fav_nations || [])) if (w.nations.has(nat) && !out.some((o) => o.kind === "nation" && o.name === nat)) out.push({ kind: "nation", name: nat, inducted: natNames(w, nat, Y) });
     return out;
+  }
+  // ---- a country's Hall of Fame day: its own vote, plus the federation honouring this year's world inductees ------------------------------
+  function v_nationday(w, nat, Y) {
+    if (!w.nations.has(nat)) throw new Error("unknown nation");
+    Y = Y || w.season;
+    const h = st(w), res = (key) => h.res[key + "|" + Y] || { ind: [], bal: [], off: [] };
+    const own = res("C:" + nat), ownc = res("cC:" + nat), wp = res("W"), ownIds = new Set(own.ind.map((e) => e.id));
+    const withWorld = wp.ind.filter((e) => e.nat === nat && !ownIds.has(e.id)).filter((e) => { const c = cardOf(w, e.id), s = c && c.st["C:" + nat]; return s && s.status === "in" && s.yr === Y; })
+      .map((e) => entryRow(w, Object.assign({}, e, { via: "world", tier: "C", scope: nat }), "C:" + nat));
+    const inducted = withWorld.concat(own.ind.map((e) => entryRow(w, Object.assign({}, e, { tier: "C", scope: nat }), "C:" + nat)), ownc.ind.map((e) => entryRow(w, Object.assign({}, e, { tier: "C", scope: nat }), "cC:" + nat)));
+    const vetoes = (h.res["VETO|" + Y] || []).filter((v) => v.nat === nat);
+    return { nation: nat, season: Y, label: label(w, Y), ready: !!h.ran["YD|" + Y] || Y < w.season, inducted, nWorld: withWorld.length, nOwn: own.ind.length + ownc.ind.length,
+      ballot: own.bal.slice(0, 8).map((e) => entryRow(w, e, "C:" + nat)), vetoes, total: Object.values(h.cards).filter((c) => c.k === "p" && c.st["C:" + nat] && c.st["C:" + nat].status === "in").length };
   }
   // ---- a league's Hall of Fame day ---------------------------------------------------------------------------------
   function leagueDone(w, ln) { const lc = w.comps.get(("L:" + ln)); return !!lc && !w.missing(lc).length; }
@@ -8201,7 +8247,7 @@ $mods["hofpages"] = (function () {
     return out;
   }
   const extras = (w, p) => ({ academy: p.trn || null, under: underOf(w, p.career) });
-  return { TIERS, TIER_NAME, label, badge, chain, row, entryRow, v_day, v_leagueday, v_hof, v_card, v_coach, chainFor, v_watch, favourites, line, cardOf, cardByUid, underOf, extras };
+  return { TIERS, TIER_NAME, label, badge, chain, row, entryRow, v_day, v_leagueday, v_hof, v_card, v_coach, chainFor, v_nationday, v_watch, favourites, line, cardOf, cardByUid, underOf, extras };
 })();
 
 // v16 Off-season moves pages: reads over w.mv (the move log) and, for seasons from before the log, over w.transfers.
@@ -9542,6 +9588,7 @@ POST = $lit_dict([["/api/favs", a_favs], ["/api/favnations", a_favnations],
   const HP = $mods.hofpages, hq = (q, k, d) => { const v = $M.get(q, k); return v === null || v === undefined || v === "" ? d : v; };
   const bad = (m, c = 404) => { throw $new(ApiError, [m, c]); };
   GET.set("/api/hofday", (q) => { const w = need_world(); return $dict($kw(HP.v_day(w, $T($M.get(q, "season")) ? $int($idx(q, "season")) : w.season))); });
+  GET.set("/api/hofnation", (q) => { const w = need_world(); if (!w.nations.has($idx(q, "nation"))) bad("unknown nation"); return $dict($kw(HP.v_nationday(w, $idx(q, "nation"), $T($M.get(q, "season")) ? $int($idx(q, "season")) : w.season))); });
   GET.set("/api/hofleague", (q) => { const w = need_world(); if (!w.leagues.has($idx(q, "league"))) bad("unknown league"); return $dict($kw(HP.v_leagueday(w, $idx(q, "league"), $T($M.get(q, "season")) ? $int($idx(q, "season")) : null))); });
   GET.set("/api/hof", (q) => { const w = need_world(); return $dict($kw(HP.v_hof(w, { tier: hq(q, "tier", "W"), name: hq(q, "name", null), kind: hq(q, "kind", "p") }))); });
   GET.set("/api/coach", (q) => { const w = need_world(); w.ensure_uids(); const v = HP.v_coach(w, $int($idx(q, "id"))); if (!v) bad("unknown coach"); return $dict($kw(v)); });
@@ -10399,6 +10446,14 @@ async function worldHallsCard(sel) {
 }
 
 // ---------------------------------------------------------------- one person's Hall of Fame page
+// the four halls as rows: every hall he is in or up for (a player can be in several league and club halls), the tier's own row when none
+function hofChainRows(ch, size) {
+  return ["W", "C", "L", "K"].map((t) => {
+    const items = (ch.by && ch.by[t] && ch.by[t].length) ? ch.by[t] : (ch[t] ? [ch[t]] : []);
+    if (!items.length) return `<div class="hch">${hofBadge({ tier: t, scope: null }, size)}<div class="hch-m"><b>${HOF_LBL[t]}</b><span class="small">${HOF_ST(null)}</span></div></div>`;
+    return items.map((it) => `<div class="hch ${it.status === "in" ? "in" : ""}">${hofBadge({ tier: t, scope: it.scope }, size)}<div class="hch-m"><b>${HOF_LBL[t]}</b><span class="small">${HOF_ST(it)}${it.scope ? ` <span class="dim small">${esc(it.scope)}</span>` : ""}</span></div></div>`).join("");
+  }).join("");
+}
 const HOF_ST = (it, c) => {
   if (!it) return `<span class="dim">Not nominated</span>`;
   if (it.status === "in") return `<b class="gold">Inducted ${esc(it.label)}</b>${it.via === "world" ? ` <span class="dim small">with the world</span>` : ""}`;
@@ -10428,11 +10483,7 @@ async function viewCoach(id) {
 }
 async function viewHofCard(id) {
   const c = await api("/api/hofcard?id=" + enc(id)), ch = c.chain;
-  const rows = ["W", "C", "L", "K"].map((t) => {
-    const it = ch[t], tierBadge = hofBadge(it && it.status === "in" ? { tier: t, scope: it.scope } : { tier: t, scope: null }, 24);
-    return `<div class="hch ${it && it.status === "in" ? "in" : ""}">${tierBadge}<div class="hch-m"><b>${HOF_LBL[t]}</b><span class="small">${HOF_ST(it, c)}${it && it.scope ? ` <span class="dim small">${esc(it.scope)}</span>` : ""}</span></div></div>`;
-  }).join("");
-  const more = ch.all.filter((x) => (x.tier === "L" || x.tier === "K") && !(ch[x.tier] && ch[x.tier].scope === x.scope));
+  const rows = hofChainRows(ch, 24);
   const veto = ch.veto ? `<div class="hveto">${esc(ch.veto.text)}</div>` : "";
   let tail = "";
   if (c.k === "p") {
@@ -10451,16 +10502,13 @@ async function viewHofCard(id) {
   $("#view").innerHTML = `<div class="v2"><a class="crumb" href="#/hof">&lsaquo; Hall of Fame</a>
     <div class="hd"><div><h1>${flag(c.nat, 26)} ${esc(c.name)}</h1><div class="sub">${c.k === "c" ? "Coach" : esc(c.pos || "")} &middot; ${natLink(c.nat)} &middot; retired ${esc(c.retired)}</div></div>${hofBadge(c.badge, 38)}</div>
     <div class="dim small" style="margin-bottom:8px">${esc(c.line)}</div>
-    <div class="card"><h3>The four halls</h3><div class="hchain">${rows}</div>${more.length ? `<div class="dim small" style="margin-top:8px">Also: ${more.map((x) => `${esc(x.scope)} (${esc(x.label)})`).join(", ")}</div>` : ""}${veto}</div>${tail}
+    <div class="card"><h3>The four halls</h3><div class="hchain">${rows}</div>${veto}</div>${tail}
     ${c.uid && c.has_page ? `<a class="more" href="#/player/${c.uid}"><span>Full player page</span><span>&rsaquo;</span></a>` : ""}</div>`;
 }
 // the block on a player's page
 function hofPlayerBlock(h) {
   if (!h) return "";
-  const ch = h.chain, rows = ["W", "C", "L", "K"].map((t) => {
-    const it = ch[t];
-    return `<div class="hch ${it && it.status === "in" ? "in" : ""}">${hofBadge(it && it.status === "in" ? { tier: t, scope: it.scope } : { tier: t, scope: null }, 22)}<div class="hch-m"><b>${HOF_LBL[t]}</b><span class="small">${HOF_ST(it)}</span></div></div>`;
-  }).join("");
+  const ch = h.chain, rows = hofChainRows(ch, 22);
   return `<div class="card"><h3>Hall of Fame <small><a href="#/hofcard/${esc(h.id)}">full page</a></small></h3><div class="hchain">${rows}</div>${ch.veto ? `<div class="hveto">${esc(ch.veto.text)}</div>` : ""}</div>`;
 }
 
@@ -10469,9 +10517,9 @@ function hofReveal(e, scopeText, idx, n, icon) {
   const an = !(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches), pc = Math.round(e.pct * 100);
   return `<div class="hrv${an ? " live" : ""}"><div class="hrv-sc">${icon || ""}<div class="dim small">${esc(scopeText)}${n ? ` &middot; ${idx + 1} of ${n}` : ""}</div></div>
     <div class="hrv-n">${flag(e.nat, 34)}<div><div class="hrv-name">${esc(e.name)}</div><div class="dim small">${hofSub(Object.assign({}, e, { n: 0 }))}</div></div></div>
-    <div class="hrv-p"><span class="dim small">${e.n === 1 ? "First ballot" : "Year " + e.n + " on the ballot"}</span><b class="hrv-pct" data-p="${pc}">${hofPct(e.pct)}</b></div>
+    <div class="hrv-p"><span class="dim small">${e.via === "world" ? "With his World induction" : e.n === 1 ? "First ballot" : "Year " + e.n + " on the ballot"}</span><b class="hrv-pct" data-p="${pc}">${hofPct(e.pct)}</b></div>
     <div class="hbar big"><i class="g" style="width:${pc}%"></i><u style="left:75%"></u></div>
-    <div class="dim small hrv-need">75% of the votes are needed</div>
+    <div class="dim small hrv-need">${e.via === "world" ? "The federation honours the world's inductees (World vote shown)" : "75% of the votes are needed"}</div>
     <div class="dim small">${esc(e.line || "")}</div>
     <div class="hrv-v"><span class="tag gold">Inducted</span> ${hofBadge(e.tier ? { tier: e.tier, scope: e.scope || null } : (e.badge || { tier: "W" }), 26)}</div></div>`;
 }
@@ -10496,7 +10544,7 @@ async function viewHofDay(season, sub) {
     ${d.vetoes.length ? d.vetoes.map((v) => `<div class="hveto"><b>${esc(v.nat)} did not honour ${esc(v.name)}.</b> ${esc(v.text.replace(/^.*?Federation veto: /, "Federation veto: "))}</div>`).join("") : ""}
     ${d.missed.length ? `<h2 class="lbl2">Missed out</h2>${list(d.missed, (r) => ({ right: hofPct(r.pct), bar: r.pct, tag: r.left === 0 ? "last year" : r.left === 1 ? "1 year left" : "", tagc: "red" }))}` : ""}
     ${d.fell.length ? `<h2 class="lbl2">Fell off the ballot</h2>${list(d.fell, (r) => ({ right: r.why === "time" ? "ten years" : "no support" }))}` : ""}
-    ${d.favs.length ? `<h2 class="lbl2">Your favourites</h2><div class="hlist">${d.favs.map((f) => `<div class="hr"><div class="hr-a"><div class="hr-m"><b>${f.kind === "league" ? leagueLink(f.name) : natLink(f.name)}</b><span class="dim small">${f.inducted.length ? "inducted " + f.inducted.map(esc).join(", ") : "no inductees this year"}</span></div></div></div>`).join("")}</div>` : ""}
+    ${d.favs.length ? `<h2 class="lbl2">Your favourites</h2><div class="hlist">${d.favs.map((f) => `<div class="hr"><div class="hr-a"><div class="hr-m"><b>${f.kind === "league" ? leagueLink(f.name) : natLink(f.name)}</b><span class="dim small">${f.inducted.length ? "inducted " + f.inducted.map(esc).join(", ") : "no inductees this year"}</span></div></div><a class="btn sm" href="#/${f.kind === "league" ? "hofleague" : "hofnation"}/${enc(f.name)}/${S}/watch">Ceremony</a></div>`).join("")}</div>` : ""}
     <a class="more" href="#/hof"><span>Open the Hall of Fame</span><span>&rsaquo;</span></a></div>`;
 }
 function hofDayWatch(d) {
@@ -10523,7 +10571,7 @@ function hofDayWatch(d) {
         h = head("The vote: summary") + `<h2 class="lbl2">Inducted</h2>${ind.length ? `<div class="hlist">${ind.slice().reverse().map((r) => hofRow(r, { right: hofPct(r.pct), bar: r.pct, gold: true })).join("")}</div>` : '<div class="card dim small">Nobody reached 75% this year.</div>'}
           ${d.vetoes.map((v) => `<div class="hveto"><b>${esc(v.nat)} did not honour ${esc(v.name)}.</b> ${esc(v.text.replace(/^.*?Federation veto: /, "Federation veto: "))}</div>`).join("")}
           ${d.missed.length ? `<h2 class="lbl2">Missed out</h2><div class="hlist">${d.missed.slice(0, 4).map((r) => hofRow(r, { right: hofPct(r.pct), tag: r.left === 0 ? "last year" : r.left === 1 ? "1 year left" : "", tagc: "red" })).join("")}</div>` : ""}
-          ${d.favs.length ? `<h2 class="lbl2">Your favourites</h2><div class="hlist">${d.favs.map((f) => `<div class="hr"><div class="hr-a"><div class="hr-m"><b>${esc(f.name)}</b><span class="dim small">${f.inducted.length ? "inducted " + f.inducted.map(esc).join(", ") : "no inductees"}</span></div></div></div>`).join("")}</div>` : ""}
+          ${d.favs.length ? `<h2 class="lbl2">Your favourites</h2><div class="hlist">${d.favs.map((f) => `<div class="hr"><div class="hr-a"><div class="hr-m"><b>${esc(f.name)}</b><span class="dim small">${f.inducted.length ? "inducted " + f.inducted.map(esc).join(", ") : "no inductees"}</span></div></div><a class="btn sm" href="#/${f.kind === "league" ? "hofleague" : "hofnation"}/${enc(f.name)}/${d.season}/watch">Ceremony</a></div>`).join("")}</div>` : ""}
           <div class="foot"><button class="btn" id="hd-back">Back</button><button class="btn pri" id="hd-next">Who fell off</button></div>`;
       }
     } else {
@@ -10566,39 +10614,57 @@ async function viewHofLeague(league, season, sub, club) {
     <a class="more" href="#/hof/L/${enc(league)}"><span>Full ${esc(league)} Hall of Fame</span><span>&rsaquo;</span></a></div>`;
   document.querySelectorAll("[data-ltab]").forEach((b) => (b.onclick = () => { HLG.tab = b.dataset.ltab; route(); }));
 }
-// the ceremony of a league's Hall of Fame day: opening, the club halls one by one (the vote counts up, then the verdict), the league hall last, the class
-function hofLeagueWatch(d) {
-  const lg = d.league, spec = { kind: "league_cup", color: `hsl(${hueOf(lg)} 62% 58%)` };
-  const items = [];
-  for (const c of d.clubs) for (const e of c.inducted) items.push({ e: Object.assign({}, e, { tier: "K", scope: c.club }), scope: c.club + " Hall of Fame" + (e.k === "c" ? " · coach" : ""), icon: crest(c.club, 30) });
-  const lh = d.league_ind.slice().sort((a, b) => a.pct - b.pct);
-  for (const e of lh) items.push({ e: Object.assign({}, e, { tier: "L", scope: lg }), scope: lg + " Hall of Fame" + (e.k === "c" ? " · coach" : ""), icon: compEmb(lg, spec, 30), main: true });
-  let i = -1;
-  const back = `<a class="crumb" href="#/hofleague/${enc(lg)}/${d.season}">&lsaquo; Results</a>`;
+// One Hall of Fame day as a ceremony: opening, each inductee in turn (the vote counts up, then the verdict), the class and what is left.
+// cfg: { title, sub, logo(size), items: [{ e, scope, icon, phase }], counts: [[n, label]...], blurb, back, results, hall, tail (html for the class page), start }
+function hofCeremony(cfg) {
+  const items = cfg.items;
+  let i = cfg.start === "class" ? items.length : -1;
   const draw = () => {
     const last = i >= items.length;
     let body, foot;
     if (i < 0) {
-      body = `<div class="hday-open"><div class="hday-logo">${compEmb(lg, spec, 84)}</div><div class="eyebrow gold">Hall of Fame day</div><h1 style="margin:6px 0">${esc(lg)}</h1><div class="dim">${esc(d.label)}</div>
-        <div class="hday-n"><div><b>${d.nClubs}</b><span>club inductees</span></div><div><b>${d.nLeague}</b><span>league inductees</span></div></div>
-        <div class="dim small">${items.length ? "The clubs vote first, then the league. Each name needs 75% of the votes." : "Nobody reached 75% this year."}</div></div>`;
-      foot = items.length ? `<a class="btn" href="#/hofleague/${enc(lg)}/${d.season}">Skip to results</a><button class="btn pri" id="hl-next">Begin</button>` : `<a class="btn" href="#/hof/L/${enc(lg)}">League hall</a><a class="btn pri" href="#/hofleague/${enc(lg)}/${d.season}">Results</a>`;
+      body = `<div class="hday-open"><div class="hday-logo">${cfg.logo(84)}</div><div class="eyebrow gold">Hall of Fame day</div><h1 style="margin:6px 0">${esc(cfg.title)}</h1><div class="dim">${esc(cfg.sub)}</div>
+        <div class="hday-n">${cfg.counts.map(([n, t]) => `<div><b>${n}</b><span>${esc(t)}</span></div>`).join("")}</div>
+        <div class="dim small">${items.length ? esc(cfg.blurb) : "Nobody was inducted this year."}</div></div>`;
+      foot = items.length ? `<a class="btn" href="${cfg.results}">Skip to results</a><button class="btn pri" id="hc-next">Begin</button>` : `<a class="btn" href="${cfg.hall}">${esc(cfg.hallLabel)}</a><a class="btn pri" href="${cfg.results}">Results</a>`;
     } else if (!last) {
-      const it = items[i], nxt = items[i + 1], phase = it.main ? "The league hall" : "The club halls";
-      body = `<div class="dim small" style="margin:8px 2px">${phase}${it.main && i === items.length - 1 ? " · the final name" : ""}</div>${hofReveal(it.e, it.scope, i, items.length, it.icon)}`;
-      foot = `<a class="btn" href="#/hofleague/${enc(lg)}/${d.season}">Skip to results</a><button class="btn pri" id="hl-next">${nxt ? (nxt.main && !it.main ? "The league hall" : "Next") : "The class"}</button>`;
+      const it = items[i], nxt = items[i + 1];
+      body = `<div class="dim small" style="margin:8px 2px">${esc(it.phase || "")}${i === items.length - 1 && items.length > 1 ? " &middot; the final name" : ""}</div>${hofReveal(it.e, it.scope, i, items.length, it.icon)}`;
+      foot = `<a class="btn" href="${cfg.results}">Skip to results</a><button class="btn pri" id="hc-next">${nxt ? (nxt.phase !== it.phase && nxt.phase ? esc(nxt.phase) : "Next") : "The class"}</button>`;
     } else {
-      body = `<div class="card" style="text-align:center;padding:22px 14px"><div class="hday-logo">${compEmb(lg, spec, 56)}</div><div class="eyebrow gold">That is the class</div><div style="font-size:18px;font-weight:700;margin:8px 0">${d.nLeague} league and ${d.nClubs} club inductees</div></div>
-        ${items.length ? `<div class="hlist">${items.slice().reverse().map((it) => hofRow(Object.assign({}, it.e, { badge: { tier: it.e.tier, scope: it.e.scope } }), { right: hofPct(it.e.pct), bar: it.e.pct, gold: true, sub: esc(it.scope) })).join("")}</div>` : ""}
-        ${d.ballot.length ? `<h2 class="lbl2">Still on the league ballot</h2><div class="hlist">${d.ballot.slice(0, 4).map((r) => hofRow(r, { right: hofPct(r.pct), bar: r.pct, tag: r.left <= 1 ? (r.left === 0 ? "last year" : "1 year left") : "", tagc: "red" })).join("")}</div>` : ""}`;
-      foot = `<a class="btn" href="#/hof/L/${enc(lg)}">League hall</a><a class="btn pri" href="#/hofleague/${enc(lg)}/${d.season}">Results</a>`;
+      body = `<div class="card" style="text-align:center;padding:22px 14px"><div class="hday-logo">${cfg.logo(56)}</div><div class="eyebrow gold">${items.length ? "That is the class" : "No class this year"}</div><div style="font-size:18px;font-weight:700;margin:8px 0">${esc(cfg.counts.map(([n, t]) => n + " " + t).join(" and "))}</div></div>
+        ${items.length ? `<div class="hlist">${items.slice().reverse().map((it) => hofRow(Object.assign({}, it.e, { badge: { tier: it.e.tier, scope: it.e.scope } }), { right: it.e.via === "world" ? "with the world" : hofPct(it.e.pct), bar: it.e.via === "world" ? 0 : it.e.pct, gold: true, sub: esc(it.scope) })).join("")}</div>` : ""}
+        ${cfg.tail || ""}`;
+      foot = `<a class="btn" href="${cfg.hall}">${esc(cfg.hallLabel)}</a><a class="btn pri" href="${cfg.end[1]}">${esc(cfg.end[0])}</a>`;
     }
-    $("#view").innerHTML = `<div class="v2 hday">${back}<div class="hd"><div><div class="dim small">${esc(lg)} &middot; ${esc(d.label)}</div><h1>Hall of Fame day</h1></div></div>${body}<div class="foot">${foot}</div></div>`;
+    $("#view").innerHTML = `<div class="v2 hday"><a class="crumb" href="${cfg.back}">${esc(cfg.backLabel)}</a><div class="hd"><div><div class="dim small">${esc(cfg.title)} &middot; ${esc(cfg.sub)}</div><h1>Hall of Fame day</h1></div></div>${body}<div class="foot">${foot}</div></div>`;
     hofCount();
-    const nx = $("#hl-next"); if (nx) nx.onclick = () => { i++; draw(); window.scrollTo(0, 0); };
+    const nx = $("#hc-next"); if (nx) nx.onclick = () => { i++; draw(); window.scrollTo(0, 0); };
   };
   draw();
 }
+function hofLeagueWatch(d) {
+  const lg = d.league, spec = { kind: "league_cup", color: `hsl(${hueOf(lg)} 62% 58%)` }, items = [];
+  for (const c of d.clubs) for (const e of c.inducted) items.push({ e: Object.assign({}, e, { tier: "K", scope: c.club }), scope: c.club + " Hall of Fame" + (e.k === "c" ? " · coach" : ""), icon: crest(c.club, 30), phase: "The club halls" });
+  for (const e of d.league_ind.slice().sort((a, b) => a.pct - b.pct)) items.push({ e: Object.assign({}, e, { tier: "L", scope: lg }), scope: lg + " Hall of Fame" + (e.k === "c" ? " · coach" : ""), icon: compEmb(lg, spec, 30), phase: "The league hall" });
+  const res = `#/hofleague/${enc(lg)}/${d.season}`;
+  hofCeremony({ title: lg, sub: d.label, logo: (n) => compEmb(lg, spec, n), items, counts: [[d.nClubs, "club inductees"], [d.nLeague, "league inductees"]], blurb: "The clubs vote first, then the league. Each name needs 75% of the votes.",
+    back: res, backLabel: "‹ Results", results: res, end: ["Results", res], hall: `#/hof/L/${enc(lg)}`, hallLabel: "League hall",
+    tail: d.ballot.length ? `<h2 class="lbl2">Still on the league ballot</h2><div class="hlist">${d.ballot.slice(0, 4).map((r) => hofRow(r, { right: hofPct(r.pct), bar: r.pct, tag: r.left <= 1 ? (r.left === 0 ? "last year" : "1 year left") : "", tagc: "red" })).join("")}</div>` : "" });
+}
+// a country's day: the federation honours this year's world inductees, then its own vote
+async function viewHofNation(nat, season, sub) {
+  const d = await api("/api/hofnation?nation=" + enc(nat) + "&season=" + (season || STATUS.header.season));
+  const items = [], res = `#/hofnation/${enc(nat)}/${d.season}`;
+  for (const e of d.inducted.filter((x) => x.via === "world").sort((a, b) => a.pct - b.pct)) items.push({ e, scope: nat + " Hall of Fame · with the world", icon: natBadge(nat, 30), phase: "Honoured with the World class" });
+  for (const e of d.inducted.filter((x) => x.via !== "world").sort((a, b) => a.pct - b.pct)) items.push({ e, scope: nat + " Hall of Fame" + (e.k === "c" ? " · coach" : ""), icon: natBadge(nat, 30), phase: "The country's own vote" });
+  const vetoes = d.vetoes.map((v) => `<div class="hveto"><b>${esc(v.nat)} did not honour ${esc(v.name)}.</b> ${esc(v.text.replace(/^.*?Federation veto: /, "Federation veto: "))}</div>`).join("");
+  hofCeremony({ title: nat, sub: d.label, logo: (n) => natBadge(nat, n), items, counts: [[d.nWorld, "honoured with the world"], [d.nOwn, "by the country's own vote"]], blurb: "The federation honours the world's inductees first, then the country votes. Each name on the ballot needs 75%.",
+    back: "#/hofday/" + d.season, backLabel: "‹ World Hall of Fame day", results: res, end: sub === "watch" ? ["World day", "#/hofday/" + d.season] : ["Watch the ceremony", res + "/watch"], hall: `#/hof/C/${enc(nat)}`, hallLabel: nat + " hall",
+    start: sub === "watch" ? "open" : "class",
+    tail: vetoes + (d.ballot.length ? `<h2 class="lbl2">Still on the ballot</h2><div class="hlist">${d.ballot.slice(0, 4).map((r) => hofRow(r, { right: hofPct(r.pct), bar: r.pct, tag: r.left <= 1 ? (r.left === 0 ? "last year" : "1 year left") : "", tagc: "red" })).join("")}</div>` : "") });
+}
+
 // the block in the league-finish popup: fetched once the league is done
 async function hofLeagueBlock(league) {
   try {
@@ -11244,7 +11310,7 @@ function wireSaves(inGame) {
 
 // ---------------------------------------------------------------- favorites
 // A favorite is a key: "L:<league>" or "<kind>:<confed>" (cup, ct, nl, qual). The list is kept inside the world, so it travels with every save.
-const APP_VERSION = "v16.1.3", APP_TAG = "Show Your Worth";
+const APP_VERSION = "v16.1.4", APP_TAG = "Show Your Worth";
 let FAVS = null, PICK_ASKED = false;                    // FAVS: null until the player has chosen, then an array of keys
 const CT_NAMES = { UEFA: "European Championship", CONMEBOL: "Copa America", CONCACAF: "Gold Cup", CAF: "Africa Cup of Nations", AFC: "Asian Cup", OFC: "OFC Nations Cup" };
 const NL_NAMES = { UEFA: "UEFA Nations League", CONMEBOL: "CONMEBOL Nations League", CONCACAF: "CONCACAF Nations League", CAF: "CAF Nations League", AFC: "AFC Nations League", OFC: "OFC Nations League" };
@@ -12688,6 +12754,7 @@ async function routeInner(r, a, b) {
     if (r === "hofcard") return await viewHofCard(a);
     if (r === "coach") return await viewCoach(a);
     if (r === "hofday") return await viewHofDay(a ? +a : null, b);
+    if (r === "hofnation") { const q = location.hash.replace(/^#\/?/, "").split("/").map(decodeURIComponent); return await viewHofNation(a, b ? +b : null, q[3]); }
     if (r === "hofleague") { const q = location.hash.replace(/^#\/?/, "").split("/").map(decodeURIComponent); return await viewHofLeague(a, b ? +b : null, q[3], q[4]); }
     if (r === "trophies") return a === "winners" ? await viewTrophies(b, "winners") : await viewTrophies(null, a || "winners");
     if (r === "money") return await viewMoney();

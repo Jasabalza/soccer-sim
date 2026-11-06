@@ -20,12 +20,12 @@ const URL='http://localhost:8791/test_artifact.html';
  ok(/Hall of Fame day/.test(await p.innerText('#view')) && await p.$('.hday-open'),'opening screen');
  ok(await p.$('.hday-logo .lbox, .hday-logo .emb, .hday-logo svg'),'league logo or emblem on opening');
  await p.screenshot({path:OUT+'/hd_open.png'});
- let n=0; await p.click('#hl-next'); await p.waitForTimeout(300);
+ let n=0; await p.click('#hc-next'); await p.waitForTimeout(300);
  const first=await p.$eval('.hrv-pct',e=>e.textContent); ok(await p.$('.hrv.live'),'reveal is animated');
  await p.waitForTimeout(2300); const fin=await p.$eval('.hrv-pct',e=>e.textContent); const want=await p.$eval('.hrv-pct',e=>e.dataset.p+'%');
  ok(fin===want,'vote counted up to '+want+', got '+fin); ok(+await p.$eval('.hrv-v',e=>getComputedStyle(e).opacity)===1,'verdict visible after the count');
  ok(await p.$('.hrv-v .hb.K'),'a club-hall reveal shows the club badge, not the league logo'); await p.screenshot({path:OUT+'/hd_reveal.png'});
- let guard=0; while(await p.$('#hl-next') && guard++<80){ n++; await p.click('#hl-next'); await p.waitForTimeout(120); }
+ let guard=0; while(await p.$('#hc-next') && guard++<80){ n++; await p.click('#hc-next'); await p.waitForTimeout(120); }
  ok(n===info.nL+info.nK,'one reveal per inductee, saw '+n+' of '+(info.nL+info.nK));
  ok(/that is the class/i.test(await p.innerText('#view')),'class summary at the end'); await p.screenshot({path:OUT+'/hd_class.png'});
  // the league overview popup stays up for a followed league with inductees; the ceremony is a button
@@ -50,6 +50,11 @@ const URL='http://localhost:8791/test_artifact.html';
  await go('#/world',1400); ok(/Country Halls of Fame/.test(await p.innerText('#w-halls')) && /Mexico/.test(await p.innerText('#w-halls')),'followed Mexico shows on the World page'); await p.screenshot({path:OUT+'/hd_world.png',fullPage:true});
  await go('#/hof/C',900); ok(/Mexico/.test(await p.$eval('#hof-scope',e=>e.value)),'Country tab opens on the followed country');
  await p.evaluate(async()=>{ await api('/api/favnations',{set:[]}); });
+ // a country ceremony for a followed nation (any nation with a class this season), and every hall of a multi-hall player on his card
+ const nd=await p.evaluate(async(S)=>{ for(const n of ['England','Spain','France','Germany','Brazil','Argentina','Italy','Portugal','Netherlands','Mexico','Morocco']){ const d=await api('/api/hofnation?nation='+encodeURIComponent(n)+'&season='+S); if(d.inducted.length) return {n,k:d.inducted.length,world:d.nWorld}; } return null; },info.s);
+ console.log('nation day',JSON.stringify(nd));
+ if(nd){ await go('#/hofnation/'+encodeURIComponent(nd.n)+'/'+info.s+'/watch',800); ok(/Hall of Fame day/.test(await p.innerText('#view')) && await p.$('.hday-open'),'country ceremony opening'); let m=0; await p.click('#hc-next'); await p.waitForTimeout(2300); let g=0; while(await p.$('#hc-next') && g++<60){ m++; await p.click('#hc-next'); await p.waitForTimeout(100); } ok(m+1===nd.k,'one reveal per country inductee, saw '+(m+1)+' of '+nd.k); ok(/that is the class/i.test(await p.innerText('#view')),'country class summary'); await p.screenshot({path:OUT+'/hd_nation.png'}); }
+ const multi=await p.evaluate(async()=>{ const r=await api('/api/hofcard?id=p1'); return r&&r.chain&&r.chain.by?Object.keys(r.chain.by).join(','):null; }); ok(multi==='W,C,L,K','card chain lists every hall: '+multi);
  // player page
  const pu=await p.evaluate(async(id)=>{ const c=await api('/api/hofcard?id='+id); return c.uid; },card);
  if(pu){ await go('#/player/'+pu,900); const t=await p.innerText('#view'); ok(/Origins/.test(t)&&/Played under/.test(t),'player page has Origins and Played under'); await p.screenshot({path:OUT+'/hd_player.png',fullPage:true}); }

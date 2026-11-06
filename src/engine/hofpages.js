@@ -53,14 +53,16 @@ $mods["hofpages"] = (function () {
   // ---- the chain: where a person stands in each of the four halls ----------------------------------------------
   const STATUS_RANK = { in: 0, ballot: 1, off: 2 };
   function chain(w, card) {
-    const out = { W: null, C: null, L: null, K: null, all: [], veto: card.vetoed || null };
+    const out = { W: null, C: null, L: null, K: null, all: [], by: { W: [], C: [], L: [], K: [] }, veto: (card.vetoed && !(card.st["C:" + card.nat] && card.st["C:" + card.nat].status === "in")) ? card.vetoed : null };
     for (const [key, s] of Object.entries(card.st)) {
       const t = tierOf(key), scope = nameOf(key);
       const item = { tier: t, scope, status: s.status, yr: s.yr, label: s.yr ? label(w, s.yr) : null, n: s.n, pct: s.pct, first: s.first, left: Math.max(0, H.CFG.window - s.n), via: s.via };
       if (s.status === "in") out.all.push(item);
+      out.by[t].push(item);                                       // every hall he is in or up for: a player can be in several league and club halls
       const cur = out[t];
       if (!cur || STATUS_RANK[s.status] < STATUS_RANK[cur.status] || (STATUS_RANK[s.status] === STATUS_RANK[cur.status] && (s.yr || 0) > (cur.yr || 0) && s.status === "in" && false)) out[t] = item;
     }
+    for (const t of Object.keys(out.by)) out.by[t].sort((a, b) => STATUS_RANK[a.status] - STATUS_RANK[b.status] || (b.yr || 0) - (a.yr || 0) || (a.scope < b.scope ? -1 : 1));
     out.all.sort((a, b) => TIERS.indexOf(a.tier) - TIERS.indexOf(b.tier) || a.yr - b.yr);
     return out;
   }
@@ -81,15 +83,30 @@ $mods["hofpages"] = (function () {
       favs: fav, cfg: { window: H.CFG.window, pass: H.CFG.pass, floor: H.CFG.floor, wait: H.CFG.wait } };
   }
   // what the followed leagues and nations did this year
+  // everyone who entered a country's hall in year Y: by its own vote or honoured with a world inductee
+  const natNames = (w, nat, Y) => { const names = []; for (const c of Object.values(st(w).cards)) { const s = c.st["C:" + nat]; if (c.k === "p" && s && s.status === "in" && s.yr === Y) names.push(c.name); } return names.sort(); };
   function favourites(w, Y) {
     const h = st(w), out = [];
     for (const f of (w.favs || [])) {
       const ln = f.startsWith("L:") ? f.slice(2) : null, nat = f.startsWith("nation:") ? f.slice(7) : null;
       if (ln && w.leagues.has(ln)) { const r = h.res["L:" + ln + "|" + Y]; if (r) out.push({ kind: "league", name: ln, inducted: r.ind.map((e) => e.name) }); else out.push({ kind: "league", name: ln, inducted: [] }); }
-      else if (nat && w.nations.has(nat)) { const r = h.res["C:" + nat + "|" + Y]; out.push({ kind: "nation", name: nat, inducted: r ? r.ind.map((e) => e.name) : [] }); }
+      else if (nat && w.nations.has(nat)) out.push({ kind: "nation", name: nat, inducted: natNames(w, nat, Y) });
     }
-    for (const nat of (w.fav_nations || [])) if (w.nations.has(nat) && !out.some((o) => o.kind === "nation" && o.name === nat)) { const r = h.res["C:" + nat + "|" + Y]; out.push({ kind: "nation", name: nat, inducted: r ? r.ind.map((e) => e.name) : [] }); }
+    for (const nat of (w.fav_nations || [])) if (w.nations.has(nat) && !out.some((o) => o.kind === "nation" && o.name === nat)) out.push({ kind: "nation", name: nat, inducted: natNames(w, nat, Y) });
     return out;
+  }
+  // ---- a country's Hall of Fame day: its own vote, plus the federation honouring this year's world inductees ------------------------------
+  function v_nationday(w, nat, Y) {
+    if (!w.nations.has(nat)) throw new Error("unknown nation");
+    Y = Y || w.season;
+    const h = st(w), res = (key) => h.res[key + "|" + Y] || { ind: [], bal: [], off: [] };
+    const own = res("C:" + nat), ownc = res("cC:" + nat), wp = res("W"), ownIds = new Set(own.ind.map((e) => e.id));
+    const withWorld = wp.ind.filter((e) => e.nat === nat && !ownIds.has(e.id)).filter((e) => { const c = cardOf(w, e.id), s = c && c.st["C:" + nat]; return s && s.status === "in" && s.yr === Y; })
+      .map((e) => entryRow(w, Object.assign({}, e, { via: "world", tier: "C", scope: nat }), "C:" + nat));
+    const inducted = withWorld.concat(own.ind.map((e) => entryRow(w, Object.assign({}, e, { tier: "C", scope: nat }), "C:" + nat)), ownc.ind.map((e) => entryRow(w, Object.assign({}, e, { tier: "C", scope: nat }), "cC:" + nat)));
+    const vetoes = (h.res["VETO|" + Y] || []).filter((v) => v.nat === nat);
+    return { nation: nat, season: Y, label: label(w, Y), ready: !!h.ran["YD|" + Y] || Y < w.season, inducted, nWorld: withWorld.length, nOwn: own.ind.length + ownc.ind.length,
+      ballot: own.bal.slice(0, 8).map((e) => entryRow(w, e, "C:" + nat)), vetoes, total: Object.values(h.cards).filter((c) => c.k === "p" && c.st["C:" + nat] && c.st["C:" + nat].status === "in").length };
   }
   // ---- a league's Hall of Fame day ---------------------------------------------------------------------------------
   function leagueDone(w, ln) { const lc = w.comps.get(("L:" + ln)); return !!lc && !w.missing(lc).length; }
@@ -220,5 +237,5 @@ $mods["hofpages"] = (function () {
     return out;
   }
   const extras = (w, p) => ({ academy: p.trn || null, under: underOf(w, p.career) });
-  return { TIERS, TIER_NAME, label, badge, chain, row, entryRow, v_day, v_leagueday, v_hof, v_card, v_coach, chainFor, v_watch, favourites, line, cardOf, cardByUid, underOf, extras };
+  return { TIERS, TIER_NAME, label, badge, chain, row, entryRow, v_day, v_leagueday, v_hof, v_card, v_coach, chainFor, v_nationday, v_watch, favourites, line, cardOf, cardByUid, underOf, extras };
 })();

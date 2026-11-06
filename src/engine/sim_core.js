@@ -776,7 +776,7 @@ class World {
       if (!$in("acad", c)) self._init_v15(c, n, L);
     }
     for (const nm of self.nations.keysArr()) $mods.fed.init($idx(self.nations, nm));
-    $mods.hof.ensure(self); $mods.hof.foundOnce(self);
+    $mods.hof.ensure(self); $mods.hof.fixKeys(self); $mods.hof.foundOnce(self);
     $mods.hof.acadInit(self, (c, g, nat, age) => self._mk_mgr(c, g, nat, age));
     return true;
   }

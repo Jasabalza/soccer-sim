@@ -20,6 +20,8 @@ for (const [k, v] of Object.entries(h.res)) {
   for (const e of v.off) { if (e.n > cfg.window) fail("on a ballot for " + e.n + " years"); if (e.why === "time" && e.n < cfg.window) fail("timed out early"); }
 }
 if (!nInd) fail("nobody was ever inducted");
+// a federation veto never sits next to an induction: nobody with a veto is in his country hall
+{ let bad = 0, multi = 0; for (const c of Object.values(h.cards)) { if (c.k !== "p") continue; const cs = c.st["C:" + c.nat]; if (c.vetoed && cs && cs.status === "in") bad++; } if (bad) fail(bad + " cards have a veto and a country induction"); }
 // every hall member keeps a player page (retired players with a card are kept while the card lives)
 { let miss = 0, n = 0; for (const c of Object.values(h.cards)) { if (c.k !== "p") continue; n++; if (!c.uid || !a.player_by_uid(c.uid)) miss++; } if (miss) fail(miss + " of " + n + " cards have no player page"); }
 // 2. determinism and lazy league days: run each league's day before the rollover in world B, must equal world A

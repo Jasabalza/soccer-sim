@@ -261,7 +261,9 @@ $mods.shim = (function () {
       else if (nd.t === "p" || nd.t === "o") {
         const f = nd.f; for (const k in f) f[k] = rs(f[k]);
         nd.f = keyed(f);
-        const ks = Object.keys(nd.f); if (nd.t === "p" && ks.length > 20 && ks.every((k) => /^[^|]+\|[^|]+$/.test(k))) pairs.push(i);   // rivalry records
+        // rivalry records only: a plain object of "A|B" keys whose values are records with club sides a and b. (This used to match any dict of 21+ "x|y" keys, which re-sorted the Hall of Fame results and "ran" keys on every load.)
+        const isRec = (v) => { const r = typeof v === "string" && v.charCodeAt(0) === 1 ? nodes[+v.slice(1)] : null; return !!(r && r.f && typeof r.f.a === "string" && typeof r.f.b === "string"); };
+        const ks = Object.keys(nd.f); if (nd.t === "p" && ks.length > 20 && ks.every((k) => /^[^|]+\|[^|]+$/.test(k)) && ks.slice(0, 6).every((k) => isRec(nd.f[k]))) pairs.push(i);
       }
     }
     for (const i of pairs) {                      // put each record back under its alphabetical key; a flipped pair swaps sides

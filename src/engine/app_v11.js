@@ -944,6 +944,7 @@ POST = $lit_dict([["/api/favs", a_favs], ["/api/favnations", a_favnations],
   const HP = $mods.hofpages, hq = (q, k, d) => { const v = $M.get(q, k); return v === null || v === undefined || v === "" ? d : v; };
   const bad = (m, c = 404) => { throw $new(ApiError, [m, c]); };
   GET.set("/api/hofday", (q) => { const w = need_world(); return $dict($kw(HP.v_day(w, $T($M.get(q, "season")) ? $int($idx(q, "season")) : w.season))); });
+  GET.set("/api/hofnation", (q) => { const w = need_world(); if (!w.nations.has($idx(q, "nation"))) bad("unknown nation"); return $dict($kw(HP.v_nationday(w, $idx(q, "nation"), $T($M.get(q, "season")) ? $int($idx(q, "season")) : w.season))); });
   GET.set("/api/hofleague", (q) => { const w = need_world(); if (!w.leagues.has($idx(q, "league"))) bad("unknown league"); return $dict($kw(HP.v_leagueday(w, $idx(q, "league"), $T($M.get(q, "season")) ? $int($idx(q, "season")) : null))); });
   GET.set("/api/hof", (q) => { const w = need_world(); return $dict($kw(HP.v_hof(w, { tier: hq(q, "tier", "W"), name: hq(q, "name", null), kind: hq(q, "kind", "p") }))); });
   GET.set("/api/coach", (q) => { const w = need_world(); w.ensure_uids(); const v = HP.v_coach(w, $int($idx(q, "id"))); if (!v) bad("unknown coach"); return $dict($kw(v)); });

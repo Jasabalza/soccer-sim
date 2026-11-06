@@ -287,7 +287,12 @@ $mods["hof"] = (function () {
         if (kk !== "p") continue;
         const key = cKey(card.nat), cs = card.st[key];
         if (cs && cs.status === "in") continue;
-        if (natRecordPoor(card)) { card.vetoed = { yr: Y, text: vetoText(card) }; vetoes.push({ id: card.id, name: card.name, nat: card.nat, text: card.vetoed.text }); continue; }
+        if (natRecordPoor(card)) {
+          card.vetoed = { yr: Y, text: vetoText(card) }; vetoes.push({ id: card.id, name: card.name, nat: card.nat, text: card.vetoed.text });
+          // the federation does not honour him, by the world's vote or by its own: he leaves the country ballot too (a veto never sits next to an induction)
+          if (cs && cs.status !== "in") { cs.status = "off"; if (H.bal[key]) { H.bal[key] = H.bal[key].filter((x) => x !== card.id); if (!H.bal[key].length) delete H.bal[key]; } }
+          continue;
+        }
         if (!cs) { card.st[key] = { first: Y, n: 0, low: 0, status: "in", pct: 1, yr: Y, via: "world" }; acadCredit(H, card, key); } else setIn(H, card, key, Y, "world");
       }
     }
@@ -408,7 +413,29 @@ $mods["hof"] = (function () {
     return rows;
   }
   // ---- the rollover hook and migration -----------------------------------------------------------------------------------------
-  function rollover(w, Y) { ensure(w); foundOnce(w); return runYearDay(w, Y); }
+  // saves from v16.1.2 and before could show "did not honour" on someone the country hall had inducted on its own vote: the induction stands, the veto note goes
+  function clearStaleVetoes(H) {
+    for (const c of Object.values(H.cards)) if (c.vetoed && c.k === "p" && c.st[cKey(c.nat)] && c.st[cKey(c.nat)].status === "in") {
+      const id = c.id; c.vetoed = null;
+      for (const k of Object.keys(H.res)) if (k.startsWith("VETO|")) { H.res[k] = H.res[k].filter((x) => x.id !== id); if (!H.res[k].length) delete H.res[k]; }
+    }
+  }
+  // Saves loaded by v16.1.2 and earlier had their "KEY|YEAR" result and "ran" keys flipped to "YEAR|KEY" (a loader bug), which hid old Hall of Fame days and ballots and let finished days run again. Put them back.
+  function fixKeys(w) {
+    const H = ensure(w); let n = 0;
+    for (const part of ["res", "ran"]) {
+      const d = H[part]; if (!d) continue;
+      for (const k of Object.keys(d)) {
+        const m = /^(\d+)\|(.+)$/.exec(k); if (!m) continue;
+        const to = m[2] + "|" + m[1], cur = d[to], bad = d[k]; delete d[k]; n++;
+        if (part === "ran") { d[to] = true; continue; }
+        const score = (r) => r ? (r.ind ? r.ind.length : (Array.isArray(r) ? r.length : 0)) * 1000 + (r.bal ? r.bal.length : 0) : -1;
+        d[to] = score(cur) > score(bad) ? cur : bad;      // keep whichever holds the real result (a re-run of a finished day writes an empty one)
+      }
+    }
+    return n;
+  }
+  function rollover(w, Y) { const H = ensure(w); fixKeys(w); clearStaleVetoes(H); foundOnce(w); return runYearDay(w, Y); }
   // a save from before v16 has no cards: the retired stars and retired coaches become a founding class, voted on from now
   function foundOnce(w) {
     const H = ensure(w);
@@ -427,6 +454,6 @@ $mods["hof"] = (function () {
   }
   // a fresh World starts founded: nothing to found
   function init(w) { const H = ensure(w); H.founded = true; return H; }
-  return { CFG, HP, ensure, init, pscores, cscores, makePlayerCard, makeCoachCard, onRetire, onCoachRetire, coachHired, coachLeft, natCoachSet, closeStint, openStint,
+  return { CFG, HP, ensure, init, pscores, cscores, makePlayerCard, makeCoachCard, fixKeys, onRetire, onCoachRetire, coachHired, coachLeft, natCoachSet, closeStint, openStint,
     acadTick, acadInit, acadView, acadRanking, mgrPromoted, mgrGrade, mgrOdds, drawGrade, stretch, isChaser, borderline, runScope, dataOf, cKey, runLeagueDay, runYearDay, rollover, foundOnce, prune, scoreOf, pctFor, rnd, nrm, leagueOf, stintsOf, stintNums, rkey, scopeName, scopeKind, quality, natRecordPoor };
 })();
