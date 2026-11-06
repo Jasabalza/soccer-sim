@@ -11,3 +11,4 @@ soccersim_personal.html
 *.sav
 *.log
 .DS_Store
+__pycache__/
