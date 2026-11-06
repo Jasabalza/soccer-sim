@@ -113,7 +113,7 @@ function compCard(c) {
     const fin = cur.total > 0 && cur.done >= cur.total;
     status = `<div class="st"><span>Season ${cur.season}: ${fin ? "finished" : cur.next ? esc(cur.next) + (cur.next_date ? " · " + esc(cur.next_date.text) : "") : "in progress"}</span><span>${cur.done} of ${cur.total}</span></div><div class="bar"><i style="width:${cur.total ? Math.round(cur.done / cur.total * 100) : 0}%"></i></div>`;
   } else status = `<div class="st"><span>Between tournaments${c.next_label ? " · next in " + esc(c.next_label) : ""}</span><span>${c.editions_n} played</span></div>`;
-  return `<div class="cc"><div class="t"><span class="cem">${compEmb(c.title, c.emblem, 38)}</span><div class="m"><b>${esc(c.title)}</b><span><span class="tag ${c.scope === "clubs" ? "blue" : "gold"}">${c.scope === "clubs" ? "Clubs" : "National teams"}</span> · ${everyTxt(c)}</span></div></div>
+  return `<div class="cc"><div class="t"><span class="cem">${compEmb(c.title, c.emblem, 38, editionYear(c))}</span><div class="m"><b>${esc(c.title)}</b><span><span class="tag ${c.scope === "clubs" ? "blue" : "gold"}">${c.scope === "clubs" ? "Clubs" : "National teams"}</span> · ${everyTxt(c)}</span></div></div>
     ${status}
     <div class="kv"><div><span>HOLDERS</span><b>${hd ? lk(hd.name) : "None yet"}</b></div><div><span>MOST TITLES</span><b>${mostTxt(c)}</b></div></div>
     <a class="go" href="#/c/${enc(c.key)}"><span>${cur ? "Current edition, history and stats" : "History, winners and stats"}</span><span>&rsaquo;</span></a></div>`;
@@ -170,7 +170,7 @@ async function viewCompPage(key, tab) {
   if (cf !== "WORLD") crumb.push(`<a href="#/continent/${esc(cf)}">${esc(cf)}</a>`);
   crumb.push(esc(h.title));
   $("#view").innerHTML = `<div class="v2">${crumbHTML(crumb)}
-    <div style="display:flex;align-items:center;gap:12px"><span class="cem big-e">${compEmb(h.title, h.emblem, 48)}</span><div><h1>${esc(h.title)}</h1><div class="sub">${sub}</div></div></div>
+    <div style="display:flex;align-items:center;gap:12px"><span class="cem big-e">${compEmb(h.title, h.emblem, 48, editionYear(h))}</span><div><h1>${esc(h.title)}</h1><div class="sub">${sub}</div></div></div>
     ${stat4}${compTabsHTML(key, tab, cur && cur.cid)}<div id="cp-body"></div></div>`;
   const body = $("#cp-body");
   if (tab === "stats") {

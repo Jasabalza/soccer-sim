@@ -40,6 +40,18 @@ const PNG='iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEh
  await go('#/league/'+encodeURIComponent(lg)); ck((await p.$$('.lbox')).length>=1,'league page uses the league logo');
  await go('#/world'); await p.waitForTimeout(500);
  await go('#/world'); ck((await p.$$('.cc .lbox')).length>=1||(await p.$$('.cem .lbox')).length>=1,'competition hub uses imported competition logos');
+ // edition year: drawn on a picture only when the file says so (yearSlots), four digits, centred in the ring
+ ck(await p.evaluate(()=>!/<text/.test(logoBox('comps','Club World Cup',40,2029))),'no year drawn without yearSlots');
+ fs.writeFileSync(tmp+'/d.json',JSON.stringify({format:'soccersim-logos',version:2,mime:'image/png',comps:{'Club World Cup':PNG},yearSlots:{'Club World Cup':'cwc','Gold Cup':'cwc','Atlantis':'cwc'}}));
+ await go('#/start'); if(!(await p.$('#logo-file'))) await go('#/settings');
+ await p.setInputFiles('#logo-file',tmp+'/d.json'); await p.waitForTimeout(1200);
+ const yb=await p.evaluate(()=>({a:logoBox('comps','Club World Cup',40,2029),b:logoBox('comps','Club World Cup',40,0),c:logoBox('comps','UEFA Champions League',40,2029),slots:JSON.stringify(window.__LOGOS2.year)}));
+ ck(/<text[^>]*>2029<\/text>/.test(yb.a)&&/x="750" y="745"/.test(yb.a),'Club World Cup draws a centred four digit year');
+ ck(/>0000<\/text>|<img/.test(yb.b)||/<text/.test(yb.b),'year 0 does not break');
+ ck(!/<text/.test(yb.c),'other competitions never get a year');
+ ck(yb.slots==='{"Club World Cup":"cwc"}','only known competitions keep a year slot: '+yb.slots);
+ await go('#/world'); await p.waitForTimeout(500); await go('#/world');
+ ck((await p.$$('.lbox svg text')).length>=1,'competition hub shows the edition year on the Club World Cup logo');
  await p.screenshot({path:OUT+'/lg_1.png',fullPage:true});
  ck(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'no sideways scroll');
  // a file with nothing recognisable is refused

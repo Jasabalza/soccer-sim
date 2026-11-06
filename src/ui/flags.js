@@ -165,7 +165,7 @@ function _logoUrl(name) {
 let _logoBase = null, _logoImp = null;
 const _lg2 = {};
 // only what the player imported (not the baked-in club set)
-function importedLogos() { const i = _logoImp || {}; return { clubs: i.clubs || {}, nations: i.nations || {}, leagues: i.leagues || {}, comps: i.comps || {} }; }
+function importedLogos() { const i = _logoImp || {}; return { clubs: i.clubs || {}, nations: i.nations || {}, leagues: i.leagues || {}, comps: i.comps || {}, year: i.year || {} }; }
 function setLogos(imp) {
   if (_logoBase === null) _logoBase = window.__LOGOS || {};
   for (const k in _lg) delete _lg[k];
@@ -173,7 +173,7 @@ function setLogos(imp) {
   _logoImp = imp || null;
   const m = Object.assign({}, _logoBase, imp && imp.clubs ? imp.clubs : {});
   window.__LOGOS = Object.keys(m).length ? m : undefined;
-  window.__LOGOS2 = imp ? { nations: imp.nations || {}, leagues: imp.leagues || {}, comps: imp.comps || {} } : undefined;
+  window.__LOGOS2 = imp ? { nations: imp.nations || {}, leagues: imp.leagues || {}, comps: imp.comps || {}, year: imp.year || {} } : undefined;
 }
 // an imported picture for a nation, a league or a competition (a data URL), or null
 function logo2(kind, name) {
@@ -186,10 +186,18 @@ function natBadge(nat, size) {
   const u = logo2("nations", nat);
   return u ? `<span class="nbadge" style="width:${size}px;height:${size}px"><img src="${u}" alt="" decoding="async" title="${esc(nat)}"></span>` : flag(nat, size);
 }
-// a league or competition logo (img in a square box), or "" so the caller can fall back to its own emblem
-function logoBox(kind, name, size) {
-  const u = logo2(kind, name);
-  return u ? `<span class="lbox" style="width:${size}px;height:${size}px"><img src="${u}" alt="" decoding="async" title="${esc(name)}"></span>` : "";
+// a league or competition logo (img in a square box), or "" so the caller can fall back to its own emblem.
+// year: the edition's year, for a picture that came with its year taken off (file key "year": {"Club World Cup": "cwc"}). The four digit year is drawn
+// in the empty middle of the ring, in the logo's own gold. The picture must be the whole 1500 x 1500 canvas (tools/make_nation_logos.py --keep-canvas does that).
+const YEAR_KINDS = { cwc: { x: 750, y: 745, fs: 240, col: "#f6cf6a", sp: 10 } };
+function logoBox(kind, name, size, year) {
+  const u = logo2(kind, name); if (!u) return "";
+  const yk = kind === "comps" && year && window.__LOGOS2 && window.__LOGOS2.year && YEAR_KINDS[window.__LOGOS2.year[name]];
+  if (yk) {
+    const yr = String(Math.abs(year | 0)).slice(-4).padStart(4, "0");
+    return `<span class="lbox" style="width:${size}px;height:${size}px" title="${esc(name)} ${yr}"><svg viewBox="0 0 1500 1500" width="100%" height="100%" aria-hidden="true"><image href="${u}" width="1500" height="1500"/><text x="${yk.x}" y="${yk.y}" text-anchor="middle" dominant-baseline="central" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="${yk.fs}" letter-spacing="${yk.sp}" fill="${yk.col}" stroke="${yk.col}" stroke-width="8" stroke-linejoin="round">${yr}</text></svg></span>`;
+  }
+  return `<span class="lbox" style="width:${size}px;height:${size}px"><img src="${u}" alt="" decoding="async" title="${esc(name)}"></span>`;
 }
 function crest(name, size) {
   size = size || 18;

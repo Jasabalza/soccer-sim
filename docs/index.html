@@ -9454,7 +9454,12 @@ window.SIM = { request: $mods.shim.request, init: $mods.shim.init, store: $mods.
    lidded league cup, globe on a column, golden ball, boot...). Colours come from the server. */
 let _eid = 0;
 // a competition or league: the imported logo when there is one, else the generated trophy illustration (champion screens and trophy rooms always keep the trophy)
-function compEmb(name, spec, size) { return logoBox("comps", name, size) || logoBox("leagues", name, size) || (spec ? emblem(spec, size) : ""); }
+// the year an edition is played in: a season label like "2026/27" is played in the summer of its second year
+function editionYear(c) {
+  const lab = c && c.current ? (STATUS && STATUS.header && STATUS.header.season_label) : c && c.next_label, m = /(\d{4})\/(\d{2})/.exec(lab || "");
+  return m ? +m[1] + 1 : null;
+}
+function compEmb(name, spec, size, year) { return logoBox("comps", name, size, year) || logoBox("leagues", name, size) || (spec ? emblem(spec, size) : ""); }
 function emblem(spec, size) {
   size = size || 48;
   const id = "e" + (++_eid), k = spec.kind, c = spec.color || "#f5c542";
@@ -9683,7 +9688,7 @@ function _logoUrl(name) {
 let _logoBase = null, _logoImp = null;
 const _lg2 = {};
 // only what the player imported (not the baked-in club set)
-function importedLogos() { const i = _logoImp || {}; return { clubs: i.clubs || {}, nations: i.nations || {}, leagues: i.leagues || {}, comps: i.comps || {} }; }
+function importedLogos() { const i = _logoImp || {}; return { clubs: i.clubs || {}, nations: i.nations || {}, leagues: i.leagues || {}, comps: i.comps || {}, year: i.year || {} }; }
 function setLogos(imp) {
   if (_logoBase === null) _logoBase = window.__LOGOS || {};
   for (const k in _lg) delete _lg[k];
@@ -9691,7 +9696,7 @@ function setLogos(imp) {
   _logoImp = imp || null;
   const m = Object.assign({}, _logoBase, imp && imp.clubs ? imp.clubs : {});
   window.__LOGOS = Object.keys(m).length ? m : undefined;
-  window.__LOGOS2 = imp ? { nations: imp.nations || {}, leagues: imp.leagues || {}, comps: imp.comps || {} } : undefined;
+  window.__LOGOS2 = imp ? { nations: imp.nations || {}, leagues: imp.leagues || {}, comps: imp.comps || {}, year: imp.year || {} } : undefined;
 }
 // an imported picture for a nation, a league or a competition (a data URL), or null
 function logo2(kind, name) {
@@ -9704,10 +9709,18 @@ function natBadge(nat, size) {
   const u = logo2("nations", nat);
   return u ? `<span class="nbadge" style="width:${size}px;height:${size}px"><img src="${u}" alt="" decoding="async" title="${esc(nat)}"></span>` : flag(nat, size);
 }
-// a league or competition logo (img in a square box), or "" so the caller can fall back to its own emblem
-function logoBox(kind, name, size) {
-  const u = logo2(kind, name);
-  return u ? `<span class="lbox" style="width:${size}px;height:${size}px"><img src="${u}" alt="" decoding="async" title="${esc(name)}"></span>` : "";
+// a league or competition logo (img in a square box), or "" so the caller can fall back to its own emblem.
+// year: the edition's year, for a picture that came with its year taken off (file key "year": {"Club World Cup": "cwc"}). The four digit year is drawn
+// in the empty middle of the ring, in the logo's own gold. The picture must be the whole 1500 x 1500 canvas (tools/make_nation_logos.py --keep-canvas does that).
+const YEAR_KINDS = { cwc: { x: 750, y: 745, fs: 240, col: "#f6cf6a", sp: 10 } };
+function logoBox(kind, name, size, year) {
+  const u = logo2(kind, name); if (!u) return "";
+  const yk = kind === "comps" && year && window.__LOGOS2 && window.__LOGOS2.year && YEAR_KINDS[window.__LOGOS2.year[name]];
+  if (yk) {
+    const yr = String(Math.abs(year | 0)).slice(-4).padStart(4, "0");
+    return `<span class="lbox" style="width:${size}px;height:${size}px" title="${esc(name)} ${yr}"><svg viewBox="0 0 1500 1500" width="100%" height="100%" aria-hidden="true"><image href="${u}" width="1500" height="1500"/><text x="${yk.x}" y="${yk.y}" text-anchor="middle" dominant-baseline="central" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="${yk.fs}" letter-spacing="${yk.sp}" fill="${yk.col}" stroke="${yk.col}" stroke-width="8" stroke-linejoin="round">${yr}</text></svg></span>`;
+  }
+  return `<span class="lbox" style="width:${size}px;height:${size}px"><img src="${u}" alt="" decoding="async" title="${esc(name)}"></span>`;
 }
 function crest(name, size) {
   size = size || 18;
@@ -9855,7 +9868,7 @@ function compCard(c) {
     const fin = cur.total > 0 && cur.done >= cur.total;
     status = `<div class="st"><span>Season ${cur.season}: ${fin ? "finished" : cur.next ? esc(cur.next) + (cur.next_date ? " · " + esc(cur.next_date.text) : "") : "in progress"}</span><span>${cur.done} of ${cur.total}</span></div><div class="bar"><i style="width:${cur.total ? Math.round(cur.done / cur.total * 100) : 0}%"></i></div>`;
   } else status = `<div class="st"><span>Between tournaments${c.next_label ? " · next in " + esc(c.next_label) : ""}</span><span>${c.editions_n} played</span></div>`;
-  return `<div class="cc"><div class="t"><span class="cem">${compEmb(c.title, c.emblem, 38)}</span><div class="m"><b>${esc(c.title)}</b><span><span class="tag ${c.scope === "clubs" ? "blue" : "gold"}">${c.scope === "clubs" ? "Clubs" : "National teams"}</span> · ${everyTxt(c)}</span></div></div>
+  return `<div class="cc"><div class="t"><span class="cem">${compEmb(c.title, c.emblem, 38, editionYear(c))}</span><div class="m"><b>${esc(c.title)}</b><span><span class="tag ${c.scope === "clubs" ? "blue" : "gold"}">${c.scope === "clubs" ? "Clubs" : "National teams"}</span> · ${everyTxt(c)}</span></div></div>
     ${status}
     <div class="kv"><div><span>HOLDERS</span><b>${hd ? lk(hd.name) : "None yet"}</b></div><div><span>MOST TITLES</span><b>${mostTxt(c)}</b></div></div>
     <a class="go" href="#/c/${enc(c.key)}"><span>${cur ? "Current edition, history and stats" : "History, winners and stats"}</span><span>&rsaquo;</span></a></div>`;
@@ -9912,7 +9925,7 @@ async function viewCompPage(key, tab) {
   if (cf !== "WORLD") crumb.push(`<a href="#/continent/${esc(cf)}">${esc(cf)}</a>`);
   crumb.push(esc(h.title));
   $("#view").innerHTML = `<div class="v2">${crumbHTML(crumb)}
-    <div style="display:flex;align-items:center;gap:12px"><span class="cem big-e">${compEmb(h.title, h.emblem, 48)}</span><div><h1>${esc(h.title)}</h1><div class="sub">${sub}</div></div></div>
+    <div style="display:flex;align-items:center;gap:12px"><span class="cem big-e">${compEmb(h.title, h.emblem, 48, editionYear(h))}</span><div><h1>${esc(h.title)}</h1><div class="sub">${sub}</div></div></div>
     ${stat4}${compTabsHTML(key, tab, cur && cur.cid)}<div id="cp-body"></div></div>`;
   const body = $("#cp-body");
   if (tab === "stats") {
@@ -11029,7 +11042,8 @@ function readLogoPack(obj) {
   if (!obj || typeof obj !== "object" || !LOGO_SECTIONS.some((k) => obj[k] && typeof obj[k] === "object")) throw new Error("That is not a Soccer Sim logo file (no \"clubs\", \"nations\", \"leagues\" or \"comps\" list).");
   if (obj.format && obj.format !== LOGO_FORMAT) throw new Error("That file says it is \"" + obj.format + "\", not a Soccer Sim logo file.");
   const mime = /^image\/(webp|png|jpeg)$/.test(obj.mime || "") ? obj.mime : "image/webp", known = knownLogoNames();
-  const out = { sections: {}, matched: {}, total: 0, unknown: [], skipped: [] };
+  const out = { sections: {}, matched: {}, total: 0, unknown: [], skipped: [], year: {} };
+  if (obj.yearSlots && typeof obj.yearSlots === "object") for (const [n, k] of Object.entries(obj.yearSlots)) if (known.comps.has(n) && k === "cwc") out.year[n] = k;
   for (const sec of LOGO_SECTIONS) {
     out.sections[sec] = {}; out.matched[sec] = 0;
     if (!obj[sec] || typeof obj[sec] !== "object") continue;
@@ -11048,7 +11062,7 @@ function readLogoPack(obj) {
 // what is imported right now, as one object (or null)
 function logoSet() {
   const clubs = window.__LOGOS || {}, o2 = window.__LOGOS2 || {};
-  return { clubs, nations: o2.nations || {}, leagues: o2.leagues || {}, comps: o2.comps || {} };
+  return { clubs, nations: o2.nations || {}, leagues: o2.leagues || {}, comps: o2.comps || {}, year: o2.year || {} };
 }
 function logoState() {
   const k = knownLogoNames(), s = logoSet(), n = (sec) => Object.keys(s[sec]).filter((x) => s[sec][x]).length;
@@ -11069,9 +11083,10 @@ function wireLogoPanel() {
     try {
       const pack = readLogoPack(JSON.parse(await f.text())), cur = importedLogos();
       const merged = {}; for (const sec of LOGO_SECTIONS) merged[sec] = Object.assign({}, cur[sec], pack.sections[sec]);
+      merged.year = Object.assign({}, cur.year, pack.year); for (const n of Object.keys(merged.year)) if (!merged.comps[n]) delete merged.year[n];
       setLogos(merged);
       let kept = true;
-      try { kept = await SIM.logos.save({ format: LOGO_FORMAT, version: 2, clubs: merged.clubs, nations: merged.nations, leagues: merged.leagues, comps: merged.comps }); } catch (err) { toast(err.message); kept = false; }
+      try { kept = await SIM.logos.save({ format: LOGO_FORMAT, version: 2, clubs: merged.clubs, nations: merged.nations, leagues: merged.leagues, comps: merged.comps, year: merged.year }); } catch (err) { toast(err.message); kept = false; }
       state();
       const what = [["clubs", "club"], ["nations", "nation"], ["leagues", "league"], ["comps", "competition"]].filter(([s]) => pack.matched[s]).map(([s, w]) => `${pack.matched[s]} ${w}`).join(", ");
       const extra = (pack.unknown.length ? ` ${pack.unknown.length} not recognized.` : "") + (pack.skipped.length ? ` ${pack.skipped.length} skipped (bad or too large).` : "");
@@ -11333,7 +11348,7 @@ function trophyRoom(list, title) {
     const items = list.filter((t) => t.group === g); return items.length ? `<div class="tro-group"><div class="lbl">${name}</div><div class="tro-grid">${items.map(tile).join("")}</div></div>` : "";
   }).join("")}</div>`;
 }
-const withEmb = (spec, size, inner, name) => `<span class="h1emb">${name ? compEmb(name, spec, size) : spec ? emblem(spec, size) : ""}<span>${inner}</span></span>`;
+const withEmb = (spec, size, inner, name, year) => `<span class="h1emb">${name ? compEmb(name, spec, size, year) : spec ? emblem(spec, size) : ""}<span>${inner}</span></span>`;
 
 // ---- brackets ------------------------------------------------------------------------------------
 // ties of the round being played that already have a result (single games simmed from the list) show it in the bracket before the round is over
@@ -11549,7 +11564,7 @@ async function viewComp(id) {
       <div id="tab-fld" hidden><div class="scroll"><table><thead><tr><th class="l">Club</th><th class="l">League</th><th>OVR</th></tr></thead><tbody>${x.field.map((f) => `<tr><td class="l">${clubLink(f.club)}</td><td class="l meta">${esc(f.league)}</td><td>${ovr(f.ovr)}</td></tr>`).join("")}</tbody></table></div></div>` : ""}`;
   }
   const finished = p.done >= p.total;
-  $("#view").innerHTML = `<div class="crumbs"><a href="#/world">World</a> / ${esc(x.title)}</div><h1>${withEmb(x.emblem, 44, esc(x.title), x.title)}</h1>${liveTabs(id)}
+  $("#view").innerHTML = `<div class="crumbs"><a href="#/world">World</a> / ${esc(x.title)}</div><h1>${withEmb(x.emblem, 44, esc(x.title), x.title, editionYear({ current: true }))}</h1>${liveTabs(id)}
     ${locked ? `<div class="card" style="margin-bottom:14px"><span class="tag red">LOCKED</span> needs ${p.locked.map((m) => `<a href="#/comp/${enc(m.id)}">${esc(m.title)}</a>`).join(", ")} to finish first.
       <p style="margin:10px 0 0"><button id="k-up" class="pri">Sim up to here</button> <span class="meta">plays only what it needs, then stops so you can play it your way.</span></p>
       <p style="margin:8px 0 0"><button id="k-pre">Sim everything it needs, then this to the end</button></p></div>`

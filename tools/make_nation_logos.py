@@ -91,22 +91,40 @@ def glow(im, px=256):
     base = Image.fromarray(np.dstack([np.full(a.shape, 244), np.full(a.shape, 249), np.full(a.shape, 244), (ga * 255).astype("uint8")]).astype("uint8"), "RGBA")
     base.alpha_composite(big); return base
 
-def encode(im, px=256):
-    im = trim(im); s = px / max(im.size)
+def encode(im, px=256, canvas=False):
+    im = im if canvas else trim(im); s = px / max(im.size)
     if s < 1: im = im.resize((max(1, round(im.width * s)), max(1, round(im.height * s))), Image.LANCZOS)
     buf = io.BytesIO(); im.save(buf, "WEBP", quality=88, method=6); return base64.b64encode(buf.getvalue()).decode()
+
+def recenter_arc(im, cx, cy, rin, ymax, tighten=0.985):
+    """turn the lettering that runs round a ring (everything farther than rin from the ring centre, above row ymax) so the whole arc is balanced on the top.
+    Used when the part of the arc that carried the year was taken off and the words now sit lopsided. tighten pulls the letters 1.5% toward the ring so
+    the ones that end up at 9 and 3 o'clock do not touch the picture's edge."""
+    a = np.array(im.convert("RGBA")); H, W = a.shape[:2]; yy, xx = np.mgrid[0:H, 0:W]
+    m = (a[..., 3] > 0) & (np.hypot(xx - cx, yy - cy) > rin) & (yy < ymax)
+    ang = np.degrees(np.arctan2(xx - cx, -(yy - cy))); sol = m & (a[..., 3] > 40)
+    mid = float(ang[sol].min() + ang[sol].max()) / 2                      # 0 = straight up, clockwise positive
+    layer = np.zeros_like(a); layer[m] = a[m]; col = layer[sol][:, :3].mean(axis=0); layer[~m, :3] = col.astype("uint8")
+    base = a.copy(); base[m] = 0
+    s = tighten; lay = Image.fromarray(layer, "RGBA").transform(layer.shape[1::-1], Image.AFFINE, (1 / s, 0, cx - cx / s, 0, 1 / s, cy - cy / s), resample=Image.BICUBIC)
+    rot = lay.rotate(mid, resample=Image.BICUBIC, center=(cx, cy))      # PIL turns counter clockwise, so this brings mid to the top
+    out = Image.fromarray(base, "RGBA"); out.alpha_composite(rot)
+    return out, mid
 
 def apply_edits(im, edits):
     """edits: ("erase", x0, y0, x1, y1) clears a box; ("shift", x0, y0, x1, y1, dx) moves a box sideways. Coordinates are in the original picture."""
     im = im.convert("RGBA")
     for e in edits:
+        if e[0] == "arc": continue
         x0, y0, x1, y1 = e[1:5]
         if e[0] == "erase": im.paste((0, 0, 0, 0), (x0, y0, x1, y1))
         elif e[0] == "shift":
             piece = im.crop((x0, y0, x1, y1)); im.paste((0, 0, 0, 0), (x0, y0, x1, y1)); im.alpha_composite(piece, (x0 + e[5], y0))
+    for e in edits:
+        if e[0] == "arc": im, mid = recenter_arc(im, *e[1:5]); print("   arc lettering turned %.1f degrees" % -mid)
     return im
 
-def process(im, name, keep_stars=False, strip_loc=False, comp=False, edits=()):
+def process(im, name, keep_stars=False, strip_loc=False, comp=False, edits=(), canvas=False):
     notes = []
     im = im.convert("RGBA")
     if edits: im = apply_edits(im, edits); notes.append("edited")
@@ -115,6 +133,8 @@ def process(im, name, keep_stars=False, strip_loc=False, comp=False, edits=()):
     if name in STAR_BADGES and not keep_stars:
         im, ok = strip_stars(im)
         if ok: notes.append("stars removed")
+    if canvas:      # whole square kept as it is (no trim, no glow) so the game can draw the edition year at a fixed spot
+        small = im.copy(); small.thumbnail((256, 256)); notes.append("canvas kept"); return small, notes
     im = trim(im)
     small = im.copy(); small.thumbnail((256, 256))
     sh = dark_share(small)
@@ -129,6 +149,9 @@ def main():
     ap = argparse.ArgumentParser(); ap.add_argument("out"); ap.add_argument("--nations", nargs="*", default=[]); ap.add_argument("--comp", nargs="*", default=[]); ap.add_argument("--league", nargs="*", default=[])
     ap.add_argument("--strip-loc", nargs="*", default=[]); ap.add_argument("--keep-stars", nargs="*", default=["germany"]); ap.add_argument("--clean", nargs="*", default=[])
     ap.add_argument("--erase", nargs="*", default=[], help="Name=x0,y0,x1,y1 clear a box of that picture (original pixels)"); ap.add_argument("--shift", nargs="*", default=[], help="Name=x0,y0,x1,y1,dx move a box sideways")
+    ap.add_argument("--arc-center", nargs="*", default=[], help="Name=cx,cy,rin,ymax balance the ring lettering on the top (ring centre, inner radius of the letters, last row to look at)")
+    ap.add_argument("--keep-canvas", nargs="*", default=[], help="competition names kept as the whole square (no trim, no glow)")
+    ap.add_argument("--year-slot", nargs="*", default=[], help='Name=kind: the game draws the edition year on this competition ("Club World Cup=cwc"); needs --keep-canvas')
     ap.add_argument("--preview", help="write a contact sheet PNG here")
     o = ap.parse_args()
     names = [n["name"] for n in json.load(open(os.path.join(HERE, "..", "data", "nations.json")))["nations"]]
@@ -150,9 +173,16 @@ def main():
       for spec in specs:
         name, path = spec.split("=", 1)
         ed = [("erase",) + tuple(int(v) for v in s.split("=", 1)[1].split(",")) for s in o.erase if s.split("=", 1)[0] == name] + \
-             [("shift",) + tuple(int(v) for v in s.split("=", 1)[1].split(",")) for s in o.shift if s.split("=", 1)[0] == name]
-        im, notes = process(Image.open(path), "", strip_loc=name in o.strip_loc, comp=True, edits=ed)
-        out[sec][name] = "data:image/webp;base64," + encode(im, 256); prev.append((name, im)); print(f"  {name}: {', '.join(notes) or 'as is'}")
+             [("shift",) + tuple(int(v) for v in s.split("=", 1)[1].split(",")) for s in o.shift if s.split("=", 1)[0] == name] + \
+             [("arc",) + tuple(int(v) for v in s.split("=", 1)[1].split(",")) for s in o.arc_center if s.split("=", 1)[0] == name]
+        kc = name in o.keep_canvas
+        im, notes = process(Image.open(path), "", strip_loc=name in o.strip_loc, comp=True, edits=ed, canvas=kc)
+        out[sec][name] = "data:image/webp;base64," + encode(im, 256, canvas=kc); prev.append((name, im)); print(f"  {name}: {', '.join(notes) or 'as is'}")
+    slots = dict(s.split("=", 1) for s in o.year_slot)
+    if slots:
+        bad = [n for n in slots if n not in o.keep_canvas or n not in out["comps"]]
+        if bad: sys.exit("year slot needs a competition given with --comp and --keep-canvas: " + ", ".join(bad))
+        out["yearSlots"] = slots
     json.dump(out, open(o.out, "w"), separators=(",", ":"))
     print(f"{len(out['nations'])} nations, {len(out['leagues'])} leagues, {len(out['comps'])} competitions -> {o.out} ({os.path.getsize(o.out)//1024} KB)")
     print("no badge yet:", ", ".join(n for n in names if n not in out["nations"]))

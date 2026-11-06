@@ -407,7 +407,8 @@ function readLogoPack(obj) {
   if (!obj || typeof obj !== "object" || !LOGO_SECTIONS.some((k) => obj[k] && typeof obj[k] === "object")) throw new Error("That is not a Soccer Sim logo file (no \"clubs\", \"nations\", \"leagues\" or \"comps\" list).");
   if (obj.format && obj.format !== LOGO_FORMAT) throw new Error("That file says it is \"" + obj.format + "\", not a Soccer Sim logo file.");
   const mime = /^image\/(webp|png|jpeg)$/.test(obj.mime || "") ? obj.mime : "image/webp", known = knownLogoNames();
-  const out = { sections: {}, matched: {}, total: 0, unknown: [], skipped: [] };
+  const out = { sections: {}, matched: {}, total: 0, unknown: [], skipped: [], year: {} };
+  if (obj.yearSlots && typeof obj.yearSlots === "object") for (const [n, k] of Object.entries(obj.yearSlots)) if (known.comps.has(n) && k === "cwc") out.year[n] = k;
   for (const sec of LOGO_SECTIONS) {
     out.sections[sec] = {}; out.matched[sec] = 0;
     if (!obj[sec] || typeof obj[sec] !== "object") continue;
@@ -426,7 +427,7 @@ function readLogoPack(obj) {
 // what is imported right now, as one object (or null)
 function logoSet() {
   const clubs = window.__LOGOS || {}, o2 = window.__LOGOS2 || {};
-  return { clubs, nations: o2.nations || {}, leagues: o2.leagues || {}, comps: o2.comps || {} };
+  return { clubs, nations: o2.nations || {}, leagues: o2.leagues || {}, comps: o2.comps || {}, year: o2.year || {} };
 }
 function logoState() {
   const k = knownLogoNames(), s = logoSet(), n = (sec) => Object.keys(s[sec]).filter((x) => s[sec][x]).length;
@@ -447,9 +448,10 @@ function wireLogoPanel() {
     try {
       const pack = readLogoPack(JSON.parse(await f.text())), cur = importedLogos();
       const merged = {}; for (const sec of LOGO_SECTIONS) merged[sec] = Object.assign({}, cur[sec], pack.sections[sec]);
+      merged.year = Object.assign({}, cur.year, pack.year); for (const n of Object.keys(merged.year)) if (!merged.comps[n]) delete merged.year[n];
       setLogos(merged);
       let kept = true;
-      try { kept = await SIM.logos.save({ format: LOGO_FORMAT, version: 2, clubs: merged.clubs, nations: merged.nations, leagues: merged.leagues, comps: merged.comps }); } catch (err) { toast(err.message); kept = false; }
+      try { kept = await SIM.logos.save({ format: LOGO_FORMAT, version: 2, clubs: merged.clubs, nations: merged.nations, leagues: merged.leagues, comps: merged.comps, year: merged.year }); } catch (err) { toast(err.message); kept = false; }
       state();
       const what = [["clubs", "club"], ["nations", "nation"], ["leagues", "league"], ["comps", "competition"]].filter(([s]) => pack.matched[s]).map(([s, w]) => `${pack.matched[s]} ${w}`).join(", ");
       const extra = (pack.unknown.length ? ` ${pack.unknown.length} not recognized.` : "") + (pack.skipped.length ? ` ${pack.skipped.length} skipped (bad or too large).` : "");
@@ -711,7 +713,7 @@ function trophyRoom(list, title) {
     const items = list.filter((t) => t.group === g); return items.length ? `<div class="tro-group"><div class="lbl">${name}</div><div class="tro-grid">${items.map(tile).join("")}</div></div>` : "";
   }).join("")}</div>`;
 }
-const withEmb = (spec, size, inner, name) => `<span class="h1emb">${name ? compEmb(name, spec, size) : spec ? emblem(spec, size) : ""}<span>${inner}</span></span>`;
+const withEmb = (spec, size, inner, name, year) => `<span class="h1emb">${name ? compEmb(name, spec, size, year) : spec ? emblem(spec, size) : ""}<span>${inner}</span></span>`;
 
 // ---- brackets ------------------------------------------------------------------------------------
 // ties of the round being played that already have a result (single games simmed from the list) show it in the bracket before the round is over
@@ -927,7 +929,7 @@ async function viewComp(id) {
       <div id="tab-fld" hidden><div class="scroll"><table><thead><tr><th class="l">Club</th><th class="l">League</th><th>OVR</th></tr></thead><tbody>${x.field.map((f) => `<tr><td class="l">${clubLink(f.club)}</td><td class="l meta">${esc(f.league)}</td><td>${ovr(f.ovr)}</td></tr>`).join("")}</tbody></table></div></div>` : ""}`;
   }
   const finished = p.done >= p.total;
-  $("#view").innerHTML = `<div class="crumbs"><a href="#/world">World</a> / ${esc(x.title)}</div><h1>${withEmb(x.emblem, 44, esc(x.title), x.title)}</h1>${liveTabs(id)}
+  $("#view").innerHTML = `<div class="crumbs"><a href="#/world">World</a> / ${esc(x.title)}</div><h1>${withEmb(x.emblem, 44, esc(x.title), x.title, editionYear({ current: true }))}</h1>${liveTabs(id)}
     ${locked ? `<div class="card" style="margin-bottom:14px"><span class="tag red">LOCKED</span> needs ${p.locked.map((m) => `<a href="#/comp/${enc(m.id)}">${esc(m.title)}</a>`).join(", ")} to finish first.
       <p style="margin:10px 0 0"><button id="k-up" class="pri">Sim up to here</button> <span class="meta">plays only what it needs, then stops so you can play it your way.</span></p>
       <p style="margin:8px 0 0"><button id="k-pre">Sim everything it needs, then this to the end</button></p></div>`

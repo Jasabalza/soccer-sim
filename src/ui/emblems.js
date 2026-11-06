@@ -3,7 +3,12 @@
    lidded league cup, globe on a column, golden ball, boot...). Colours come from the server. */
 let _eid = 0;
 // a competition or league: the imported logo when there is one, else the generated trophy illustration (champion screens and trophy rooms always keep the trophy)
-function compEmb(name, spec, size) { return logoBox("comps", name, size) || logoBox("leagues", name, size) || (spec ? emblem(spec, size) : ""); }
+// the year an edition is played in: a season label like "2026/27" is played in the summer of its second year
+function editionYear(c) {
+  const lab = c && c.current ? (STATUS && STATUS.header && STATUS.header.season_label) : c && c.next_label, m = /(\d{4})\/(\d{2})/.exec(lab || "");
+  return m ? +m[1] + 1 : null;
+}
+function compEmb(name, spec, size, year) { return logoBox("comps", name, size, year) || logoBox("leagues", name, size) || (spec ? emblem(spec, size) : ""); }
 function emblem(spec, size) {
   size = size || 48;
   const id = "e" + (++_eid), k = spec.kind, c = spec.color || "#f5c542";

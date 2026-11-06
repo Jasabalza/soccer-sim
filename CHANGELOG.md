@@ -6,6 +6,7 @@
 - **Federation badges instead of flags** on nation pages, the Nations list, national team links and national jobs (player flags stay flags).
 - **League and competition logos** on league pages and cards, competition cards and pages (the trophy illustration stays on champion screens and trophy rooms).
 - **Logo file version 2** adds `nations`, `leagues` and `comps`; importing adds to what is already stored. New `tools/make_nation_logos.py` (strips printed stars and printed host/year lines, light halo for dark badges). The game still ships no logos. See docs/LOGOS.md.
+- **Club World Cup year.** It is the only imported logo that depends on the edition. With `yearSlots` in the file the game draws the four digit year in the middle of your imported ring (no year is shipped or drawn without your logo), and `make_nation_logos.py` can turn the lettering round the ring so it stays balanced once the printed year is gone (`--arc-center`, `--keep-canvas`, `--year-slot`; `tools/make_cwc_years.py` for stills).
 - Tests: `tools/t_logos_ui.js`.
 
 ## v16: Hall of Fame

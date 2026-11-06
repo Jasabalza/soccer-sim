@@ -49,6 +49,7 @@ One file can carry four lists, and any of them can be left out. Importing a seco
 - `nations`: the federation badge, used instead of the flag on nation pages, the Nations list, national team links and national jobs. Player flags stay flags. Names are the game's (see `data/nations.json`).
 - `leagues`: a league's logo on its page, its card and wherever a league is linked (names from `data/leagues.json`).
 - `comps`: a competition's logo on its card and page. Known names: UEFA Champions League, Copa Libertadores, CONCACAF Champions Cup, AFC Champions League Elite, Club World Cup, World Cup, European Championship, Copa America, Gold Cup, Africa Cup of Nations, Asian Cup, OFC Nations Cup, UEFA Nations League, CONMEBOL Nations League, CONCACAF Nations League, CAF Nations League, AFC Nations League, OFC Nations League.
+- `yearSlots` (optional, `{"Club World Cup": "cwc"}`): the one logo that carries a year. The game draws the edition's four digit year, in the logo's own gold, in the middle of the ring on the card and the competition page (the edition year is the second year of the season, so 2028/29 shows 2029). The picture must therefore be the whole square with the old year taken off, which `--keep-canvas` and `--year-slot` do. Only known competitions keep a slot; no other logo needs a year (European Championship, Copa America and Africa Cup of Nations have their host and year taken off and show none).
 - The trophy illustrations stay on the champion screen and in trophy rooms. Anything without a picture keeps its generated flag or emblem.
 - Title stars (World Cup on nation pages, Club World Cup on club pages) are drawn by the game, so a badge should not carry printed stars.
 
@@ -63,6 +64,8 @@ python3 tools/make_nation_logos.py out.json --nations folder1 folder2 \
 ```
 
 Nation files are named `<slug>-national-team-logo-footylogos.png` (slug such as `south-korea`, `cote-d-ivoire`). It takes printed title stars off the badges that have them (Germany keeps its stars by default, `--keep-stars`), gives dark badges and dark lettering a soft light halo so they read on the dark theme, removes a printed host or year line with `--strip-loc`, and shrinks everything to 256 px WebP.
+
+For the Club World Cup logo: `--erase "Club World Cup=1320,740,1500,1050"` takes the printed year off, `--arc-center "Club World Cup=749,744,545,1330"` turns the words CLUB WORLD CUP so they sit balanced on top of the ring (the year used to fill the right side of the arc), `--keep-canvas "Club World Cup"` keeps the whole square and `--year-slot "Club World Cup=cwc"` writes `yearSlots`. `tools/make_cwc_years.py logo.png OUT_DIR 2025 2029` makes stills of any years the same way.
 
 ## Making a file from a folder of images
 
