@@ -78,6 +78,18 @@ $mods["movepages"] = (function () {
     return out;
   }
 
+  // one row per coach: the events of the same person (left, then retired; sacked, then hired) share a row and show as several bubbles
+  const COACH = ["h", "x", "q", "cr", "n"];
+  function mergeCoaches(rows) {
+    const out = [], by = new Map();
+    for (const r of rows) {
+      if (!COACH.includes(r.k)) { out.push(r); continue; }
+      const key = r.name + "|" + r.nat, g = by.get(key);
+      if (!g) { const m = Object.assign({}, r, { evs: [r] }); by.set(key, m); out.push(m); }
+      else { g.evs.push(r); g.evs.sort((a, b) => a.i - b.i); const last = g.evs[g.evs.length - 1], ev = g.evs; Object.assign(g, last, { evs: ev, hot: Math.max.apply(null, ev.map((x) => x.hot)) }); }
+    }
+    return out;
+  }
   function v_moves(w, q) {
     const seasons = w.hist.length, S = q.season >= 1 && q.season <= seasons ? q.season : seasons;
     if (!seasons) return { season: null };
@@ -88,7 +100,7 @@ $mods["movepages"] = (function () {
     const rowsFor = (kinds) => all.filter((x) => kinds.includes(x.e.k) && inLeague(x.e, lg)).map((x) => rowOf(w, x.e, x.i, ctx));
     const base = { season: S, label: label(w, S), seasons, recorded, league: lg, leagues, tab, counts: { transfers: cnt.t || 0, free: cnt.fa || 0, hired: cnt.h || 0, fired: cnt.x || 0, left: cnt.q || 0, coachRetired: cnt.cr || 0, academy: cnt.ac || 0, national: cnt.n || 0, retired: cnt.p || 0 }, sort: null, shown: 0, total: 0, rows: [] };
     if (tab === "highlights") {
-      const rows = rowsFor(["t", "f", "p", "h", "x", "q", "cr", "n"]);
+      const rows = mergeCoaches(rowsFor(["t", "f", "p", "h", "x", "q", "cr", "n"]));
       const wk = walk(w, rows); base.walk = wk; base.rows = []; base.total = wk.length; return markLinks(w, base);
     }
     let kinds, filt = () => true;
@@ -97,10 +109,12 @@ $mods["movepages"] = (function () {
       if (q.mv && q.mv !== "all") filt = (r) => r.mv === q.mv;
     } else if (tab === "coaches") {
       const k = q.kind || "all"; kinds = k === "all" ? ["h", "x", "q", "cr", "n"] : k === "acad" ? ["h"] : [k];
-      filt = (r) => (k !== "acad" || r.src === "acad") && (!q.mv || q.mv === "all" || r.mv === q.mv);
+      const evs = (r) => r.evs || [r];
+      filt = (r) => (k === "all" || (k === "acad" ? evs(r).some((e) => e.k === "h" && e.src === "acad") : evs(r).some((e) => e.k === k))) && (!q.mv || q.mv === "all" || evs(r).some((e) => e.mv === q.mv));
     } else { kinds = q.who === "c" ? ["cr"] : ["p"]; }
     const sort = SORTS[q.sort] ? q.sort : (tab === "retired" ? "prestige" : "hot");
-    let rows = rowsFor(kinds).filter(filt).sort(SORTS[sort]);
+    let rows = rowsFor(kinds); if (tab === "coaches") rows = mergeCoaches(rows);
+    rows = rows.filter(filt).sort(SORTS[sort]);
     base.sort = sort; base.total = rows.length; base.rows = rows.slice(0, +q.limit || 60); base.shown = base.rows.length;
     if (tab === "players") { const mvc = { up: 0, side: 0, down: 0 }; for (const r of rowsFor(["t", "f"])) if (r.mv) mvc[r.mv]++; base.mvCounts = mvc; }
     return markLinks(w, base);

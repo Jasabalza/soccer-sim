@@ -21,7 +21,23 @@ function mvWho(r) {
   const nm = r.uid ? `<a href="#/player/${r.uid}">${esc(r.name)}</a>` : r.hid ? `<a href="#/hofcard/${esc(r.hid)}">${esc(r.name)}</a>` : esc(r.name);
   return nm;
 }
+// one short phrase for one coach event (a coach with several events gets several phrases and several bubbles)
+function mvEvPhrase(e) {
+  if (e.k === "h") return e.src === "acad" ? `${esc(e.from)} academy &rarr; ${esc(e.to)}` : e.src === "new" ? `first job &rarr; ${esc(e.to)}` : e.from ? `${esc(e.from)} &rarr; ${esc(e.to)}` : `hired by ${esc(e.to)}`;
+  if (e.k === "x") return `sacked by ${esc(e.from)}`;
+  if (e.k === "q") return `left ${esc(e.from)}`;
+  if (e.k === "cr") return "retired";
+  return `${esc(e.nation)} national team`;
+}
+function mvTags(e) {
+  if (e.k === "h") return e.src === "acad" ? `<span class="tag gold">Academy shot</span>` : `<span class="tag green">Hired</span>${mvTag(e.mv)}`;
+  if (e.k === "x") return `<span class="tag red">Sacked</span>`;
+  if (e.k === "q") return `<span class="tag">Left</span>`;
+  if (e.k === "cr") return `<span class="tag">Retired</span>`;
+  return `<span class="tag blue">National</span>`;
+}
 function mvLine(r) {
+  if (r.evs && r.evs.length > 1) return "Coach &middot; age " + r.age + " &middot; " + r.evs.map(mvEvPhrase).join(" &middot; ");
   const age = r.age ? `age ${r.age}` : "";
   const who = r.k === "t" || r.k === "f" || r.k === "r" || r.k === "p" ? [mvPos(r), age].filter(Boolean).join(" &middot; ") : "Coach &middot; " + age;
   let mid = "";
@@ -37,6 +53,7 @@ function mvLine(r) {
   return [who, mid].filter(Boolean).join(" &middot; ");
 }
 function mvRight(r) {
+  if (r.evs && r.evs.length > 1) return `<span class="mvtags2">${r.evs.map(mvTags).join("")}</span>`;
   if (r.k === "t") return `<b>${money(r.fee)}</b>${mvTag(r.mv)}`;
   if (r.k === "f") return `<b>${r.wage ? money(r.wage) + "/yr" : "free"}</b>${mvTag(r.mv)}`;
   if (r.k === "r") return `<b>${r.wage ? money(r.wage) + "/yr" : ""}</b><span class="tag">no club</span>`;
@@ -130,6 +147,7 @@ async function viewMoves(season, tab) {
 
 // ---------------------------------------------------------------- the walk-through
 function mvStory(r) {
+  if (r.evs && r.evs.length > 1) return r.evs.map((e) => mvStory(Object.assign({}, r, e, { evs: null }))).join(" ");
   const nm = esc(r.name);
   if (r.k === "t") return `${nm} (${esc(r.pos || "")}, ${r.age}) joins ${esc(r.to)} from ${esc(r.from)} for ${money(r.fee)}.${r.abroad ? ` ${esc(r.fromL)} to ${esc(r.toL)}.` : ""}`;
   if (r.k === "f") return r.first ? `First pro contract, with ${esc(r.to)}: ${money(r.wage)}/yr.` : `${r.from ? "Out of contract at " + esc(r.from) + ". " : ""}Signs for ${esc(r.to)}: ${money(r.wage)}/yr.`;
@@ -154,7 +172,7 @@ function mvSlide(r, n, total) {
     <div class="hrv-n">${r.nat ? flag(r.nat, 24) : ""}<div><div class="hrv-name">${mvWho(r)} ${rating}</div><div class="dim small">${r.k === "p" || r.k === "t" || r.k === "f" || r.k === "r" ? mvPos(r) + " &middot; age " + r.age : "Coach &middot; age " + r.age}${r.nat ? " &middot; " + esc(r.nat) : ""}</div></div></div>
     ${fromTo}${money_}
     <div class="mvstory">${mvStory(r)}</div>
-    <div class="mvtags">${r.k === "h" && r.src === "acad" ? `<span class="tag gold">Academy manager gets his shot</span>` : `<span class="tag">${esc(r.kind)}</span>`}${mvTag(r.mv)}${r.rival ? `<span class="tag red">Rivals</span>` : ""}${r.hid ? `<span class="tag gold">Hall of Fame candidate</span>` : ""}</div>
+    <div class="mvtags">${r.evs && r.evs.length > 1 ? r.evs.map(mvTags).join("") : r.k === "h" && r.src === "acad" ? `<span class="tag gold">Academy manager gets his shot</span>` : `<span class="tag">${esc(r.kind)}</span>`}${mvTag(r.mv)}${r.rival ? `<span class="tag red">Rivals</span>` : ""}${r.hid ? `<span class="tag gold">Hall of Fame candidate</span>` : ""}</div>
     <div class="mvheat"><span class="dim small">Heat</span><div class="hbar"><i class="${r.hot >= 70 ? "g" : ""}" style="width:${r.hot}%"></i></div><b>${r.hot}</b></div></div>`;
 }
 function mvWalk(d) {

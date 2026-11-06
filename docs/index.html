@@ -777,6 +777,7 @@ button.wide { width: 100%; min-height: 44px; margin-top: 10px; }
 .mvp .stp span { font-size: 11px; padding: 4px 6px; }
 .mvp .mtiles { gap: 6px; } .mvp .mtiles a { padding: 8px 10px; min-height: 0; } .mvp .mtiles a b { font-size: 18px; }
 .mvp .linkbtn { min-height: 36px; font-size: 13px; }
+.mvp .mvtags2 { display: flex; flex-wrap: wrap; gap: 3px; justify-content: flex-end; max-width: 96px; }
 
 </style>
 
@@ -8155,6 +8156,18 @@ $mods["movepages"] = (function () {
     return out;
   }
 
+  // one row per coach: the events of the same person (left, then retired; sacked, then hired) share a row and show as several bubbles
+  const COACH = ["h", "x", "q", "cr", "n"];
+  function mergeCoaches(rows) {
+    const out = [], by = new Map();
+    for (const r of rows) {
+      if (!COACH.includes(r.k)) { out.push(r); continue; }
+      const key = r.name + "|" + r.nat, g = by.get(key);
+      if (!g) { const m = Object.assign({}, r, { evs: [r] }); by.set(key, m); out.push(m); }
+      else { g.evs.push(r); g.evs.sort((a, b) => a.i - b.i); const last = g.evs[g.evs.length - 1], ev = g.evs; Object.assign(g, last, { evs: ev, hot: Math.max.apply(null, ev.map((x) => x.hot)) }); }
+    }
+    return out;
+  }
   function v_moves(w, q) {
     const seasons = w.hist.length, S = q.season >= 1 && q.season <= seasons ? q.season : seasons;
     if (!seasons) return { season: null };
@@ -8165,7 +8178,7 @@ $mods["movepages"] = (function () {
     const rowsFor = (kinds) => all.filter((x) => kinds.includes(x.e.k) && inLeague(x.e, lg)).map((x) => rowOf(w, x.e, x.i, ctx));
     const base = { season: S, label: label(w, S), seasons, recorded, league: lg, leagues, tab, counts: { transfers: cnt.t || 0, free: cnt.fa || 0, hired: cnt.h || 0, fired: cnt.x || 0, left: cnt.q || 0, coachRetired: cnt.cr || 0, academy: cnt.ac || 0, national: cnt.n || 0, retired: cnt.p || 0 }, sort: null, shown: 0, total: 0, rows: [] };
     if (tab === "highlights") {
-      const rows = rowsFor(["t", "f", "p", "h", "x", "q", "cr", "n"]);
+      const rows = mergeCoaches(rowsFor(["t", "f", "p", "h", "x", "q", "cr", "n"]));
       const wk = walk(w, rows); base.walk = wk; base.rows = []; base.total = wk.length; return markLinks(w, base);
     }
     let kinds, filt = () => true;
@@ -8174,10 +8187,12 @@ $mods["movepages"] = (function () {
       if (q.mv && q.mv !== "all") filt = (r) => r.mv === q.mv;
     } else if (tab === "coaches") {
       const k = q.kind || "all"; kinds = k === "all" ? ["h", "x", "q", "cr", "n"] : k === "acad" ? ["h"] : [k];
-      filt = (r) => (k !== "acad" || r.src === "acad") && (!q.mv || q.mv === "all" || r.mv === q.mv);
+      const evs = (r) => r.evs || [r];
+      filt = (r) => (k === "all" || (k === "acad" ? evs(r).some((e) => e.k === "h" && e.src === "acad") : evs(r).some((e) => e.k === k))) && (!q.mv || q.mv === "all" || evs(r).some((e) => e.mv === q.mv));
     } else { kinds = q.who === "c" ? ["cr"] : ["p"]; }
     const sort = SORTS[q.sort] ? q.sort : (tab === "retired" ? "prestige" : "hot");
-    let rows = rowsFor(kinds).filter(filt).sort(SORTS[sort]);
+    let rows = rowsFor(kinds); if (tab === "coaches") rows = mergeCoaches(rows);
+    rows = rows.filter(filt).sort(SORTS[sort]);
     base.sort = sort; base.total = rows.length; base.rows = rows.slice(0, +q.limit || 60); base.shown = base.rows.length;
     if (tab === "players") { const mvc = { up: 0, side: 0, down: 0 }; for (const r of rowsFor(["t", "f"])) if (r.mv) mvc[r.mv]++; base.mvCounts = mvc; }
     return markLinks(w, base);
@@ -10265,7 +10280,23 @@ function mvWho(r) {
   const nm = r.uid ? `<a href="#/player/${r.uid}">${esc(r.name)}</a>` : r.hid ? `<a href="#/hofcard/${esc(r.hid)}">${esc(r.name)}</a>` : esc(r.name);
   return nm;
 }
+// one short phrase for one coach event (a coach with several events gets several phrases and several bubbles)
+function mvEvPhrase(e) {
+  if (e.k === "h") return e.src === "acad" ? `${esc(e.from)} academy &rarr; ${esc(e.to)}` : e.src === "new" ? `first job &rarr; ${esc(e.to)}` : e.from ? `${esc(e.from)} &rarr; ${esc(e.to)}` : `hired by ${esc(e.to)}`;
+  if (e.k === "x") return `sacked by ${esc(e.from)}`;
+  if (e.k === "q") return `left ${esc(e.from)}`;
+  if (e.k === "cr") return "retired";
+  return `${esc(e.nation)} national team`;
+}
+function mvTags(e) {
+  if (e.k === "h") return e.src === "acad" ? `<span class="tag gold">Academy shot</span>` : `<span class="tag green">Hired</span>${mvTag(e.mv)}`;
+  if (e.k === "x") return `<span class="tag red">Sacked</span>`;
+  if (e.k === "q") return `<span class="tag">Left</span>`;
+  if (e.k === "cr") return `<span class="tag">Retired</span>`;
+  return `<span class="tag blue">National</span>`;
+}
 function mvLine(r) {
+  if (r.evs && r.evs.length > 1) return "Coach &middot; age " + r.age + " &middot; " + r.evs.map(mvEvPhrase).join(" &middot; ");
   const age = r.age ? `age ${r.age}` : "";
   const who = r.k === "t" || r.k === "f" || r.k === "r" || r.k === "p" ? [mvPos(r), age].filter(Boolean).join(" &middot; ") : "Coach &middot; " + age;
   let mid = "";
@@ -10281,6 +10312,7 @@ function mvLine(r) {
   return [who, mid].filter(Boolean).join(" &middot; ");
 }
 function mvRight(r) {
+  if (r.evs && r.evs.length > 1) return `<span class="mvtags2">${r.evs.map(mvTags).join("")}</span>`;
   if (r.k === "t") return `<b>${money(r.fee)}</b>${mvTag(r.mv)}`;
   if (r.k === "f") return `<b>${r.wage ? money(r.wage) + "/yr" : "free"}</b>${mvTag(r.mv)}`;
   if (r.k === "r") return `<b>${r.wage ? money(r.wage) + "/yr" : ""}</b><span class="tag">no club</span>`;
@@ -10374,6 +10406,7 @@ async function viewMoves(season, tab) {
 
 // ---------------------------------------------------------------- the walk-through
 function mvStory(r) {
+  if (r.evs && r.evs.length > 1) return r.evs.map((e) => mvStory(Object.assign({}, r, e, { evs: null }))).join(" ");
   const nm = esc(r.name);
   if (r.k === "t") return `${nm} (${esc(r.pos || "")}, ${r.age}) joins ${esc(r.to)} from ${esc(r.from)} for ${money(r.fee)}.${r.abroad ? ` ${esc(r.fromL)} to ${esc(r.toL)}.` : ""}`;
   if (r.k === "f") return r.first ? `First pro contract, with ${esc(r.to)}: ${money(r.wage)}/yr.` : `${r.from ? "Out of contract at " + esc(r.from) + ". " : ""}Signs for ${esc(r.to)}: ${money(r.wage)}/yr.`;
@@ -10398,7 +10431,7 @@ function mvSlide(r, n, total) {
     <div class="hrv-n">${r.nat ? flag(r.nat, 24) : ""}<div><div class="hrv-name">${mvWho(r)} ${rating}</div><div class="dim small">${r.k === "p" || r.k === "t" || r.k === "f" || r.k === "r" ? mvPos(r) + " &middot; age " + r.age : "Coach &middot; age " + r.age}${r.nat ? " &middot; " + esc(r.nat) : ""}</div></div></div>
     ${fromTo}${money_}
     <div class="mvstory">${mvStory(r)}</div>
-    <div class="mvtags">${r.k === "h" && r.src === "acad" ? `<span class="tag gold">Academy manager gets his shot</span>` : `<span class="tag">${esc(r.kind)}</span>`}${mvTag(r.mv)}${r.rival ? `<span class="tag red">Rivals</span>` : ""}${r.hid ? `<span class="tag gold">Hall of Fame candidate</span>` : ""}</div>
+    <div class="mvtags">${r.evs && r.evs.length > 1 ? r.evs.map(mvTags).join("") : r.k === "h" && r.src === "acad" ? `<span class="tag gold">Academy manager gets his shot</span>` : `<span class="tag">${esc(r.kind)}</span>`}${mvTag(r.mv)}${r.rival ? `<span class="tag red">Rivals</span>` : ""}${r.hid ? `<span class="tag gold">Hall of Fame candidate</span>` : ""}</div>
     <div class="mvheat"><span class="dim small">Heat</span><div class="hbar"><i class="${r.hot >= 70 ? "g" : ""}" style="width:${r.hot}%"></i></div><b>${r.hot}</b></div></div>`;
 }
 function mvWalk(d) {

@@ -774,3 +774,4 @@ button.wide { width: 100%; min-height: 44px; margin-top: 10px; }
 .mvp .stp span { font-size: 11px; padding: 4px 6px; }
 .mvp .mtiles { gap: 6px; } .mvp .mtiles a { padding: 8px 10px; min-height: 0; } .mvp .mtiles a b { font-size: 18px; }
 .mvp .linkbtn { min-height: 36px; font-size: 13px; }
+.mvp .mvtags2 { display: flex; flex-wrap: wrap; gap: 3px; justify-content: flex-end; max-width: 96px; }

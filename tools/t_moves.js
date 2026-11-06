@@ -25,6 +25,10 @@ vm.runInThisContext(fs.readFileSync(__dirname + "/../dist/bundle_engine.js", "ut
   let co = null, ac = 0, fired = 0, nat = 0;
   for (let s = 1; s <= S; s++) { const c = await call("/api/moves?season=" + s + "&tab=coaches"); if (c.counts.academy) ac += c.counts.academy; fired += c.counts.fired; nat += c.counts.national; if (s === S) co = c; }
   if (!co.rows.length) fail("coach rows"); if (!ac) fail("no academy manager ever promoted"); if (!fired) fail("no firings"); if (!nat) fail("no national coach moves");
+  { const all = await call("/api/moves?season=" + S + "&tab=coaches&limit=500"), seen = new Set(); let multi = 0;
+    for (const r of all.rows) { const k = r.name + "|" + r.nat; if (seen.has(k)) fail("coach shown twice: " + k); seen.add(k); if (r.evs && r.evs.length > 1) multi++; }
+    for (let s = 1; s <= S && !multi; s++) { const c = await call("/api/moves?season=" + s + "&tab=coaches&limit=500"); multi += c.rows.filter((r) => r.evs && r.evs.length > 1).length; }
+    if (!multi) fail("no coach with two events (left and retired, or sacked and hired) to check"); }
   const ca = await call("/api/moves?season=" + S + "&tab=coaches&kind=acad"); if (ca.rows.some((r) => r.src !== "acad")) fail("academy filter");
   const rt = await call("/api/moves?season=" + S + "&tab=retired"); if (!rt.rows.length) fail("retired rows"); for (let i = 1; i < rt.rows.length; i++) if (rt.rows[i].prestige > rt.rows[i - 1].prestige) fail("retired sort");
   const rp = await call("/api/moves?season=" + S + "&tab=retired&sort=peak"); for (let i = 1; i < rp.rows.length; i++) if (rp.rows[i].pk > rp.rows[i - 1].pk) fail("peak sort");
