@@ -190,11 +190,12 @@ function natBadge(nat, size) {
 // year: the edition's year, for a picture that came with its year taken off (file key "year": {"Club World Cup": "cwc"}). The four digit year is drawn
 // in the empty middle of the ring, in the logo's own gold. The picture must be the whole 1500 x 1500 canvas (tools/make_nation_logos.py --keep-canvas does that).
 const YEAR_KINDS = { cwc: { x: 750, y: 745, fs: 240, col: "#f6cf6a", sp: 10 } };
+const yr4 = (y) => String(Math.abs(y | 0)).slice(-4).padStart(4, "0");      // always four digits: 2025, 2125, 2825
 function logoBox(kind, name, size, year) {
   const u = logo2(kind, name); if (!u) return "";
   const yk = kind === "comps" && year && window.__LOGOS2 && window.__LOGOS2.year && YEAR_KINDS[window.__LOGOS2.year[name]];
   if (yk) {
-    const yr = String(Math.abs(year | 0)).slice(-4).padStart(4, "0");
+    const yr = yr4(year);
     return `<span class="lbox" style="width:${size}px;height:${size}px" title="${esc(name)} ${yr}"><svg viewBox="0 0 1500 1500" width="100%" height="100%" aria-hidden="true"><image href="${u}" width="1500" height="1500"/><text x="${yk.x}" y="${yk.y}" text-anchor="middle" dominant-baseline="central" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="${yk.fs}" letter-spacing="${yk.sp}" fill="${yk.col}" stroke="${yk.col}" stroke-width="8" stroke-linejoin="round">${yr}</text></svg></span>`;
   }
   return `<span class="lbox" style="width:${size}px;height:${size}px"><img src="${u}" alt="" decoding="async" title="${esc(name)}"></span>`;

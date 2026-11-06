@@ -8,7 +8,21 @@ function editionYear(c) {
   const lab = c && c.current ? (STATUS && STATUS.header && STATUS.header.season_label) : c && c.next_label, m = /(\d{4})\/(\d{2})/.exec(lab || "");
   return m ? +m[1] + 1 : null;
 }
-function compEmb(name, spec, size, year) { return logoBox("comps", name, size, year) || logoBox("leagues", name, size) || (spec ? emblem(spec, size) : ""); }
+// the World Cup host cycles through a fixed list (data/nations.json world_cup.host_order); edition number n (0 = first) is hosted by host_order[n % length]
+function hostFor(editionsPlayed) {
+  try { const o = JSON.parse(window.__DATA.nations).world_cup.host_order; return o[(editionsPlayed | 0) % o.length]; } catch (e) { return null; }
+}
+// the generated World Cup banner of one edition: that host's colours and name, that edition's four digit year
+function wcBanner(host, year, size) {
+  const h = Math.round(size * 1.6), w = Math.round(h * 0.75), y = yr4(year);
+  return `<span class="lbox wcb" style="width:${w}px;height:${h}px" title="World Cup ${esc(host)} ${y}">${wcLogo(host, y, { style: "poster", w })}</span>`;
+}
+function compEmb(name, spec, size, year, host) {
+  const real = logoBox("comps", name, size, year) || logoBox("leagues", name, size);
+  if (real) return real;
+  if (name === "World Cup" && host && year) return wcBanner(host, year, size);      // no imported World Cup logo: the generated banner for this edition
+  return spec ? emblem(spec, size) : "";
+}
 function emblem(spec, size) {
   size = size || 48;
   const id = "e" + (++_eid), k = spec.kind, c = spec.color || "#f5c542";

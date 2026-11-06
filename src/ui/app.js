@@ -641,7 +641,7 @@ const ordN = (n) => `${n}${["th", "st", "nd", "rd"][n % 100 >= 11 && n % 100 <= 
 const POS_ORDER = ["GK", "DEF", "MID", "FWD"], POS_NAME = { GK: "Goalkeepers", DEF: "Defenders", MID: "Midfielders", FWD: "Forwards" };
 const SQ_SORTS = [["pos", "Position"], ["ovr", "Overall"], ["pot", "Potential"], ["age", "Age"], ["wage", "Wage"], ["contract", "Contract"], ["value", "Value"]];
 async function viewClub(name) {
-  const c = await api("/api/club?name=" + enc(name));
+  const [c] = await Promise.all([api("/api/club?name=" + enc(name)), loadWcHosts()]);
   const co = c.coach, key = c.squad.slice().sort((a, b) => b.ovr - a.ovr).slice(0, 5);
   const finishes = c.finishes.slice().sort((a, b) => a.season - b.season), cap = Math.max(20, ...finishes.map((f) => f.pos));
   const last5 = c.finishes.slice(0, 5).map((f) => ordN(f.pos)).join(", ");
@@ -703,17 +703,36 @@ async function viewClub(name) {
 }
 
 // ---- trophy rooms ------------------------------------------------------------------------------------
+// World Cup editions for the trophy rooms: season -> host nation (from the World Cup history), season -> the year it was played
+let WC_HOSTS = {};
+async function loadWcHosts() {
+  try { const h = await api("/api/comphist?key=wc"); WC_HOSTS = {}; (h.hosts || []).forEach((x) => { WC_HOSTS[x.season] = x.host; }); } catch (e) { /* no history yet */ }
+}
+function seasonYear(s) {
+  const hd = STATUS && STATUS.header, m = /(\d{4})\/(\d{2})/.exec((hd && hd.season_label) || "");
+  return m && hd.season != null ? +m[1] + 1 - (hd.season - s) : null;
+}
+// one picture per title won, so you can see which World Cup it was: the generated banner (host and year) for the World Cup, your imported logo with its year for the Club World Cup
+function titleStrip(t) {
+  if (!t.count || (t.title !== "World Cup" && t.title !== "Club World Cup")) return "";
+  const wc = t.title === "World Cup", figs = t.seasons.map((s) => {
+    const y = seasonYear(s), host = WC_HOSTS[s] || null; if (!y) return "";
+    const pic = wc ? (logoBox("comps", t.title, 70, y) || (host ? wcBanner(host, y, 70) : "")) : logoBox("comps", t.title, 70, y);
+    return pic ? `<figure>${pic}<figcaption>S${s} &middot; ${wc && host ? esc(host) + " " : ""}${yr4(y)}</figcaption></figure>` : "";
+  }).join("");
+  return figs ? `<div class="tro-strip">${figs}</div>` : "";
+}
 function trophyRoom(list, title) {
   if (!list || !list.length) return `<div class="card"><h3>${title || "Trophy room"}</h3><div class="meta">No trophies yet.</div></div>`;
   const groups = [["world", "World"], ["continental", "Continental"], ["domestic", "Domestic"], ["individual", "Individual awards"]];
-  const tile = (t) => `<div class="tro ${t.count ? "" : "none"}">${emblem(t.emblem, 54)}<div class="tro-info"><b>${esc(t.title)}</b>
+  const tile = (t) => { const strip = titleStrip(t); return `<div class="tro ${t.count ? "" : "none"}${strip ? " wide" : ""}">${emblem(t.emblem, 54)}<div class="tro-info"><b>${esc(t.title)}</b>
     <div class="tro-n">${t.count ? "&times;" + t.count : "<span class='meta'>runner-up only</span>"}</div>
-    <div class="meta">${t.count ? "S" + t.seasons.join(", S") : ""}${t.runner_up.length ? (t.count ? " &middot; " : "") + "2nd: S" + t.runner_up.join(", S") : ""}</div></div></div>`;
+    <div class="meta">${t.count ? "S" + t.seasons.join(", S") : ""}${t.runner_up.length ? (t.count ? " &middot; " : "") + "2nd: S" + t.runner_up.join(", S") : ""}</div></div>${strip}</div>`; };
   return `<div class="card"><h3>${title || "Trophy room"}</h3>${groups.map(([g, name]) => {
     const items = list.filter((t) => t.group === g); return items.length ? `<div class="tro-group"><div class="lbl">${name}</div><div class="tro-grid">${items.map(tile).join("")}</div></div>` : "";
   }).join("")}</div>`;
 }
-const withEmb = (spec, size, inner, name, year) => `<span class="h1emb">${name ? compEmb(name, spec, size, year) : spec ? emblem(spec, size) : ""}<span>${inner}</span></span>`;
+const withEmb = (spec, size, inner, name, year, host) => `<span class="h1emb">${name ? compEmb(name, spec, size, year, host) : spec ? emblem(spec, size) : ""}<span>${inner}</span></span>`;
 
 // ---- brackets ------------------------------------------------------------------------------------
 // ties of the round being played that already have a result (single games simmed from the list) show it in the bracket before the round is over
@@ -929,7 +948,7 @@ async function viewComp(id) {
       <div id="tab-fld" hidden><div class="scroll"><table><thead><tr><th class="l">Club</th><th class="l">League</th><th>OVR</th></tr></thead><tbody>${x.field.map((f) => `<tr><td class="l">${clubLink(f.club)}</td><td class="l meta">${esc(f.league)}</td><td>${ovr(f.ovr)}</td></tr>`).join("")}</tbody></table></div></div>` : ""}`;
   }
   const finished = p.done >= p.total;
-  $("#view").innerHTML = `<div class="crumbs"><a href="#/world">World</a> / ${esc(x.title)}</div><h1>${withEmb(x.emblem, 44, esc(x.title), x.title, editionYear({ current: true }))}</h1>${liveTabs(id)}
+  $("#view").innerHTML = `<div class="crumbs"><a href="#/world">World</a> / ${esc(x.title)}</div><h1>${withEmb(x.emblem, 44, esc(x.title), x.title, editionYear({ current: true }), x.host)}</h1>${liveTabs(id)}
     ${locked ? `<div class="card" style="margin-bottom:14px"><span class="tag red">LOCKED</span> needs ${p.locked.map((m) => `<a href="#/comp/${enc(m.id)}">${esc(m.title)}</a>`).join(", ")} to finish first.
       <p style="margin:10px 0 0"><button id="k-up" class="pri">Sim up to here</button> <span class="meta">plays only what it needs, then stops so you can play it your way.</span></p>
       <p style="margin:8px 0 0"><button id="k-pre">Sim everything it needs, then this to the end</button></p></div>`
@@ -1047,7 +1066,7 @@ function bestEleven(players) {
 }
 const prRow = (p) => `<div class="pr"><span class="p ${esc(p.pos)}">${esc(p.pos)}</span><div class="nm"><b>${playerLink(p)}</b><span>${p.club ? clubLink(p.club) : "free agent"}</span></div><span class="age">${p.age}</span><span class="ovr">${p.ovr}</span></div>`;
 async function viewNation(name) {
-  const [n, all] = await Promise.all([api("/api/nation?name=" + enc(name)), api("/api/nations")]);
+  const [n, all] = await Promise.all([api("/api/nation?name=" + enc(name)), api("/api/nations"), loadWcHosts()]);
   const me = all.rows.find((r) => r.name === name), rk = me ? me.rank : null;
   const sfx = (k) => { const t = k % 100; return t >= 11 && t <= 13 ? "th" : ["th", "st", "nd", "rd"][k % 10] || "th"; };
   const tabs = [["squad", "Squad"], ["fed", "Federation"], ["hon", "Honours"]];

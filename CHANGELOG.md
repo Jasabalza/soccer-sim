@@ -7,7 +7,8 @@
 - **League and competition logos** on league pages and cards, competition cards and pages (the trophy illustration stays on champion screens and trophy rooms).
 - **Logo file version 2** adds `nations`, `leagues` and `comps`; importing adds to what is already stored. New `tools/make_nation_logos.py` (strips printed stars and printed host/year lines, light halo for dark badges). The game still ships no logos. See docs/LOGOS.md.
 - **Club World Cup year.** It is the only imported logo that depends on the edition. With `yearSlots` in the file the game draws the four digit year in the middle of your imported ring (no year is shipped or drawn without your logo), and `make_nation_logos.py` can turn the lettering round the ring so it stays balanced once the printed year is gone (`--arc-center`, `--keep-canvas`, `--year-slot`; `tools/make_cwc_years.py` for stills).
-- Tests: `tools/t_logos_ui.js`.
+- **World Cup banner.** A generated banner (host colours and name, trophy, four digit year) for every World Cup edition: on the competition card and page, and one per title in trophy rooms. Hosts keep their fixed rotation; the years keep up as it cycles. The Club World Cup trophy room shows the imported logo with each title's year. `src/ui/wclogo.js` is now part of the build.
+- Tests: `tools/t_logos_ui.js`, `tools/t_wclogo_ui.js`.
 
 ## v16: Hall of Fame
 - **Hall of Fame, four tiers.** Club, League, Country and World, for players and for coaches. A Hall of Fame is a vote by people: career points only set the odds. Eligible five years after retiring, up to ten years on the ballot, off after two years under 5%, 75% to get in, limited slots a year. A club and a league decide independently of each other. A world inductee is honoured by his federation unless his national record is poor (the veto and its reason are shown). A coach reaches the country tier by spending time coaching that nation.

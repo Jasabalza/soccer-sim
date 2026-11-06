@@ -22,7 +22,7 @@ function page(kind, logos) {
   const scripts = [
     "window.__DATA = " + JSON.stringify(data) + ";" + "window.__KIND = " + JSON.stringify(kind) + ";" + (logos ? logoScript() : ""),
     "(function(){\n" + engineJs + "\n})();",
-    rd("src/ui/emblems.js"), rd("src/ui/flags.js"), rd("src/ui/pages.js"), rd("src/ui/hof_ui.js"), rd("src/ui/moves_ui.js"), rd("src/ui/app.js"),
+    rd("src/ui/emblems.js"), rd("src/ui/flags.js"), rd("src/ui/wclogo.js"), rd("src/ui/pages.js"), rd("src/ui/hof_ui.js"), rd("src/ui/moves_ui.js"), rd("src/ui/app.js"),
   ].map((s) => "<script>" + safe(s) + "</script>").join("\n");
   return `<title>Soccer Sim</title>\n<style>\n:root { color-scheme: dark; }\n${css}\n</style>\n${rd("src/ui/body.html")}\n${scripts}\n`;
 }

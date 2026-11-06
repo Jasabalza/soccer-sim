@@ -1,5 +1,5 @@
 "use strict";
-/* Generated World Cup and Club World Cup logos (mock-up stage, not wired into the game yet).
+/* Generated World Cup banner. The game draws it for the World Cup when no World Cup logo was imported: each edition gets the host nation and its own four digit year.
    wcLogo(host, year, {style:"poster"|"roundel", w}) builds an ORIGINAL logo: one simple trophy, the host's flag colours, the host's name and the year.
    Nothing here is a real FIFA mark. hostPalette(nation) reads the colours from the game's own flag drawing. */
 let _wcid = 0;
@@ -22,6 +22,7 @@ function hostPalette(nation) {
   const pick = [];
   for (const c of all) if (sat(c) > 60 && _lum(c) > 0.06 && pick.every((p) => _dist(p, c) > 90)) pick.push(c);
   for (const c of all) if (pick.length < 3 && pick.every((p) => _dist(p, c) > 90)) pick.push(c);
+  if (!pick.length) return ["#1d6b3a", "#f5c542", "#ffffff"];       // a nation without a drawn flag
   while (pick.length < 3) pick.push(pick.length === 1 ? _mix(pick[0], [255, 255, 255], 0.75) : _mix(pick[0], [0, 0, 0], 0.5));
   return pick.slice(0, 3).map(_rgb);
 }

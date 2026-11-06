@@ -147,6 +147,9 @@ button.pri:disabled { background: var(--panel2); color: var(--dim); border-color
 .tro-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; margin-top: 6px; }
 .tro { display: flex; gap: 10px; align-items: center; background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; }
 .tro.none { opacity: .6; }
+.tro.wide { grid-column: 1 / -1; flex-wrap: wrap; }
+.tro-strip { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 12px; padding-top: 4px; } .tro-strip figure { margin: 0; text-align: center; } .tro-strip figcaption { font-size: 11px; color: var(--dim); margin-top: 3px; }
+.tro-strip .lbox { margin: 0; }
 .tro-n { font-size: 20px; font-weight: 800; color: var(--accent2); line-height: 1.1; }
 .tro-info { min-width: 0; }
 .tro-info b { font-size: 13px; }

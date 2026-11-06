@@ -150,6 +150,9 @@ button.pri:disabled { background: var(--panel2); color: var(--dim); border-color
 .tro-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; margin-top: 6px; }
 .tro { display: flex; gap: 10px; align-items: center; background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; }
 .tro.none { opacity: .6; }
+.tro.wide { grid-column: 1 / -1; flex-wrap: wrap; }
+.tro-strip { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 12px; padding-top: 4px; } .tro-strip figure { margin: 0; text-align: center; } .tro-strip figcaption { font-size: 11px; color: var(--dim); margin-top: 3px; }
+.tro-strip .lbox { margin: 0; }
 .tro-n { font-size: 20px; font-weight: 800; color: var(--accent2); line-height: 1.1; }
 .tro-info { min-width: 0; }
 .tro-info b { font-size: 13px; }
@@ -9459,7 +9462,21 @@ function editionYear(c) {
   const lab = c && c.current ? (STATUS && STATUS.header && STATUS.header.season_label) : c && c.next_label, m = /(\d{4})\/(\d{2})/.exec(lab || "");
   return m ? +m[1] + 1 : null;
 }
-function compEmb(name, spec, size, year) { return logoBox("comps", name, size, year) || logoBox("leagues", name, size) || (spec ? emblem(spec, size) : ""); }
+// the World Cup host cycles through a fixed list (data/nations.json world_cup.host_order); edition number n (0 = first) is hosted by host_order[n % length]
+function hostFor(editionsPlayed) {
+  try { const o = JSON.parse(window.__DATA.nations).world_cup.host_order; return o[(editionsPlayed | 0) % o.length]; } catch (e) { return null; }
+}
+// the generated World Cup banner of one edition: that host's colours and name, that edition's four digit year
+function wcBanner(host, year, size) {
+  const h = Math.round(size * 1.6), w = Math.round(h * 0.75), y = yr4(year);
+  return `<span class="lbox wcb" style="width:${w}px;height:${h}px" title="World Cup ${esc(host)} ${y}">${wcLogo(host, y, { style: "poster", w })}</span>`;
+}
+function compEmb(name, spec, size, year, host) {
+  const real = logoBox("comps", name, size, year) || logoBox("leagues", name, size);
+  if (real) return real;
+  if (name === "World Cup" && host && year) return wcBanner(host, year, size);      // no imported World Cup logo: the generated banner for this edition
+  return spec ? emblem(spec, size) : "";
+}
 function emblem(spec, size) {
   size = size || 48;
   const id = "e" + (++_eid), k = spec.kind, c = spec.color || "#f5c542";
@@ -9713,11 +9730,12 @@ function natBadge(nat, size) {
 // year: the edition's year, for a picture that came with its year taken off (file key "year": {"Club World Cup": "cwc"}). The four digit year is drawn
 // in the empty middle of the ring, in the logo's own gold. The picture must be the whole 1500 x 1500 canvas (tools/make_nation_logos.py --keep-canvas does that).
 const YEAR_KINDS = { cwc: { x: 750, y: 745, fs: 240, col: "#f6cf6a", sp: 10 } };
+const yr4 = (y) => String(Math.abs(y | 0)).slice(-4).padStart(4, "0");      // always four digits: 2025, 2125, 2825
 function logoBox(kind, name, size, year) {
   const u = logo2(kind, name); if (!u) return "";
   const yk = kind === "comps" && year && window.__LOGOS2 && window.__LOGOS2.year && YEAR_KINDS[window.__LOGOS2.year[name]];
   if (yk) {
-    const yr = String(Math.abs(year | 0)).slice(-4).padStart(4, "0");
+    const yr = yr4(year);
     return `<span class="lbox" style="width:${size}px;height:${size}px" title="${esc(name)} ${yr}"><svg viewBox="0 0 1500 1500" width="100%" height="100%" aria-hidden="true"><image href="${u}" width="1500" height="1500"/><text x="${yk.x}" y="${yk.y}" text-anchor="middle" dominant-baseline="central" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="${yk.fs}" letter-spacing="${yk.sp}" fill="${yk.col}" stroke="${yk.col}" stroke-width="8" stroke-linejoin="round">${yr}</text></svg></span>`;
   }
   return `<span class="lbox" style="width:${size}px;height:${size}px"><img src="${u}" alt="" decoding="async" title="${esc(name)}"></span>`;
@@ -9751,6 +9769,70 @@ function titleStars(n, size, what) {
   const k = starLadder(n); if (!k.length) return "";
   size = size || 13;
   return `<span class="tstars" role="img" aria-label="${n} ${what || "title"}${n > 1 ? "s" : ""}" title="${n} ${what || "title"}${n > 1 ? "s" : ""}">${k.map((c) => `<svg width="${size}" height="${size}" viewBox="0 0 20 20" aria-hidden="true"><path d="${_starPath}" fill="${STAR_COL[c]}" ${c === "w" ? 'stroke="#8ec5ff" stroke-width="1.2" style="filter:drop-shadow(0 0 3px #9fd0ff)"' : 'stroke="rgba(0,0,0,.35)" stroke-width="1"'}/></svg>`).join("")}</span>`;
+}
+</script>
+<script>"use strict";
+/* Generated World Cup banner. The game draws it for the World Cup when no World Cup logo was imported: each edition gets the host nation and its own four digit year.
+   wcLogo(host, year, {style:"poster"|"roundel", w}) builds an ORIGINAL logo: one simple trophy, the host's flag colours, the host's name and the year.
+   Nothing here is a real FIFA mark. hostPalette(nation) reads the colours from the game's own flag drawing. */
+let _wcid = 0;
+function _hex(c) { c = c.replace("#", ""); if (c.length === 3) c = c.replace(/./g, "$&$&"); return [0, 2, 4].map((i) => parseInt(c.substr(i, 2), 16)); }
+function _rgb(a) { return "#" + a.map((v) => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, "0")).join(""); }
+const _lum = (a) => (0.2126 * a[0] + 0.7152 * a[1] + 0.0722 * a[2]) / 255;
+const _mix = (a, b, t) => a.map((v, i) => v + (b[i] - v) * t);
+const _dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+// the three main colours of a nation's flag, biggest area first. Whites and blacks only fill in when the flag has fewer than three colours.
+function hostPalette(nation) {
+  const svg = (typeof FLAGS === "object" && FLAGS[nation]) ? FLAGS[nation]() : "";
+  const w = {};
+  const add = (c, a) => { if (!/^#[0-9a-f]{3,6}$/i.test(c)) return; const k = _rgb(_hex(c)); w[k] = (w[k] || 0) + a; };
+  for (const m of svg.matchAll(/<rect[^>]*?width="([\d.]+)"[^>]*?height="([\d.]+)"[^>]*?fill="(#[0-9a-fA-F]+)"/g)) add(m[3], m[1] * m[2]);
+  for (const m of svg.matchAll(/<circle[^>]*?r="([\d.]+)"[^>]*?fill="(#[0-9a-fA-F]+)"/g)) add(m[2], Math.PI * m[1] * m[1]);
+  for (const m of svg.matchAll(/<polygon[^>]*?fill="(#[0-9a-fA-F]+)"/g)) add(m[1], 260);
+  for (const m of svg.matchAll(/<path[^>]*?fill="(#[0-9a-fA-F]+)"/g)) add(m[1], 120);
+  const all = Object.entries(w).sort((a, b) => b[1] - a[1]).map(([k]) => _hex(k));
+  const sat = (a) => Math.max(...a) - Math.min(...a);
+  const pick = [];
+  for (const c of all) if (sat(c) > 60 && _lum(c) > 0.06 && pick.every((p) => _dist(p, c) > 90)) pick.push(c);
+  for (const c of all) if (pick.length < 3 && pick.every((p) => _dist(p, c) > 90)) pick.push(c);
+  if (!pick.length) return ["#1d6b3a", "#f5c542", "#ffffff"];       // a nation without a drawn flag
+  while (pick.length < 3) pick.push(pick.length === 1 ? _mix(pick[0], [255, 255, 255], 0.75) : _mix(pick[0], [0, 0, 0], 0.5));
+  return pick.slice(0, 3).map(_rgb);
+}
+// the one trophy: a globe held by a flaring column on a banded base. 100 x 160 box.
+function _trophy(id, band) {
+  return `<defs><linearGradient id="${id}g" x1="0" x2="1"><stop offset="0" stop-color="#fff2ad"/><stop offset=".45" stop-color="#f5c542"/><stop offset="1" stop-color="#a87708"/></linearGradient></defs>
+  <path d="M33 56C20 74 34 90 41 106c4 10 0 16-7 24h32c-7-8-11-14-7-24 7-16 21-32 8-50-8 5-18 7-17 7s-9-2-17-7z" fill="url(#${id}g)"/>
+  <circle cx="50" cy="36" r="27" fill="url(#${id}g)"/><path d="M30 28c4-9 13-14 22-13" stroke="#fff" stroke-opacity=".7" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path d="M24 38c9 6 43 6 52 0" stroke="#8a6508" stroke-opacity=".45" stroke-width="1.6" fill="none"/>
+  <rect x="26" y="130" width="48" height="9" rx="2" fill="url(#${id}g)"/><rect x="26" y="139" width="48" height="6" rx="2" fill="${band}"/>`;
+}
+function wcLogo(host, year, o) {
+  o = o || {}; const style = o.style || "poster", id = "wl" + (++_wcid), pal = o.palette || hostPalette(host), w = o.w || 240;
+  const sat = (a) => Math.max(...a) - Math.min(...a), cand = pal.map(_hex).filter((a) => sat(a) > 60), bgc = cand.length ? cand.reduce((a, b) => (_lum(b) < _lum(a) ? b : a)) : _hex(pal[0]);
+  const p1 = _hex(pal[0]), p2 = pal[1], p3 = pal[2], bg1 = _rgb(_lum(bgc) > 0.5 ? _mix(bgc, [0, 0, 0], 0.4) : _mix(bgc, [0, 0, 0], 0.1)), bg0 = _rgb(_mix(_hex(bg1), [0, 0, 0], 0.5));
+  const name = String(host).toUpperCase(), fs = name.length > 14 ? 17 : name.length > 10 ? 20 : 24;
+  if (style === "roundel") {
+    const ink = _lum(p1) > 0.6 ? "#111" : "#fff";
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 260" width="${w}" height="${w}" role="img" aria-label="World Cup ${esc(host)} ${year}">
+      <defs><radialGradient id="${id}b" cx=".5" cy=".4" r=".7"><stop offset="0" stop-color="${bg1}"/><stop offset="1" stop-color="${bg0}"/></radialGradient>
+        <path id="${id}t" d="M38 130a92 92 0 0 1 184 0"/><path id="${id}u" d="M26 130a104 104 0 0 0 208 0"/></defs>
+      <circle cx="130" cy="130" r="124" fill="url(#${id}b)" stroke="${pal[0]}" stroke-width="10"/><circle cx="130" cy="130" r="113" fill="none" stroke="${p2}" stroke-width="2.5"/>
+      <text font-family="Arial,Helvetica,sans-serif" font-weight="800" font-size="15" letter-spacing="5" fill="#fff" text-anchor="middle"><textPath href="#${id}t" startOffset="50%">WORLD CUP</textPath></text>
+      <g transform="translate(97 46) scale(.64)">${_trophy(id, p2)}</g>
+      <rect x="62" y="158" width="136" height="36" rx="6" fill="${pal[0]}" stroke="${p3}" stroke-width="2.5"/>
+      <text x="130" y="185" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="27" letter-spacing="3" fill="${ink}" text-anchor="middle">${year}</text>
+      <text font-family="Arial,Helvetica,sans-serif" font-weight="800" font-size="${name.length > 11 ? 12 : 14}" letter-spacing="${name.length > 11 ? 2 : 4}" fill="#f5c542" text-anchor="middle"><textPath href="#${id}u" startOffset="50%">${esc(name)}</textPath></text></svg>`;
+  }
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 320" width="${w}" height="${w * 320 / 240}" role="img" aria-label="World Cup ${esc(host)} ${year}">
+    <defs><linearGradient id="${id}b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${bg1}"/><stop offset="1" stop-color="${bg0}"/></linearGradient><clipPath id="${id}c"><rect width="240" height="320" rx="20"/></clipPath></defs>
+    <g clip-path="url(#${id}c)"><rect width="240" height="320" fill="url(#${id}b)"/>
+      <circle cx="120" cy="128" r="92" fill="none" stroke="${p2}" stroke-opacity=".55" stroke-width="3"/><circle cx="120" cy="128" r="104" fill="none" stroke="${p3}" stroke-opacity=".3" stroke-width="1.5"/>
+      <text x="120" y="34" font-family="Arial,Helvetica,sans-serif" font-weight="800" font-size="15" letter-spacing="6" fill="#fff" fill-opacity=".92" text-anchor="middle">WORLD CUP</text>
+      <g transform="translate(62 48) scale(1.15)">${_trophy(id, p2)}</g>
+      <text x="120" y="244" font-family="Arial,Helvetica,sans-serif" font-weight="800" font-size="${fs}" letter-spacing="3" fill="#fff" text-anchor="middle">${esc(name)}</text>
+      <text x="120" y="284" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="40" letter-spacing="2" fill="#f5c542" text-anchor="middle">${year}</text>
+      <rect y="296" width="240" height="8" fill="${pal[0]}"/><rect y="304" width="240" height="8" fill="${p2}"/><rect y="312" width="240" height="8" fill="${p3}"/></g></svg>`;
 }
 </script>
 <script>// v15.2 pages: league page with tabs, continent pages for every confederation, and competition pages (History and Stats)
@@ -9868,7 +9950,7 @@ function compCard(c) {
     const fin = cur.total > 0 && cur.done >= cur.total;
     status = `<div class="st"><span>Season ${cur.season}: ${fin ? "finished" : cur.next ? esc(cur.next) + (cur.next_date ? " · " + esc(cur.next_date.text) : "") : "in progress"}</span><span>${cur.done} of ${cur.total}</span></div><div class="bar"><i style="width:${cur.total ? Math.round(cur.done / cur.total * 100) : 0}%"></i></div>`;
   } else status = `<div class="st"><span>Between tournaments${c.next_label ? " · next in " + esc(c.next_label) : ""}</span><span>${c.editions_n} played</span></div>`;
-  return `<div class="cc"><div class="t"><span class="cem">${compEmb(c.title, c.emblem, 38, editionYear(c))}</span><div class="m"><b>${esc(c.title)}</b><span><span class="tag ${c.scope === "clubs" ? "blue" : "gold"}">${c.scope === "clubs" ? "Clubs" : "National teams"}</span> · ${everyTxt(c)}</span></div></div>
+  return `<div class="cc"><div class="t"><span class="cem">${compEmb(c.title, c.emblem, 38, editionYear(c), hostFor(c.editions_n))}</span><div class="m"><b>${esc(c.title)}</b><span><span class="tag ${c.scope === "clubs" ? "blue" : "gold"}">${c.scope === "clubs" ? "Clubs" : "National teams"}</span> · ${everyTxt(c)}</span></div></div>
     ${status}
     <div class="kv"><div><span>HOLDERS</span><b>${hd ? lk(hd.name) : "None yet"}</b></div><div><span>MOST TITLES</span><b>${mostTxt(c)}</b></div></div>
     <a class="go" href="#/c/${enc(c.key)}"><span>${cur ? "Current edition, history and stats" : "History, winners and stats"}</span><span>&rsaquo;</span></a></div>`;
@@ -9925,7 +10007,7 @@ async function viewCompPage(key, tab) {
   if (cf !== "WORLD") crumb.push(`<a href="#/continent/${esc(cf)}">${esc(cf)}</a>`);
   crumb.push(esc(h.title));
   $("#view").innerHTML = `<div class="v2">${crumbHTML(crumb)}
-    <div style="display:flex;align-items:center;gap:12px"><span class="cem big-e">${compEmb(h.title, h.emblem, 48, editionYear(h))}</span><div><h1>${esc(h.title)}</h1><div class="sub">${sub}</div></div></div>
+    <div style="display:flex;align-items:center;gap:12px"><span class="cem big-e">${compEmb(h.title, h.emblem, 48, editionYear(h), hostFor(h.editions_n))}</span><div><h1>${esc(h.title)}</h1><div class="sub">${sub}</div></div></div>
     ${stat4}${compTabsHTML(key, tab, cur && cur.cid)}<div id="cp-body"></div></div>`;
   const body = $("#cp-body");
   if (tab === "stats") {
@@ -11276,7 +11358,7 @@ const ordN = (n) => `${n}${["th", "st", "nd", "rd"][n % 100 >= 11 && n % 100 <= 
 const POS_ORDER = ["GK", "DEF", "MID", "FWD"], POS_NAME = { GK: "Goalkeepers", DEF: "Defenders", MID: "Midfielders", FWD: "Forwards" };
 const SQ_SORTS = [["pos", "Position"], ["ovr", "Overall"], ["pot", "Potential"], ["age", "Age"], ["wage", "Wage"], ["contract", "Contract"], ["value", "Value"]];
 async function viewClub(name) {
-  const c = await api("/api/club?name=" + enc(name));
+  const [c] = await Promise.all([api("/api/club?name=" + enc(name)), loadWcHosts()]);
   const co = c.coach, key = c.squad.slice().sort((a, b) => b.ovr - a.ovr).slice(0, 5);
   const finishes = c.finishes.slice().sort((a, b) => a.season - b.season), cap = Math.max(20, ...finishes.map((f) => f.pos));
   const last5 = c.finishes.slice(0, 5).map((f) => ordN(f.pos)).join(", ");
@@ -11338,17 +11420,36 @@ async function viewClub(name) {
 }
 
 // ---- trophy rooms ------------------------------------------------------------------------------------
+// World Cup editions for the trophy rooms: season -> host nation (from the World Cup history), season -> the year it was played
+let WC_HOSTS = {};
+async function loadWcHosts() {
+  try { const h = await api("/api/comphist?key=wc"); WC_HOSTS = {}; (h.hosts || []).forEach((x) => { WC_HOSTS[x.season] = x.host; }); } catch (e) { /* no history yet */ }
+}
+function seasonYear(s) {
+  const hd = STATUS && STATUS.header, m = /(\d{4})\/(\d{2})/.exec((hd && hd.season_label) || "");
+  return m && hd.season != null ? +m[1] + 1 - (hd.season - s) : null;
+}
+// one picture per title won, so you can see which World Cup it was: the generated banner (host and year) for the World Cup, your imported logo with its year for the Club World Cup
+function titleStrip(t) {
+  if (!t.count || (t.title !== "World Cup" && t.title !== "Club World Cup")) return "";
+  const wc = t.title === "World Cup", figs = t.seasons.map((s) => {
+    const y = seasonYear(s), host = WC_HOSTS[s] || null; if (!y) return "";
+    const pic = wc ? (logoBox("comps", t.title, 70, y) || (host ? wcBanner(host, y, 70) : "")) : logoBox("comps", t.title, 70, y);
+    return pic ? `<figure>${pic}<figcaption>S${s} &middot; ${wc && host ? esc(host) + " " : ""}${yr4(y)}</figcaption></figure>` : "";
+  }).join("");
+  return figs ? `<div class="tro-strip">${figs}</div>` : "";
+}
 function trophyRoom(list, title) {
   if (!list || !list.length) return `<div class="card"><h3>${title || "Trophy room"}</h3><div class="meta">No trophies yet.</div></div>`;
   const groups = [["world", "World"], ["continental", "Continental"], ["domestic", "Domestic"], ["individual", "Individual awards"]];
-  const tile = (t) => `<div class="tro ${t.count ? "" : "none"}">${emblem(t.emblem, 54)}<div class="tro-info"><b>${esc(t.title)}</b>
+  const tile = (t) => { const strip = titleStrip(t); return `<div class="tro ${t.count ? "" : "none"}${strip ? " wide" : ""}">${emblem(t.emblem, 54)}<div class="tro-info"><b>${esc(t.title)}</b>
     <div class="tro-n">${t.count ? "&times;" + t.count : "<span class='meta'>runner-up only</span>"}</div>
-    <div class="meta">${t.count ? "S" + t.seasons.join(", S") : ""}${t.runner_up.length ? (t.count ? " &middot; " : "") + "2nd: S" + t.runner_up.join(", S") : ""}</div></div></div>`;
+    <div class="meta">${t.count ? "S" + t.seasons.join(", S") : ""}${t.runner_up.length ? (t.count ? " &middot; " : "") + "2nd: S" + t.runner_up.join(", S") : ""}</div></div>${strip}</div>`; };
   return `<div class="card"><h3>${title || "Trophy room"}</h3>${groups.map(([g, name]) => {
     const items = list.filter((t) => t.group === g); return items.length ? `<div class="tro-group"><div class="lbl">${name}</div><div class="tro-grid">${items.map(tile).join("")}</div></div>` : "";
   }).join("")}</div>`;
 }
-const withEmb = (spec, size, inner, name, year) => `<span class="h1emb">${name ? compEmb(name, spec, size, year) : spec ? emblem(spec, size) : ""}<span>${inner}</span></span>`;
+const withEmb = (spec, size, inner, name, year, host) => `<span class="h1emb">${name ? compEmb(name, spec, size, year, host) : spec ? emblem(spec, size) : ""}<span>${inner}</span></span>`;
 
 // ---- brackets ------------------------------------------------------------------------------------
 // ties of the round being played that already have a result (single games simmed from the list) show it in the bracket before the round is over
@@ -11564,7 +11665,7 @@ async function viewComp(id) {
       <div id="tab-fld" hidden><div class="scroll"><table><thead><tr><th class="l">Club</th><th class="l">League</th><th>OVR</th></tr></thead><tbody>${x.field.map((f) => `<tr><td class="l">${clubLink(f.club)}</td><td class="l meta">${esc(f.league)}</td><td>${ovr(f.ovr)}</td></tr>`).join("")}</tbody></table></div></div>` : ""}`;
   }
   const finished = p.done >= p.total;
-  $("#view").innerHTML = `<div class="crumbs"><a href="#/world">World</a> / ${esc(x.title)}</div><h1>${withEmb(x.emblem, 44, esc(x.title), x.title, editionYear({ current: true }))}</h1>${liveTabs(id)}
+  $("#view").innerHTML = `<div class="crumbs"><a href="#/world">World</a> / ${esc(x.title)}</div><h1>${withEmb(x.emblem, 44, esc(x.title), x.title, editionYear({ current: true }), x.host)}</h1>${liveTabs(id)}
     ${locked ? `<div class="card" style="margin-bottom:14px"><span class="tag red">LOCKED</span> needs ${p.locked.map((m) => `<a href="#/comp/${enc(m.id)}">${esc(m.title)}</a>`).join(", ")} to finish first.
       <p style="margin:10px 0 0"><button id="k-up" class="pri">Sim up to here</button> <span class="meta">plays only what it needs, then stops so you can play it your way.</span></p>
       <p style="margin:8px 0 0"><button id="k-pre">Sim everything it needs, then this to the end</button></p></div>`
@@ -11682,7 +11783,7 @@ function bestEleven(players) {
 }
 const prRow = (p) => `<div class="pr"><span class="p ${esc(p.pos)}">${esc(p.pos)}</span><div class="nm"><b>${playerLink(p)}</b><span>${p.club ? clubLink(p.club) : "free agent"}</span></div><span class="age">${p.age}</span><span class="ovr">${p.ovr}</span></div>`;
 async function viewNation(name) {
-  const [n, all] = await Promise.all([api("/api/nation?name=" + enc(name)), api("/api/nations")]);
+  const [n, all] = await Promise.all([api("/api/nation?name=" + enc(name)), api("/api/nations"), loadWcHosts()]);
   const me = all.rows.find((r) => r.name === name), rk = me ? me.rank : null;
   const sfx = (k) => { const t = k % 100; return t >= 11 && t <= 13 ? "th" : ["th", "st", "nd", "rd"][k % 10] || "th"; };
   const tabs = [["squad", "Squad"], ["fed", "Federation"], ["hon", "Honours"]];
