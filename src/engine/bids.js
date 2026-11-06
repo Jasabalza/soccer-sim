@@ -67,6 +67,7 @@ $mods["bids"] = (function () {
       const X = cfg.money_x, e1 = (x) => Math.round(x * X * 10) / 10;
       tl.set("detail", $dict($kw({ "base": e1(ask0), "asking": e1(ask0 * demand * win.prem), "demand": Math.round(demand * 100) / 100, "premium": win.prem, "traits": $dict($kw({ "money": T.money, "loyal": T.loyal, "ambition": T.ambition, "trophies": T.trophies })),
         "bids": bidders.map((c) => $dict($kw({ "club": c.b, "bid": e1(c.bid), "wage": e1(c.wage), "score": Math.round(c.score * 100) / 100, "rival": c.R > 0 }))), "comp": e1(comp), "trainer": trainer })));
+      $mods.moves.detail(w, tl.get_("detail"));
       by[seller] = by[seller].filter((x) => x !== p); by[win.b].push(p); pay[seller] -= p.wage; pay[win.b] += win.wage;
       p.club = win.b; p.league = win.B.get_("league"); p.wage = win.wage; p.contract = rng.randint(2, 4); p.prot = 0; done.add(p); moves++;
       if (fee >= 25) w._bid_news(p, win.b, seller, fee);

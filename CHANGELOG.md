@@ -1,5 +1,26 @@
 # Changelog
 
+## v16: Hall of Fame
+- **Hall of Fame, four tiers.** Club, League, Country and World, for players and for coaches. A Hall of Fame is a vote by people: career points only set the odds. Eligible five years after retiring, up to ten years on the ballot, off after two years under 5%, 75% to get in, limited slots a year. A club and a league decide independently of each other. A world inductee is honoured by his federation unless his national record is poor (the veto and its reason are shown). A coach reaches the country tier by spending time coaching that nation.
+- **Induction day.** In the end-of-year awards: Final-year watch (swipe cards), The vote (one reveal at a time, then a summary with near misses and any veto) and who fell off the ballot. A league's own Hall of Fame day runs when that league's season ends: a popup with Watch the ceremony / Hall of Fame results / Close; results in League, Clubs and Ballot tabs with a club drill-down.
+- **Favourites are leagues now.** A favourited league plays its ceremony automatically. Club favourites are gone.
+- **Hall of Fame tab:** World / Country / League / Club, Players | Coaches, Favourites, and Inductees / Ballot / Watch / Snubs / Records. The old league Hall of Fame moved to the league page's Honours tab, and the league page has a new Hall of Fame tab. Player pages show the four-tier chain; coach pages show their career path.
+- **Legacy chasers.** Some borderline Hall-of-Fame players keep playing longer, dropping to smaller leagues for more stats, like old club legends do. Poor late years lower their odds.
+- **Academies.** Each club has an academy prestige built from what its graduates became (and who is in a hall). A new Academies ranking (World / Continent / League; Top, Rising, Underachievers) and an Academy tab on every club page. The academy manager is a real person who can be promoted to first-team manager; the replacement is a fresh draw whose odds depend on prestige and spend, and the manager adds a modifier to youth development.
+- **Off-season moves** (replaces the Transfers screen): one page for everything that changes hands between two seasons. It opens on a list, like the old Transfers page.
+  - **Players** (the landing list): transfers with the biggest fees first, free agents signed (with who released them) and released players still looking. Switch between the whole world, any league or your favourite leagues. Tap a transfer to open its bidding war: how the price was set and every club's bid. Filter by step up / lateral / step down; sort by highest paid, hottest, best player, biggest jump or youngest.
+  - **Coaches:** hired, academy shot, sacked, left, retired and national team jobs, with move type and sorts.
+  - **Retired:** players and coaches ranked by prestige, peak level or age, with the Hall of Fame year they become eligible.
+  - **Money** (a List | Money switch inside Players; the old Transfer money page is gone, and old links open this view): with the whole world picked, bars for every league (Net, Spent or Earned chips) and an All leagues | Favorites tab. Pick a league and the same view shows that league's spent, earned, net and rank, then Biggest spenders and Biggest sellers bars for its clubs (top 6, show all). Tap a club for its buys and sells, with the bidding wars. One league picker drives both the list and the money; the numbers are that league's own clubs. API: `/api/movemoney`.
+  - **Walk-through** (small optional button): 26 of the hottest moves one at a time in four chapters (transfers, free agents, coaches, retirements), with a heat meter.
+  - One row per coach: someone who left and then retired, or was sacked and then hired, shows once with several bubbles.
+  - Smaller boxes, rows and text on this page; short lines wrap instead of being cut off.
+  - Every long league list (Off-season, Players, Graduates, Academies) puts your favourite leagues at the top.
+  - The stepper and nav say Off-season. A season's moves are one compact record (last 10 seasons); older saves show transfers only for seasons played before this update. API: `/api/moves`, `/api/movemoney`.
+- Engine: new modules `hof`, `hofpages`, `moves`, `movepages`. The move log writes down what happens and never changes it: all golden files are unchanged by it.
+- Known: new worlds see their first inductions around season 13 to 16; older saves get a founding class.
+- Next (16.1): league logos on league pages and cards. The trophy stays on the champion screen.
+
 ## v15.2 fixes (UI patch)
 - **All-time leaderboards:** rank numbers were wrong (28, 4, 1...). They now run 1, 2, 3 in every list, with ties sharing a rank.
 - **Club World Cup group stage** now looks and works like the World Cup: group buttons (All, A to H) and one group's games at a time.

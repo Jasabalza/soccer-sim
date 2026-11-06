@@ -201,7 +201,7 @@ function historyHTML(h, lk, nation) {
 function liveTabs(cid) { const key = famKey(cid); return key ? `<div class="v2">${compTabsHTML(key, "now", cid)}</div>` : ""; }
 
 // ---------------------------------------------------------------- league page
-const LTABS = [["table", "Table"], ["money", "Money"], ["hof", "Hall of Fame"], ["fix", "Fixtures"], ["stats", "Stats"]];
+const LTABS = [["table", "Table"], ["money", "Money"], ["hof", "Honours"], ["halls", "Hall of Fame"], ["fix", "Fixtures"], ["stats", "Stats"]];
 const HEALTH_TAG = { Strong: "green", Steady: "", Tight: "gold", "In debt": "red" };
 function leagueMoneyHTML(mon, d) {
   if (!mon || !mon.season) return `<div class="card"><h3>League health</h3><div class="dim small">The books open after the first completed season.</div></div>`;
@@ -228,7 +228,7 @@ function leagueMoneyHTML(mon, d) {
     <div class="card"><h3>Compare with other leagues</h3>${near.map((x) => `<a class="row" href="#/league/${enc(x.league)}"><span ${x.league === mon.league ? 'class="gold"' : ""}>${esc(x.league)}</span><span class="dim small">${money(x.avg_income)} · x${(+x.tv).toFixed(2)}</span></a>`).join("")}<a class="more" href="#/money"><span>All leagues: strength and money</span><span>&rsaquo;</span></a></div>`;
 }
 function leagueHofHTML(hof, d) {
-  if (!hof || !hof.seasons_n) return `<div class="card"><h3>Hall of Fame</h3><div class="dim small">No completed season yet. Titles, champions and records appear after the first one.</div></div>`;
+  if (!hof || !hof.seasons_n) return `<div class="card"><h3>Honours</h3><div class="dim small">No completed season yet. Titles, champions and records appear after the first one.</div></div>`;
   const top = Math.max(1, hof.most_n), nm = (names) => (names.length > 2 ? names.length + " clubs" : names.map(esc).join(" and "));
   const run = hof.run;
   const tiles = `<div class="tiles"><div class="tile"><span class="eyebrow">Current champion</span><b>${clubLink(hof.holder.club)}</b><span class="dim small">season ${hof.holder.season}</span></div>
@@ -279,12 +279,23 @@ async function viewLeague(name, season) {
     <div style="display:flex;align-items:center;gap:12px"><span class="cem big-e">${emblem(d.emblem, 48)}</span><div><h1>${esc(d.name)}</h1><div class="sub">${subBits.join(" · ")}${past ? ` · <span class="tag gold">season ${past.season} final table</span>` : ""}</div></div></div>
     <div class="stat4"><div><b>${d.avg}</b><span>AVG OVR</span></div><div><b>${mon && mon.season ? money(mon.avg_income) : "-"}</b><span>CLUB INCOME</span></div><div><b>x${(+d.tv).toFixed(2)}</b><span>TV MONEY</span></div><div><b>${mon && mon.season ? "#" + mon.rank : "-"}</b><span>${mon && mon.season ? "RICHEST OF " + mon.of : "RICHEST"}</span></div></div>
     <nav class="tabs2" id="lg-tabs" aria-label="League sections">${LTABS.map(([k, t]) => `<button data-lt="${k}" class="${k === S.tab ? "on" : ""}">${t}</button>`).join("")}</nav>
-    <div id="lg-table">${tablePane}</div><div id="lg-money" hidden>${leagueMoneyHTML(mon, d)}</div><div id="lg-hof" hidden>${leagueHofHTML(hof, d)}</div><div id="lg-fix" hidden>${fixPane}</div><div id="lg-stats" hidden></div></div>`;
+    <div id="lg-table">${tablePane}</div><div id="lg-money" hidden>${leagueMoneyHTML(mon, d)}</div><div id="lg-hof" hidden>${leagueHofHTML(hof, d)}</div><div id="lg-fix" hidden>${fixPane}</div><div id="lg-halls" hidden></div><div id="lg-stats" hidden></div></div>`;
   const built = {};
   const show = (t) => {
     S.tab = t;
     document.querySelectorAll("#lg-tabs [data-lt]").forEach((b) => b.classList.toggle("on", b.dataset.lt === t));
     LTABS.forEach(([k]) => { $("#lg-" + k).hidden = k !== t; });
+    if (t === "halls" && !built.halls) {
+      built.halls = 1;
+      Promise.all([api("/api/hof?tier=L&kind=p&name=" + enc(name)), api("/api/hof?tier=L&kind=c&name=" + enc(name))]).then(([hp, hc]) => {
+        const last = hp.classes[0], lastC = hc.classes[0], fin = (STATUS.header.season - (p.done >= p.total ? 0 : 1));
+        $("#lg-halls").innerHTML = `<div class="card"><h3>${esc(name)} Hall of Fame <small>${hp.total} players &middot; ${hc.total} coaches</small></h3>
+          ${last ? `<div class="dim small" style="margin-bottom:6px">Class of ${esc(last.label)}</div><div class="hlist">${last.rows.map((r) => hofRow(r, { right: "year " + r.n })).join("")}</div>` : '<div class="dim small">Nobody inducted yet. People become eligible five years after they retire.</div>'}
+          ${lastC ? `<div class="dim small" style="margin:10px 0 6px">Latest coach: class of ${esc(lastC.label)}</div><div class="hlist">${lastC.rows.map((r) => hofRow(r, { right: "year " + r.n })).join("")}</div>` : ""}
+          <a class="more" href="#/hof/L/${enc(name)}"><span>Full league Hall of Fame</span><span>&rsaquo;</span></a>
+          ${fin > 0 ? `<a class="more" href="#/hofleague/${enc(name)}/${p.done >= p.total ? STATUS.header.season : STATUS.header.season - 1}"><span>Latest Hall of Fame day</span><span>&rsaquo;</span></a>` : ""}</div>`;
+      }).catch((e) => { $("#lg-halls").innerHTML = `<div class="card dim small">${esc(e.message)}</div>`; });
+    }
     if (t === "stats" && !built.stats) {
       built.stats = 1;
       const seasons = (hof ? hof.strip : []).map((s) => ({ season: s.season, cid: d.id, winner: s.club, stats: true }));

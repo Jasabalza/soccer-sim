@@ -263,6 +263,8 @@ class World {
     self.compute_cup_fields(null);
     self.money_update($kw({"initial": true}));
     self.start_season();
+    $mods.hof.init(self);
+    $mods.hof.acadInit(self, (c, g, nat, age) => self._mk_mgr(c, g, nat, age));
   }
   _load_data() {
     const self = this;
@@ -332,6 +334,14 @@ class World {
   _name() {
     const self = this;
     return ($str(self.rng.choice(FIRST_NAMES)) + " " + $str(self.rng.choice(LAST_NAMES)));
+  }
+  // an academy manager: a coach in the making. grade 1 strong, 0 average, -1 weak; he can be promoted to the first team
+  _mk_mgr(club, grade, nat, age) {
+    const self = this, H = $mods.hof, k = self.seed + "|" + self.season + "|" + club + "|mname";
+    const name = FIRST_NAMES[Math.floor(H.rnd(k + "f") * FIRST_NAMES.length)] + " " + LAST_NAMES[Math.floor(H.rnd(k + "l") * LAST_NAMES.length)];
+    const co = $new(Coach, [$kw({"name": name, "age": age, "personality": "loyal", "skill": grade > 0 ? "scout" : "none", "prestige": [5, 12, 22][grade + 1], "nat": nat, "contract": 3})]);
+    co.grade = grade; co.acad_since = self.season;
+    return co;
   }
   _contract() {
     const self = this;
@@ -719,6 +729,7 @@ class World {
   _log_transfer(p, seller, buyer, fee, kind) {
     const self = this;
     $M.append(self.transfers, $dict($kw({"season": self.season, "player": p.name, "nat": p.nat, "age": p.age, "ovr": p.ovr, "pot": p.pot, "frm": seller, "to": buyer, "fee": fee, "kind": kind, "frm_league": $idx($idx(self.clubs, seller), "league"), "to_league": $idx($idx(self.clubs, buyer), "league"), "why": $mods.market.take_why()})));
+    $mods.moves.transfer(self, p, seller, buyer, fee, kind, $mods.rivals.intensity(self, seller, buyer) > 0);
     if (p.ovr >= 80 || $mods.rivals.intensity(self, seller, buyer) > 0) $mods.rivals.transfer_heat(self, seller, buyer, p.ovr >= 80 ? 2.5 : 1.5);
   }
   // bring a save made before v15 up to date (new settings, an unfinished old-style Club World Cup)
@@ -740,6 +751,8 @@ class World {
       if (!$in("acad", c)) self._init_v15(c, n, L);
     }
     for (const nm of self.nations.keysArr()) $mods.fed.init($idx(self.nations, nm));
+    $mods.hof.ensure(self); $mods.hof.foundOnce(self);
+    $mods.hof.acadInit(self, (c, g, nat, age) => self._mk_mgr(c, g, nat, age));
     return true;
   }
   renegotiate_tv() {
@@ -941,6 +954,7 @@ class World {
       throw $new(RuntimeError, [("Season not finished: " + $M.join(", ", left))]);
     }
     $mods.rivals.update_season(self);
+    $mods.moves.begin(self);
     rec = $lit_dict([["season", self.season], ["retired", 0], ["youth", 0], ["outflow", 0], ["down", 0], ["up", 0]]);
     [tables, recs] = $iter([new $Dict(), new $Dict()]);
     for (const $f35 of $iter(self.leagues)) {
@@ -1033,6 +1047,8 @@ class World {
     self.apply_results(rec, recs, tables, finish, expected, cwc, wc);
     self.coach_offseason();
     self.season_end(rec);
+    $mods.hof.rollover(self, self.season);
+    $mods.hof.acadTick(self, (c, g, nat, age) => self._mk_mgr(c, g, nat, age));
     self.nations_offseason(rec, wc);
     tr = (() => { const $r = []; let t; for (const $c0 of $iter(self.transfers)) { t = $c0; if (!($eq($idx(t, "season"), self.season))) continue; $r.push(t); } return $r; })();
     net = (() => { const $r = new $Dict(); let ln; for (const $c0 of $iter(self.leagues)) { ln = $c0; $r.set(ln, 0.0); } return $r; })();
@@ -1084,6 +1100,7 @@ class World {
         self.comps_nat_refresh(nm);
       }
     }
+    $mods.moves.finish(self, $idx(rec, "season"));
     return rec;
   }
   comps_nat_refresh(nm) {
@@ -1267,6 +1284,8 @@ class World {
     c = $idx(self.clubs, n);
     co = $idx(c, "coach");
     $setidx(c, "cp", fclamp($sub($idx(c, "cp"), $mul(co.prestige, cfg.transfer_share)), 0, 1000));
+    $mods.moves.coachOut(self, co, n, reason);
+    $mods.hof.coachLeft(self, co);
     co.club = null;
     co.last_club = n;
     co.prev_attr = self.attr(n);
@@ -1277,6 +1296,7 @@ class World {
       $t1 = self.stats, $setidx($t1, "coach_retire", $idx($t1, "coach_retire") + 1);
       $M.append(self.retired_coaches, co);
       $M.append(self.retired_all, co);
+      $mods.hof.onCoachRetire(self, co);
       if (((co.prestige >= 60) || (co.titles >= 3))) {
         self.news("coach", ("Coach " + $str(co.name) + " retires after " + $str(co.seasons) + " seasons (" + $str(co.titles) + " league titles, " + $str(co.cups) + " continental cups)"));
       }
@@ -1298,6 +1318,7 @@ class World {
     cfg = self.cfg;
     c = $idx(self.clubs, n);
     $setidx(c, "cp", fclamp($add($idx(c, "cp"), $mul(co.prestige, cfg.transfer_share)), 0, 1000));
+    $mods.moves.coachIn(self, co, n);
     co.club = n;
     co.contract = self._contract();
     co.hot = 0;
@@ -1305,6 +1326,7 @@ class World {
     $M.append(co.clubs, n);
     $setidx(c, "coach", co);
     $setidx(c, "stint", 0);
+    $mods.hof.coachHired(self, co, n);
     $t1 = self.stats, $setidx($t1, "hires", $idx($t1, "hires") + 1);
     if (((co.last_club != null) && (!$eq(co.last_club, n)))) {
       $t2 = self.stats, $setidx($t2, "moves", $idx($t2, "moves") + 1);
@@ -1326,6 +1348,7 @@ class World {
       if (((co.age >= 70) || (co.unemployed_years > 6))) {
         $M.append(self.retired_coaches, co);
         $M.append(self.retired_all, co);
+        $mods.hof.onCoachRetire(self, co);
         $t1 = self.stats, $setidx($t1, "coach_retire", $idx($t1, "coach_retire") + 1);
       } else {
         $M.append(keep, co);
@@ -1374,13 +1397,16 @@ class World {
       n = $f68;
       attr = self.attr(n);
       cands = (() => { const $r = []; let co; for (const $c0 of $iter(self.coach_pool)) { co = $c0; if (!((!$eq(co.last_club, n)) && ((co.personality === "loyal") || (co.prev_attr === 0) || $ge(attr, $mul(co.prev_attr, $max(0.2, (0.85 - (0.2 * co.unemployed_years)))))))) continue; $r.push(co); } return $r; })();
+      const am = $idx(self.clubs, n).get("acad_mgr");                     // v16: the academy manager is a candidate, and the same person gets promoted
+      if (am && am.age >= 34 && am.age < 62 && (am.grade >= 0 || !$len(cands))) cands = $list(cands).concat([am]);
       if ((!$T(cands))) {
         fresh = self._new_coach(rng.uniform(5, 25), rng.randint(38, 50));
         $M.append(self.coach_pool, fresh);
         cands = [fresh];
       }
       pick = $max(cands, $kw({"key": ((x) => $add(x.prestige, rng.uniform((-5), 5)))}));
-      $M.remove(self.coach_pool, pick);
+      if (pick === am) { $idx(self.clubs, n).set("acad_mgr", null); $mods.hof.mgrPromoted(self, am, n); }
+      else $M.remove(self.coach_pool, pick);
       self._hire(n, pick);
     }
   }
@@ -1405,12 +1431,14 @@ class World {
     const self = this;
     let best, bs, co, floor, n, nm, old, order, pool, rng, s;
     rng = self.rng;
+    const natBefore = {}; for (const k of self.nations.keysArr()) natBefore[k] = $idx($idx(self.nations, k), "coach") || null;
     pool = (() => { const $r = []; let co; for (const $c0 of $iter(self.retired_coaches)) { co = $c0; if (!(co.intl == null)) continue; $r.push(co); } return $r; })();
     for (const $f71 of $iter($M.items(self.nations))) {
       [nm, n] = $iter($f71);
       old = $idx(n, "coach");
       if ((old != null)) {
         old.intl = null;
+        $mods.hof.natCoachSet(self, old, null);
         if ((old.age <= 74)) {
           $M.append(pool, old);
         }
@@ -1440,9 +1468,11 @@ class World {
         $setidx(n, "coach", self._new_coach(fclamp($add((8 + (($idx(n, "base") - 40) * 0.4)), rng.uniform((-5), 5)), 3, 60), $kw({"age": rng.randint(45, 66), "nat": nm})));
       }
       $idx(n, "coach").intl = nm;
+      $mods.hof.natCoachSet(self, $idx(n, "coach"), nm);
       $idx(n, "coach").contract = self.cfg.nat_coach_years;
     }
     self.retired_coaches = (() => { const $r = []; let co; for (const $c0 of $iter(pool)) { co = $c0; if (!((co.intl == null) && (co.age <= 75))) continue; $r.push(co); } return $r; })();
+    { const natAfter = {}; for (const k of self.nations.keysArr()) natAfter[k] = $idx($idx(self.nations, k), "coach") || null; $mods.moves.natCycle(self, natBefore, natAfter); }
   }
   _develop(p) {
     const self = this;
@@ -1472,6 +1502,9 @@ class World {
   }
   _should_retire(p) {
     const self = this;
+    if ($mods.hof.stretch(self, p)) {
+      return false;
+    }
     if ((p.age >= 39)) {
       return true;
     }
@@ -1682,6 +1715,7 @@ class World {
       p = $f85;
       if ($T(self._should_retire(p))) {
         $setidx(rec, "retired", $idx(rec, "retired") + 1);
+        $mods.hof.onRetire(self, p);
         if ((p.peak >= 86)) {
           $M.append(self.retired_players, p);
         }
@@ -1701,6 +1735,7 @@ class World {
             p.wage = wage_for(p.ovr, p.age);
             p.prot = 0;
           } else {
+            $mods.moves.released(self, p, p.club);
             p.club = null;
           }
         }
@@ -1722,6 +1757,7 @@ class World {
       if ($gt($len(members), SQUAD_MAX)) {
         for (const $f90 of $iter($slice($sorted(members, $kw({"key": ((x) => x.ovr)})), null, $sub($len(members), SQUAD_MAX), null))) {
           p = $f90;
+          $mods.moves.released(self, p, p.club);
           p.club = null;
         }
       }
@@ -1733,7 +1769,7 @@ class World {
     keep = [];
     for (const $f91 of $iter(self.players)) {
       p = $f91;
-      if (((p.club == null) && $lt(rng.random(), self._outflow_chance(p.age)))) {
+      if (((p.club == null) && $lt(rng.random(), self._outflow_chance(p.age)) && !(p.age <= 40 && p.career.length >= 8 && $mods.hof.isChaser(p)))) {
         $setidx(rec, "outflow", $idx(rec, "outflow") + 1);
         gone = gone + 1;
       } else {
@@ -1781,7 +1817,7 @@ class World {
       if (gradClub) { nm = $mods.acad.nation(self, gradClub, nm, rng, used); if (!$in(nm, gaps)) $setidx(gaps, nm, 0.0); n = $idx(self.nations, nm); }
       qb = $int($round(fclamp($mul(cfg.anchor_gain, $idx(gaps, nm)), (-10), 8)));
       qn = $int($round($div($sub($idx(n, "dev"), dev_mean), cfg.nat_quality_div) + $mods.fed.lift(self, nm) / 8));
-      if (gradClub) qb += Math.round(($idx($idx(self.clubs, gradClub), "acad") - 6) * 1.2);
+      if (gradClub) qb += Math.round(($idx($idx(self.clubs, gradClub), "acad") - 6) * 1.2) + 2 * $mods.hof.mgrGrade(self, gradClub);
       ovr = clamp($add($add(rng.randint(42, 56), Math.floor(qb / 2)), Math.floor(qn / 2)));
       q = $add($add(qb, cfg.pot_shift), qn);
       ceiling = fclamp((92 + q), 70, 99);
@@ -1844,6 +1880,7 @@ class World {
           }
         }
         [p.club, p.league, p.wage] = $iter([cname, $idx(c, "league"), ask]);
+        $mods.moves.signed(self, p, cname, ask, first);
         if ($T(first)) {
           [p.contract, p.prot] = $iter([self.cfg.first_contract, self.cfg.first_contract]);
         } else {
