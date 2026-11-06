@@ -652,7 +652,7 @@ async function viewClub(name) {
       <div class="cols"><span>Player</span><span>OVR</span><span>POT</span><span>Contr.</span></div>${body || `<div class="dim small" style="padding:14px 0">Nobody matches.</div>`}`;
   };
   $("#view").innerHTML = `<div class="v2"><div class="crumbs dim small" style="min-height:30px;display:flex;align-items:center;flex-wrap:wrap"><a href="#/world">World</a>&nbsp;›&nbsp;<a href="#/continent/${c.confed}">${esc(c.confed)}</a>&nbsp;›&nbsp;${leagueLink(c.league)}</div>
-    <div style="display:flex;align-items:center;gap:12px">${crest(c.name, 52)}<div><h1>${esc(c.name)}</h1><div class="sub">${leagueLink(c.league)} · last finish ${c.last_finish ? ordN(c.last_finish) : "-"}${c.cwc.length ? ` · ${c.cwc.length} Club World Cup${c.cwc.length > 1 ? "s" : ""}` : ""}</div></div></div>
+    <div style="display:flex;align-items:center;gap:12px">${crest(c.name, 52)}<div><h1>${esc(c.name)}</h1>${c.cwc.length ? `<div class="sub tsline">${titleStars(c.cwc.length, 13, "Club World Cup title")}<span>Club World Cup</span></div>` : ""}<div class="sub">${leagueLink(c.league)} · last finish ${c.last_finish ? ordN(c.last_finish) : "-"}</div></div></div>
     <div class="stat4"><div><b>${c.ovr}</b><span>TEAM OVR</span></div><div><b>${money(c.budget)}</b><span>INCOME</span></div><div><b>${money(c.funds)}</b><span>FUNDS</span></div><div><b>${c.squad_size}</b><span>SQUAD</span></div></div>
     <nav class="tabs2" id="ct-tabs" aria-label="Club sections">${tabs.map(([k, t]) => `<button data-ct="${k}" class="${k === CV.tab ? "on" : ""}">${t}</button>`).join("")}</nav></div>
     <div class="v2" id="ct-ov">${overview}</div><div class="v2" id="ct-sq" hidden></div><div id="ct-fin" hidden></div><div id="ct-acad" hidden></div><div id="ct-stad" hidden></div><div class="v2" id="ct-hon" hidden>${trophyRoom(c.trophies, "Trophy room")}</div>`;
@@ -1040,7 +1040,7 @@ async function viewNation(name) {
   };
   const draw = () => {
     $("#view").innerHTML = `<div class="v2"><a class="crumb" href="#/nations">‹ Nations</a>
-      <div style="display:flex;align-items:center;gap:12px">${flag(n.name, 52)}<div><h1>${esc(n.name)}</h1><div class="sub">${esc(n.confed)}${rk ? " · ranked " + rk + sfx(rk) + " in the world" : ""}</div></div></div>
+      <div style="display:flex;align-items:center;gap:12px"><span class="sbox">${titleStars(n.titles, 13, "World Cup title")}${flag(n.name, 52)}</span><div><h1>${esc(n.name)}</h1><div class="sub">${esc(n.confed)}${rk ? " · ranked " + rk + sfx(rk) + " in the world" : ""}</div></div></div>
       <div class="stat4"><div><b class="pos">${n.rating}</b><span>RATING</span></div><div><b>${n.talent}</b><span>TALENT</span></div><div><b>${n.pros}</b><span>PROS</span></div><div><b>${n.titles}</b><span>WC TITLES</span></div></div>
       <nav class="tabs2" aria-label="Nation sections">${tabs.map(([k, t]) => `<button data-nt="${k}" class="${NV.tab === k ? "on" : ""}">${t}</button>`).join("")}</nav>
       ${body()}</div>`;

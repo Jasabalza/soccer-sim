@@ -793,3 +793,8 @@ button.wide { width: 100%; min-height: 44px; margin-top: 10px; }
 .mvm-all { display: inline-block; margin-top: 4px; font-size: 12px; }
 .mvm-ch { font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 6px; } .mvm-ch small { font-weight: 400; color: var(--dim); font-size: 11px; margin-left: auto; }
 .mvp h4.sh { margin: 12px 2px 4px; }
+
+/* v16.1: title stars (World Cup on nation pages, Club World Cup on club pages) */
+.tstars { display: inline-flex; gap: 2px; align-items: center; } .tstars svg { display: block; }
+.sbox { display: inline-flex; flex-direction: column; align-items: center; gap: 4px; }
+.tsline { display: flex; align-items: center; gap: 6px; }

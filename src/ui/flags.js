@@ -187,3 +187,14 @@ function crest(name, size) {
   }
   return `<svg class="crest" width="${size}" height="${Math.round(size * 1.0)}" viewBox="0 0 32 32" aria-hidden="true">${_cr[name]}</svg>`;
 }
+
+/* title stars: one gold star per title, five gold fold into one blue, five blue fold into one ice star
+   (so a nation shows at most 4 gold + 4 blue + ice stars, however many seasons are played) */
+const STAR_COL = { g: "#f5c542", b: "#4aa8ff", w: "#e9f4ff" };
+function starLadder(n) { n = Math.max(0, Math.floor(n || 0)); const w = Math.floor(n / 25), b = Math.floor((n % 25) / 5), g = n % 5; return [].concat(Array(w).fill("w"), Array(b).fill("b"), Array(g).fill("g")); }
+const _starPath = (() => { let p = ""; for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + (i * Math.PI) / 5, r = i % 2 ? 3.6 : 9; p += (i ? "L" : "M") + (10 + r * Math.cos(a)).toFixed(2) + " " + (10.5 + r * Math.sin(a)).toFixed(2); } return p + "Z"; })();
+function titleStars(n, size, what) {
+  const k = starLadder(n); if (!k.length) return "";
+  size = size || 13;
+  return `<span class="tstars" role="img" aria-label="${n} ${what || "title"}${n > 1 ? "s" : ""}" title="${n} ${what || "title"}${n > 1 ? "s" : ""}">${k.map((c) => `<svg width="${size}" height="${size}" viewBox="0 0 20 20" aria-hidden="true"><path d="${_starPath}" fill="${STAR_COL[c]}" ${c === "w" ? 'stroke="#8ec5ff" stroke-width="1.2" style="filter:drop-shadow(0 0 3px #9fd0ff)"' : 'stroke="rgba(0,0,0,.35)" stroke-width="1"'}/></svg>`).join("")}</span>`;
+}
