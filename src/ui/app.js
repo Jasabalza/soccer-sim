@@ -38,8 +38,8 @@ function ovrColor(o) {
 }
 const ovr = (o) => `<span class="ovr" style="background:${ovrColor(o)}">${o}</span>`;
 const clubLink = (n) => `${crest(n, 16)}<a href="#/club/${enc(n)}">${esc(n)}</a>`;
-const leagueLink = (n) => `<a href="#/league/${enc(n)}">${esc(n)}</a>`;
-const natLink = (n) => `${flag(n, 18)}<a href="#/nation/${enc(n)}">${esc(n)}</a>`;
+const leagueLink = (n) => `${logoBox("leagues", n, 16)}<a href="#/league/${enc(n)}">${esc(n)}</a>`;
+const natLink = (n) => `${natBadge(n, 18)}<a href="#/nation/${enc(n)}">${esc(n)}</a>`;
 const playerLink = (p, nm) => `${flag(p.nat, 18)}<a href="#/player/${p.uid}">${esc(nm || p.name)}</a>`;
 const bar = (d, t) => `<div class="bar"><i style="width:${t ? Math.round((100 * d) / t) : 0}%"></i></div>`;
 const form = (f) => `<span class="form">${[...f].map((c) => `<span class="${c}">${c}</span>`).join("")}</span>`;
@@ -387,37 +387,56 @@ function simOthersDialog(others, d) {
   $("#so-go").onclick = () => { closeModal(); simIds(others.map((r) => r.sim), { to_end: true }, "Simulating the other competitions..."); };
 }
 
-// ---------------------------------------------------------------- club logos
-// The game ships without any club logos. A logo file is one JSON file: { "format": "soccersim-logos", "version": 1, "mime": "image/webp", "clubs": { "<club name>": "<base64 or data URL>" } }
-const LOGO_FORMAT = "soccersim-logos", LOGO_MAX = 400000;
-function knownClubs() {
-  try { return new Set(JSON.parse(window.__DATA.leagues).leagues.flatMap((l) => String(l.clubs).split(",").map((x) => x.trim().replace(/ \d+$/, "")))); } catch (e) { return new Set(); }
-}
-// check a parsed logo file; returns { clubs: {name: dataUrl}, matched, unknown, skipped }
-function readLogoPack(obj) {
-  if (!obj || typeof obj !== "object" || !obj.clubs || typeof obj.clubs !== "object") throw new Error("That is not a Soccer Sim logo file (no \"clubs\" list).");
-  if (obj.format && obj.format !== LOGO_FORMAT) throw new Error("That file says it is \"" + obj.format + "\", not a Soccer Sim logo file.");
-  const mime = /^image\/(webp|png|jpeg)$/.test(obj.mime || "") ? obj.mime : "image/webp", known = knownClubs();
-  const out = { clubs: {}, matched: 0, unknown: [], skipped: [] };
-  for (const [name, v] of Object.entries(obj.clubs)) {
-    if (known.size && !known.has(name)) { out.unknown.push(name); continue; }
-    let url = null;
-    if (typeof v === "string" && /^data:image\/(webp|png|jpeg);base64,[A-Za-z0-9+/=]+$/.test(v)) url = v;
-    else if (typeof v === "string" && /^[A-Za-z0-9+/=]+$/.test(v)) url = "data:" + mime + ";base64," + v;
-    if (!url || url.length > LOGO_MAX) { out.skipped.push(name); continue; }
-    out.clubs[name] = url; out.matched++;
-  }
-  if (!out.matched) throw new Error("None of the club names in that file match this game" + (out.unknown.length ? " (for example \"" + out.unknown[0] + "\")." : "."));
+// ---------------------------------------------------------------- logos
+// The game ships without any logos. A logo file is one JSON file: { "format": "soccersim-logos", "version": 2, "mime": "image/webp",
+//   "clubs": {...}, "nations": {...}, "leagues": {...}, "comps": {...} }   (each section: { "<name>": "<base64 or data URL>" }, any section can be left out)
+// Importing a file adds to what is already imported (the same name is replaced), so clubs, nations and competitions can come in separate files.
+const LOGO_FORMAT = "soccersim-logos", LOGO_MAX = 400000, LOGO_SECTIONS = ["clubs", "nations", "leagues", "comps"];
+const COMP_NAMES = ["UEFA Champions League", "Copa Libertadores", "CONCACAF Champions Cup", "AFC Champions League Elite", "Club World Cup", "World Cup",
+  "European Championship", "Copa America", "Gold Cup", "Africa Cup of Nations", "Asian Cup", "OFC Nations Cup",
+  "UEFA Nations League", "CONMEBOL Nations League", "CONCACAF Nations League", "CAF Nations League", "AFC Nations League", "OFC Nations League"];
+function knownLogoNames() {
+  const out = { clubs: new Set(), nations: new Set(), leagues: new Set(), comps: new Set(COMP_NAMES) };
+  try { const L = JSON.parse(window.__DATA.leagues).leagues; for (const l of L) { out.leagues.add(l.name); for (const x of String(l.clubs).split(",")) out.clubs.add(x.trim().replace(/ \d+$/, "")); } } catch (e) { /* no data */ }
+  try { for (const n of JSON.parse(window.__DATA.nations).nations) out.nations.add(n.name); } catch (e) { /* no data */ }
   return out;
 }
+const knownClubs = () => knownLogoNames().clubs;
+// check a parsed logo file; returns { sections: {clubs, nations, leagues, comps: {name: dataUrl}}, matched: {section: n}, total, unknown, skipped }
+function readLogoPack(obj) {
+  if (!obj || typeof obj !== "object" || !LOGO_SECTIONS.some((k) => obj[k] && typeof obj[k] === "object")) throw new Error("That is not a Soccer Sim logo file (no \"clubs\", \"nations\", \"leagues\" or \"comps\" list).");
+  if (obj.format && obj.format !== LOGO_FORMAT) throw new Error("That file says it is \"" + obj.format + "\", not a Soccer Sim logo file.");
+  const mime = /^image\/(webp|png|jpeg)$/.test(obj.mime || "") ? obj.mime : "image/webp", known = knownLogoNames();
+  const out = { sections: {}, matched: {}, total: 0, unknown: [], skipped: [] };
+  for (const sec of LOGO_SECTIONS) {
+    out.sections[sec] = {}; out.matched[sec] = 0;
+    if (!obj[sec] || typeof obj[sec] !== "object") continue;
+    for (const [name, v] of Object.entries(obj[sec])) {
+      if (known[sec].size && !known[sec].has(name)) { out.unknown.push(name); continue; }
+      let url = null;
+      if (typeof v === "string" && /^data:image\/(webp|png|jpeg);base64,[A-Za-z0-9+/=]+$/.test(v)) url = v;
+      else if (typeof v === "string" && /^[A-Za-z0-9+/=]+$/.test(v)) url = "data:" + mime + ";base64," + v;
+      if (!url || url.length > LOGO_MAX) { out.skipped.push(name); continue; }
+      out.sections[sec][name] = url; out.matched[sec]++; out.total++;
+    }
+  }
+  if (!out.total) throw new Error("None of the names in that file match this game" + (out.unknown.length ? " (for example \"" + out.unknown[0] + "\")." : "."));
+  return out;
+}
+// what is imported right now, as one object (or null)
+function logoSet() {
+  const clubs = window.__LOGOS || {}, o2 = window.__LOGOS2 || {};
+  return { clubs, nations: o2.nations || {}, leagues: o2.leagues || {}, comps: o2.comps || {} };
+}
 function logoState() {
-  const total = knownClubs().size, n = window.__LOGOS ? Object.keys(window.__LOGOS).filter((k) => window.__LOGOS[k]).length : 0;
-  return n ? `Logos for <b>${n}</b> of ${total || "all"} clubs.` : "No logo file imported: the game uses its own generated crests.";
+  const k = knownLogoNames(), s = logoSet(), n = (sec) => Object.keys(s[sec]).filter((x) => s[sec][x]).length;
+  const parts = [["clubs", "clubs"], ["nations", "nations"], ["leagues", "leagues"], ["comps", "competitions"]].filter(([sec]) => n(sec)).map(([sec, w]) => `<b>${n(sec)}</b> of ${k[sec].size || "all"} ${w}`);
+  return parts.length ? `Logos for ${parts.join(", ")}.` : "No logo file imported: the game uses its own generated crests, flags and emblems.";
 }
 function logoPanel() {
-  return `<h2>Club logos</h2><div class="meta" id="logo-state">${logoState()}</div>
+  return `<h2>Logos</h2><div class="meta" id="logo-state">${logoState()}</div>
     <p style="margin:8px 0"><input type="file" id="logo-file" accept=".json,application/json" hidden><button id="logo-pick">Import logo file</button> <button id="logo-clear">Remove imported logos</button></p>
-    <details class="opts"><summary>What is a logo file?</summary><p class="meta">One .json file with a picture for each club (format ${LOGO_FORMAT}, see docs/LOGOS.md in the project). The game does not include any logos, so you bring your own. They are kept in this browser next to your saves, not inside them, and clubs without a picture keep their generated crest.</p></details>`;
+    <details class="opts"><summary>What is a logo file?</summary><p class="meta">One .json file with pictures for clubs, nations (federation badges), leagues and competitions (format ${LOGO_FORMAT}, see docs/LOGOS.md in the project). The game does not include any logos, so you bring your own. Importing a second file adds to the first. They are kept in this browser next to your saves, not inside them. Anything without a picture keeps its generated crest, flag or emblem.</p></details>`;
 }
 function wireLogoPanel() {
   const state = () => { const b = $("#logo-state"); if (b) b.innerHTML = logoState(); };
@@ -426,13 +445,15 @@ function wireLogoPanel() {
   $("#logo-file").onchange = async (e) => {
     const f = e.target.files[0]; e.target.value = ""; if (!f) return;
     try {
-      const pack = readLogoPack(JSON.parse(await f.text()));
-      setLogos({ clubs: pack.clubs });
+      const pack = readLogoPack(JSON.parse(await f.text())), cur = importedLogos();
+      const merged = {}; for (const sec of LOGO_SECTIONS) merged[sec] = Object.assign({}, cur[sec], pack.sections[sec]);
+      setLogos(merged);
       let kept = true;
-      try { kept = await SIM.logos.save({ format: LOGO_FORMAT, version: 1, clubs: pack.clubs }); } catch (err) { toast(err.message); kept = false; }
+      try { kept = await SIM.logos.save({ format: LOGO_FORMAT, version: 2, clubs: merged.clubs, nations: merged.nations, leagues: merged.leagues, comps: merged.comps }); } catch (err) { toast(err.message); kept = false; }
       state();
+      const what = [["clubs", "club"], ["nations", "nation"], ["leagues", "league"], ["comps", "competition"]].filter(([s]) => pack.matched[s]).map(([s, w]) => `${pack.matched[s]} ${w}`).join(", ");
       const extra = (pack.unknown.length ? ` ${pack.unknown.length} not recognized.` : "") + (pack.skipped.length ? ` ${pack.skipped.length} skipped (bad or too large).` : "");
-      toast(`Imported ${pack.matched} logos.${extra}${kept ? "" : " Not kept after you close the page."}`, kept);
+      toast(`Imported ${what} logos.${extra}${kept ? "" : " Not kept after you close the page."}`, kept);
       if (STATUS && STATUS.has_world) await route();
     } catch (err) { toast(err instanceof SyntaxError ? "That file is not valid JSON." : err.message); }
   };
@@ -519,7 +540,7 @@ async function viewWorld() {
        </div></div>` : ""}
     ${q ? `<div class="quick"><a class="stat" href="#/league/${enc(q.league.name)}"><div class="k">Strongest league</div><div class="v">${esc(q.league.name)}</div><div class="meta">avg OVR ${q.league.avg}</div></a>
       <a class="stat" href="#/club/${enc(q.club.name)}"><div class="k">Strongest club</div><div class="v">${crest(q.club.name, 18)} ${esc(q.club.name)}</div><div class="meta">rating ${q.club.eff}</div></a>
-      <a class="stat" href="#/nation/${enc(q.nation.name)}"><div class="k">Strongest nation</div><div class="v">${flag(q.nation.name, 22)} ${esc(q.nation.name)}</div><div class="meta">rating ${q.nation.eff}</div></a>
+      <a class="stat" href="#/nation/${enc(q.nation.name)}"><div class="k">Strongest nation</div><div class="v">${natBadge(q.nation.name, 22)} ${esc(q.nation.name)}</div><div class="meta">rating ${q.nation.eff}</div></a>
       <a class="stat" href="#/club/${enc(q.rich.name)}"><div class="k">Richest club</div><div class="v">${esc(q.rich.name)}</div><div class="meta">${money(q.rich.budget)} yearly income</div></a>
       <a class="stat" href="#/players"><div class="k">Players</div><div class="v">${q.players.toLocaleString()}</div><div class="meta">${q.clubs} clubs &middot; ${q.nations} nations</div></a></div>` : ""}`;
   $("#view").innerHTML = `<div class="whead"><h1>The world</h1>${chosen ? `<div class="seg" role="group"><button data-fv="all" class="${onlyFav ? "" : "on"}">All</button><button data-fv="fav" class="${onlyFav ? "on" : ""}">Favorites ${FAVS.length}</button></div>` : ""}</div>
@@ -690,7 +711,7 @@ function trophyRoom(list, title) {
     const items = list.filter((t) => t.group === g); return items.length ? `<div class="tro-group"><div class="lbl">${name}</div><div class="tro-grid">${items.map(tile).join("")}</div></div>` : "";
   }).join("")}</div>`;
 }
-const withEmb = (spec, size, inner) => `<span class="h1emb">${spec ? emblem(spec, size) : ""}<span>${inner}</span></span>`;
+const withEmb = (spec, size, inner, name) => `<span class="h1emb">${name ? compEmb(name, spec, size) : spec ? emblem(spec, size) : ""}<span>${inner}</span></span>`;
 
 // ---- brackets ------------------------------------------------------------------------------------
 // ties of the round being played that already have a result (single games simmed from the list) show it in the bracket before the round is over
@@ -906,7 +927,7 @@ async function viewComp(id) {
       <div id="tab-fld" hidden><div class="scroll"><table><thead><tr><th class="l">Club</th><th class="l">League</th><th>OVR</th></tr></thead><tbody>${x.field.map((f) => `<tr><td class="l">${clubLink(f.club)}</td><td class="l meta">${esc(f.league)}</td><td>${ovr(f.ovr)}</td></tr>`).join("")}</tbody></table></div></div>` : ""}`;
   }
   const finished = p.done >= p.total;
-  $("#view").innerHTML = `<div class="crumbs"><a href="#/world">World</a> / ${esc(x.title)}</div><h1>${withEmb(x.emblem, 44, esc(x.title))}</h1>${liveTabs(id)}
+  $("#view").innerHTML = `<div class="crumbs"><a href="#/world">World</a> / ${esc(x.title)}</div><h1>${withEmb(x.emblem, 44, esc(x.title), x.title)}</h1>${liveTabs(id)}
     ${locked ? `<div class="card" style="margin-bottom:14px"><span class="tag red">LOCKED</span> needs ${p.locked.map((m) => `<a href="#/comp/${enc(m.id)}">${esc(m.title)}</a>`).join(", ")} to finish first.
       <p style="margin:10px 0 0"><button id="k-up" class="pri">Sim up to here</button> <span class="meta">plays only what it needs, then stops so you can play it your way.</span></p>
       <p style="margin:8px 0 0"><button id="k-pre">Sim everything it needs, then this to the end</button></p></div>`
@@ -992,7 +1013,7 @@ async function viewNations(confed) {
     let rows = d.rows.filter((r) => !q || r.name.toLowerCase().includes(q));
     rows = srt[2] ? rows.slice().sort((a, b) => srt[2](b) - srt[2](a) || a.rank - b.rank) : rows.slice().sort((a, b) => a.name.localeCompare(b.name));
     const shown = rows.slice(0, NV.show);
-    $("#nl-list").innerHTML = shown.length ? shown.map((r) => `<a class="nr" href="#/nation/${enc(r.name)}"><span class="no">${r.rank}</span>${flag(r.name, 34)}<span class="nm"><b>${esc(r.name)}</b><span>${r.confed} · coach ${esc(r.coach)}</span></span><span class="rt"><b>${srt[2] ? srt[2](r) : r.rating}</b><span>${srt[2] ? srt[1].toLowerCase() : "rating"}</span></span><span class="chev">›</span></a>`).join("") : `<div class="dim small" style="padding:14px">No nation matches.</div>`;
+    $("#nl-list").innerHTML = shown.length ? shown.map((r) => `<a class="nr" href="#/nation/${enc(r.name)}"><span class="no">${r.rank}</span>${natBadge(r.name, 34)}<span class="nm"><b>${esc(r.name)}</b>${r.titles ? titleStars(r.titles, 9, "World Cup title") : ""}<span>${r.confed} · coach ${esc(r.coach)}</span></span><span class="rt"><b>${srt[2] ? srt[2](r) : r.rating}</b><span>${srt[2] ? srt[1].toLowerCase() : "rating"}</span></span><span class="chev">›</span></a>`).join("") : `<div class="dim small" style="padding:14px">No nation matches.</div>`;
     const left = rows.length - shown.length, mb = $("#nl-more");
     mb.hidden = left <= 0; mb.textContent = `Show ${Math.min(25, left)} more`;
   };
@@ -1040,7 +1061,7 @@ async function viewNation(name) {
   };
   const draw = () => {
     $("#view").innerHTML = `<div class="v2"><a class="crumb" href="#/nations">‹ Nations</a>
-      <div style="display:flex;align-items:center;gap:12px"><span class="sbox">${titleStars(n.titles, 13, "World Cup title")}${flag(n.name, 52)}</span><div><h1>${esc(n.name)}</h1><div class="sub">${esc(n.confed)}${rk ? " · ranked " + rk + sfx(rk) + " in the world" : ""}</div></div></div>
+      <div style="display:flex;align-items:center;gap:12px"><span class="sbox">${titleStars(n.titles, 13, "World Cup title")}${natBadge(n.name, 52)}</span><div><h1>${esc(n.name)}</h1><div class="sub">${esc(n.confed)}${rk ? " · ranked " + rk + sfx(rk) + " in the world" : ""}</div></div></div>
       <div class="stat4"><div><b class="pos">${n.rating}</b><span>RATING</span></div><div><b>${n.talent}</b><span>TALENT</span></div><div><b>${n.pros}</b><span>PROS</span></div><div><b>${n.titles}</b><span>WC TITLES</span></div></div>
       <nav class="tabs2" aria-label="Nation sections">${tabs.map(([k, t]) => `<button data-nt="${k}" class="${NV.tab === k ? "on" : ""}">${t}</button>`).join("")}</nav>
       ${body()}</div>`;
@@ -1289,7 +1310,7 @@ async function viewTrophies(key, tab) {
     ? `<tr><td class="l meta">S${r.season}<div>${r.date || ""}</div></td><td class="l" colspan="2">${r.team.map((p) => `<span class="pos-${esc(p.pos)}">${esc(p.name)}</span> <span class="meta">(${esc(p.club)})</span>`).join(" &middot; ")}</td></tr>`
     : `<tr><td class="l meta nw">S${r.season}<div>${r.date ? esc(String(r.date).slice(-4)) : ""}</div></td><td class="l"><b>${aw() ? esc(r.winner) : L(r.winner)}</b>${r.club ? `<div class="meta">${clubOrNat(r.club)}</div>` : ""}
       ${r.runner_up ? `<div class="meta">${aw() ? "2nd " + esc(r.runner_up) : "beat " + L(r.runner_up)}</div>` : ""}${r.coach ? `<div class="meta">coach ${esc(r.coach)}</div>` : ""}</td><td class="nw">${esc(r.text || "")}</td></tr>`;
-  $("#view").innerHTML = `<h1>${sel ? withEmb(sel.emblem, 48, esc(sel.title)) : "Trophies"}</h1><div class="sub">Every winner so far. Pick any competition from the list.</div>${tabs}
+  $("#view").innerHTML = `<h1>${sel ? withEmb(sel.emblem, 48, esc(sel.title), sel.title) : "Trophies"}</h1><div class="sub">Every winner so far. Pick any competition from the list.</div>${tabs}
     <p><select id="tro-sel" style="min-width:min(300px,100%);max-width:100%">${Object.entries(groups).map(([g, os]) => `<optgroup label="${esc(g)}">${os.map((o) => `<option value="${esc(o.key)}" ${sel && sel.key === o.key ? "selected" : ""}>${esc(o.title)}</option>`).join("")}</optgroup>`).join("")}</select></p>
     ${sel && sel.rows.length ? `<div class="cols"><div><div class="scroll"><table class="hof"><thead><tr><th class="l">Season</th><th class="l">Winner</th><th>${aw() ? "Votes / stat" : "Final"}</th></tr></thead><tbody>${sel.rows.map(rowHTML).join("")}</tbody></table></div></div>
       <div><div class="card"><h3>Most successful</h3>${sel.board.map((b, i) => `<div class="row"><span>${i + 1}. ${sel.key.startsWith("award:") ? esc(b.name) : L(b.name)}</span><span class="meta"><b style="color:var(--accent2)">${b.count}</b> &middot; S${b.seasons.join(", S")}</span></div>`).join("")}</div></div></div>` : '<div class="empty">No winners yet. Sim a season first.</div>'}`;
@@ -1503,6 +1524,14 @@ function showQualEnd(s, more) {
     if ($("#ce-skip")) $("#ce-skip").onclick = () => done(true);
   });
 }
+// the star moment under the trophy: M1 a new gold star, M2 four gold fold into one blue on the fifth title (and so on up the ladder), M3 the Club World Cup
+function starMoment(s) {
+  const n = s.star_n | 0; if (!(s.winner && n > 0 && (s.kind === "wc" || s.kind === "cwc"))) return "";
+  const what = s.kind === "wc" ? "World Cup" : "Club World Cup", fold = n > 1 && n % 5 === 0, prev = starLadder(n - 1).length;
+  const row = titleStars(n, 22, what + " title");
+  const line = fold ? `Five titles fold into a ${n % 25 === 0 ? "ice" : "blue"} star` : n === 1 ? `First ${what} title: a star is earned` : `${ordN(n)} ${what} title: another star`;
+  return `<div class="ce-stars${fold ? " fold" : ""}" data-prev="${prev}"><div class="ce-sr">${row}</div><div class="meta">${line}</div></div>`;
+}
 function showCompEnd(s, more) {
   return new Promise((res) => {
     const tm = (n) => (s.nation ? natLink(n) : clubLink(n));
@@ -1517,7 +1546,7 @@ function showCompEnd(s, more) {
     const draw = (hof) => {
       const hofBlock = hof ? `<div class="ce-hof"><span class="hb W" style="width:36px;height:36px;--hc:#f5c542">${hofStar(24)}</span><div><b>Hall of Fame day</b><div class="meta">${hof.nLeague} league inductee${hof.nLeague === 1 ? "" : "s"} &middot; ${hof.nClubs} club inductee${hof.nClubs === 1 ? "" : "s"}</div></div></div>` : "";
       openModal(`<div class="ce"><div class="ce-emb">${emblem(s.emblem, window.innerWidth < 700 ? 72 : 96)}</div><div class="ce-t">${esc(s.name)} <span class="meta">${esc(s.season_label || "")}</span></div>
-        <div class="ce-w">${s.winner ? tm(s.winner) : "-"}</div><div class="ce-sub">${s.kind === "league" ? "Champions" : "Winners"}</div>
+        <div class="ce-w">${s.winner ? tm(s.winner) : "-"}</div><div class="ce-sub">${s.kind === "league" ? "Champions" : "Winners"}</div>${starMoment(s)}
         <div class="ce-facts">${facts.map((f, i) => `<div class="ce-f" style="animation-delay:${1.3 + i * 0.45}s">${f}</div>`).join("")}</div>${hofBlock}
         <div class="ce-btns">${hof ? '<button class="gold" id="ce-hw">Watch the ceremony</button> <button id="ce-hr">Hall of Fame results</button> ' : ""}<button class="pri" id="ce-next">${more ? "Next" : "Close"}</button>${more ? ' <button id="ce-skip">Skip all</button>' : ""}</div></div>`);
       const done = (skip) => { closeModal(); res(skip); };
@@ -1713,7 +1742,7 @@ window.addEventListener("hashchange", route);
 $("#brand").onclick = () => (location.hash = STATUS && STATUS.has_world ? "#/world" : "#/");
 (async () => {
   await SIM.init();
-  try { const imp = await SIM.logos.load(); if (imp && imp.clubs) setLogos(imp); } catch (e) { /* no logos stored */ }
+  try { const imp = await SIM.logos.load(); if (imp && LOGO_SECTIONS.some((k) => imp[k])) setLogos(imp); } catch (e) { /* no logos stored */ }
   if (!SIM.store.persistent) toast("Browser storage is blocked: saves will last only while this page is open.");
   await refreshStatus();
   if (STATUS.has_world && !location.hash) location.hash = "#/world";

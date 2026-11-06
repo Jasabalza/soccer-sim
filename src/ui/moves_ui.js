@@ -13,7 +13,7 @@ const mvPos = (r) => (r.pos ? `<span class="pos-${esc(r.pos)}">${esc(r.pos)}</sp
 // the one emblem on a row: the club the person ends up at, or the one they leave; a flag for a national job
 function mvBadge(r, size) {
   size = size || 22;
-  if (r.k === "n") return flag(r.nation, size - 4);
+  if (r.k === "n") return natBadge(r.nation, size - 4);
   const club = r.to || r.from || r.club;
   return club ? crest(club, size) : "";
 }
@@ -225,7 +225,7 @@ function mvStory(r) {
 }
 function mvSlide(r, n, total) {
   const money_ = r.k === "t" ? `<div class="mvbig">${money(r.fee)}</div>` : r.k === "f" && r.wage ? `<div class="mvbig">${money(r.wage)}<small>/yr</small></div>` : "";
-  const fromTo = (r.k === "t" || r.k === "f" || r.k === "h") && r.to ? `<div class="mvft"><span>${r.from ? crest(r.from, 32) + `<i>${esc(r.from)}</i>` : `<i>${r.k === "h" ? "" : "free agent"}</i>`}</span><span class="mvar">&rarr;</span><span>${crest(r.to, 32)}<i>${esc(r.to)}</i></span></div>` : r.k === "n" ? `<div class="mvft"><span>${flag(r.nation, 32)}<i>${esc(r.nation)}</i></span></div>` : (r.from || r.club) ? `<div class="mvft"><span>${crest(r.from || r.club, 32)}<i>${esc(r.from || r.club)}</i></span></div>` : "";
+  const fromTo = (r.k === "t" || r.k === "f" || r.k === "h") && r.to ? `<div class="mvft"><span>${r.from ? crest(r.from, 32) + `<i>${esc(r.from)}</i>` : `<i>${r.k === "h" ? "" : "free agent"}</i>`}</span><span class="mvar">&rarr;</span><span>${crest(r.to, 32)}<i>${esc(r.to)}</i></span></div>` : r.k === "n" ? `<div class="mvft"><span>${natBadge(r.nation, 32)}<i>${esc(r.nation)}</i></span></div>` : (r.from || r.club) ? `<div class="mvft"><span>${crest(r.from || r.club, 32)}<i>${esc(r.from || r.club)}</i></span></div>` : "";
   const rating = r.ovr ? `${ovr(r.ovr)}` : "";
   return `<div class="hrv mvs"><div class="dim small">${esc(r.chapter)} &middot; ${r.n} of ${r.of}</div>
     <div class="hrv-n">${r.nat ? flag(r.nat, 24) : ""}<div><div class="hrv-name">${mvWho(r)} ${rating}</div><div class="dim small">${r.k === "p" || r.k === "t" || r.k === "f" || r.k === "r" ? mvPos(r) + " &middot; age " + r.age : "Coach &middot; age " + r.age}${r.nat ? " &middot; " + esc(r.nat) : ""}</div></div></div>

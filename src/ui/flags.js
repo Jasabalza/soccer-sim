@@ -160,13 +160,36 @@ function _logoUrl(name) {
   else if (b64) { try { const bin = atob(b64), a = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i); u = URL.createObjectURL(new Blob([a], { type: "image/webp" })); } catch (e) { u = "data:image/webp;base64," + b64; } }
   return (_lg[name] = u);
 }
-// logos: the baked-in set (personal builds) plus whatever the player imported. imp = { clubs: { name: dataUrl } } or null to drop the imported ones.
-let _logoBase = null;
+// logos: the baked-in set (personal builds) plus whatever the player imported.
+// imp = { clubs, nations, leagues, comps } (each { name: dataUrl }) or null to drop the imported ones. Clubs live in window.__LOGOS; the rest in window.__LOGOS2.
+let _logoBase = null, _logoImp = null;
+const _lg2 = {};
+// only what the player imported (not the baked-in club set)
+function importedLogos() { const i = _logoImp || {}; return { clubs: i.clubs || {}, nations: i.nations || {}, leagues: i.leagues || {}, comps: i.comps || {} }; }
 function setLogos(imp) {
   if (_logoBase === null) _logoBase = window.__LOGOS || {};
   for (const k in _lg) delete _lg[k];
+  for (const k in _lg2) delete _lg2[k];
+  _logoImp = imp || null;
   const m = Object.assign({}, _logoBase, imp && imp.clubs ? imp.clubs : {});
   window.__LOGOS = Object.keys(m).length ? m : undefined;
+  window.__LOGOS2 = imp ? { nations: imp.nations || {}, leagues: imp.leagues || {}, comps: imp.comps || {} } : undefined;
+}
+// an imported picture for a nation, a league or a competition (a data URL), or null
+function logo2(kind, name) {
+  const s = window.__LOGOS2 && window.__LOGOS2[kind]; if (!s) return null;
+  const k = kind + "|" + name; if (k in _lg2) return _lg2[k];
+  const u = s[name]; return (_lg2[k] = typeof u === "string" && u.startsWith("data:") ? u : null);
+}
+// the federation badge when one was imported, else the flag. size = height of the box.
+function natBadge(nat, size) {
+  const u = logo2("nations", nat);
+  return u ? `<span class="nbadge" style="width:${size}px;height:${size}px"><img src="${u}" alt="" decoding="async" title="${esc(nat)}"></span>` : flag(nat, size);
+}
+// a league or competition logo (img in a square box), or "" so the caller can fall back to its own emblem
+function logoBox(kind, name, size) {
+  const u = logo2(kind, name);
+  return u ? `<span class="lbox" style="width:${size}px;height:${size}px"><img src="${u}" alt="" decoding="async" title="${esc(name)}"></span>` : "";
 }
 function crest(name, size) {
   size = size || 18;

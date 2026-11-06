@@ -113,7 +113,7 @@ function compCard(c) {
     const fin = cur.total > 0 && cur.done >= cur.total;
     status = `<div class="st"><span>Season ${cur.season}: ${fin ? "finished" : cur.next ? esc(cur.next) + (cur.next_date ? " · " + esc(cur.next_date.text) : "") : "in progress"}</span><span>${cur.done} of ${cur.total}</span></div><div class="bar"><i style="width:${cur.total ? Math.round(cur.done / cur.total * 100) : 0}%"></i></div>`;
   } else status = `<div class="st"><span>Between tournaments${c.next_label ? " · next in " + esc(c.next_label) : ""}</span><span>${c.editions_n} played</span></div>`;
-  return `<div class="cc"><div class="t"><span class="cem">${emblem(c.emblem, 38)}</span><div class="m"><b>${esc(c.title)}</b><span><span class="tag ${c.scope === "clubs" ? "blue" : "gold"}">${c.scope === "clubs" ? "Clubs" : "National teams"}</span> · ${everyTxt(c)}</span></div></div>
+  return `<div class="cc"><div class="t"><span class="cem">${compEmb(c.title, c.emblem, 38)}</span><div class="m"><b>${esc(c.title)}</b><span><span class="tag ${c.scope === "clubs" ? "blue" : "gold"}">${c.scope === "clubs" ? "Clubs" : "National teams"}</span> · ${everyTxt(c)}</span></div></div>
     ${status}
     <div class="kv"><div><span>HOLDERS</span><b>${hd ? lk(hd.name) : "None yet"}</b></div><div><span>MOST TITLES</span><b>${mostTxt(c)}</b></div></div>
     <a class="go" href="#/c/${enc(c.key)}"><span>${cur ? "Current edition, history and stats" : "History, winners and stats"}</span><span>&rsaquo;</span></a></div>`;
@@ -129,7 +129,7 @@ async function viewContinent(code) {
   const clubsN = c.leagues.reduce((a, l) => a + l.clubs, 0);
   const compsHTML = `<h2 class="lbl2">Competitions</h2>${cards.length ? cards.map(compCard).join("") : '<div class="card"><div class="dim small">This confederation has no tournaments yet.</div></div>'}
     ${quals.length ? `<div class="card"><h3>World Cup qualifying</h3>${quals.map((x) => progressRow({ link: `<a href="#/comp/${enc(x.id)}">${esc(x.title)}</a>`, sub: x.next ? "next: " + esc(x.next) + (x.next_date ? " · " + x.next_date.text : "") : "finished", done: x.done, total: x.total })).join("")}</div>` : ""}`;
-  const leaguesHTML = `<h2 class="lbl2">Leagues</h2><div class="card" style="margin-top:0">${c.leagues.map((l) => `<a class="lg" href="#/league/${enc(l.name)}"><div class="t"><span>${esc(l.name)}</span><span class="dim small">${l.done} / ${l.total}</span></div><div class="s"><span>Leader ${esc(l.leader)} · ${l.pts} pts</span><span>OVR ${l.avg}</span></div><div class="bar"><i style="width:${l.total ? Math.round(l.done / l.total * 100) : 0}%"></i></div></a>`).join("")}</div>
+  const leaguesHTML = `<h2 class="lbl2">Leagues</h2><div class="card" style="margin-top:0">${c.leagues.map((l) => `<a class="lg" href="#/league/${enc(l.name)}"><div class="t"><span>${logoBox("leagues", l.name, 20)} ${esc(l.name)}</span><span class="dim small">${l.done} / ${l.total}</span></div><div class="s"><span>Leader ${esc(l.leader)} · ${l.pts} pts</span><span>OVR ${l.avg}</span></div><div class="bar"><i style="width:${l.total ? Math.round(l.done / l.total * 100) : 0}%"></i></div></a>`).join("")}</div>
     <a class="more" href="#/nations/${code}"><span>National teams of ${esc(c.name)}</span><span>&rsaquo;</span></a>`;
   const tab = (location.hash.split("/")[3] || "ov");
   $("#view").innerHTML = `<div class="v2">${crumbHTML([`<a href="#/world">World</a>`, esc(code)])}
@@ -170,7 +170,7 @@ async function viewCompPage(key, tab) {
   if (cf !== "WORLD") crumb.push(`<a href="#/continent/${esc(cf)}">${esc(cf)}</a>`);
   crumb.push(esc(h.title));
   $("#view").innerHTML = `<div class="v2">${crumbHTML(crumb)}
-    <div style="display:flex;align-items:center;gap:12px"><span class="cem big-e">${emblem(h.emblem, 48)}</span><div><h1>${esc(h.title)}</h1><div class="sub">${sub}</div></div></div>
+    <div style="display:flex;align-items:center;gap:12px"><span class="cem big-e">${compEmb(h.title, h.emblem, 48)}</span><div><h1>${esc(h.title)}</h1><div class="sub">${sub}</div></div></div>
     ${stat4}${compTabsHTML(key, tab, cur && cur.cid)}<div id="cp-body"></div></div>`;
   const body = $("#cp-body");
   if (tab === "stats") {
@@ -276,7 +276,7 @@ async function viewLeague(name, season) {
     ${!inProg && d.next.length ? `<div class="card"><h3>Next matchweek <small>${d.next_date ? esc(d.next_date.text) : ""}</small></h3>${d.next.map((f) => `<div class="fix"><span class="h">${clubLink(f.h)}</span><span class="s">v</span><span>${clubLink(f.a)}</span></div>`).join("")}</div>` : ""}`;
   const subBits = [esc(d.confed), d.games + " games", "top " + d.slots + " reach the " + esc(d.cup)];
   $("#view").innerHTML = `<div class="v2">${crumbHTML([`<a href="#/world">World</a>`, `<a href="#/continent/${d.confed}">${esc(d.confed)}</a>`, esc(d.name)])}
-    <div style="display:flex;align-items:center;gap:12px"><span class="cem big-e">${emblem(d.emblem, 48)}</span><div><h1>${esc(d.name)}</h1><div class="sub">${subBits.join(" · ")}${past ? ` · <span class="tag gold">season ${past.season} final table</span>` : ""}</div></div></div>
+    <div style="display:flex;align-items:center;gap:12px"><span class="cem big-e">${compEmb(d.name, d.emblem, 48)}</span><div><h1>${esc(d.name)}</h1><div class="sub">${subBits.join(" · ")}${past ? ` · <span class="tag gold">season ${past.season} final table</span>` : ""}</div></div></div>
     <div class="stat4"><div><b>${d.avg}</b><span>AVG OVR</span></div><div><b>${mon && mon.season ? money(mon.avg_income) : "-"}</b><span>CLUB INCOME</span></div><div><b>x${(+d.tv).toFixed(2)}</b><span>TV MONEY</span></div><div><b>${mon && mon.season ? "#" + mon.rank : "-"}</b><span>${mon && mon.season ? "RICHEST OF " + mon.of : "RICHEST"}</span></div></div>
     <nav class="tabs2" id="lg-tabs" aria-label="League sections">${LTABS.map(([k, t]) => `<button data-lt="${k}" class="${k === S.tab ? "on" : ""}">${t}</button>`).join("")}</nav>
     <div id="lg-table">${tablePane}</div><div id="lg-money" hidden>${leagueMoneyHTML(mon, d)}</div><div id="lg-hof" hidden>${leagueHofHTML(hof, d)}</div><div id="lg-fix" hidden>${fixPane}</div><div id="lg-halls" hidden></div><div id="lg-stats" hidden></div></div>`;

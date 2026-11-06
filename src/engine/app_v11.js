@@ -404,6 +404,11 @@ function v_compsum(cid, season = null) {
   }
   $setidx(out, "season", w.season);
   $setidx(out, "season_label", cal.season_label(w.cfg.start_year, w.season));
+  // 16.1: how many titles the winner holds now (the star moment on the champion screen); the World Cup is counted on the nation, the Club World Cup from the history
+  if ($T($idx(out, "winner")) && c.finished) {
+    if ($idx(out, "kind") === "wc" && $in($idx(out, "winner"), w.nations)) $setidx(out, "star_n", $idx($idx(w.nations, $idx(out, "winner")), "wc_titles"));
+    else if ($idx(out, "kind") === "cwc") $setidx(out, "star_n", w.cwc_history.filter((x) => $eq(x[1], $idx(out, "winner"))).length);
+  }
   return out;
 }
 function bracket_upcoming(w, x) {

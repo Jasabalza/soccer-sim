@@ -2,6 +2,8 @@
 /* Trophy emblems: original SVG illustrations in the spirit of real trophies (big-eared cup,
    lidded league cup, globe on a column, golden ball, boot...). Colours come from the server. */
 let _eid = 0;
+// a competition or league: the imported logo when there is one, else the generated trophy illustration (champion screens and trophy rooms always keep the trophy)
+function compEmb(name, spec, size) { return logoBox("comps", name, size) || logoBox("leagues", name, size) || (spec ? emblem(spec, size) : ""); }
 function emblem(spec, size) {
   size = size || 48;
   const id = "e" + (++_eid), k = spec.kind, c = spec.color || "#f5c542";

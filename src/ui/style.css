@@ -798,3 +798,13 @@ button.wide { width: 100%; min-height: 44px; margin-top: 10px; }
 .tstars { display: inline-flex; gap: 2px; align-items: center; } .tstars svg { display: block; }
 .sbox { display: inline-flex; flex-direction: column; align-items: center; gap: 4px; }
 .tsline { display: flex; align-items: center; gap: 6px; }
+.nbadge, .lbox { display: inline-flex; align-items: center; justify-content: center; flex: none; } .nbadge img, .lbox img { max-width: 100%; max-height: 100%; object-fit: contain; }
+/* 16.1 star moments on the champion screen */
+.ce-stars { margin-top: 8px; animation: ce-fade .6s 1s both; text-align: center; }
+.ce-stars .ce-sr { display: flex; justify-content: center; }
+.ce-stars .tstars { gap: 4px; }
+.ce-stars .tstars svg:last-child { animation: ce-pop .7s 1.2s both; }
+.ce-stars.fold .tstars svg { filter: drop-shadow(0 0 6px rgba(120,190,255,.8)); }
+.ce-stars .meta { margin-top: 2px; font-size: 12px; }
+@media (prefers-reduced-motion: reduce) { .ce-stars, .ce-stars .tstars svg:last-child { animation: none; } }
+a + .lbox, .lbox + a { margin-left: 4px; } .lbox { vertical-align: middle; margin-right: 4px; }

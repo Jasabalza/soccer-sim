@@ -797,6 +797,21 @@ button.wide { width: 100%; min-height: 44px; margin-top: 10px; }
 .mvm-ch { font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 6px; } .mvm-ch small { font-weight: 400; color: var(--dim); font-size: 11px; margin-left: auto; }
 .mvp h4.sh { margin: 12px 2px 4px; }
 
+/* v16.1: title stars (World Cup on nation pages, Club World Cup on club pages) */
+.tstars { display: inline-flex; gap: 2px; align-items: center; } .tstars svg { display: block; }
+.sbox { display: inline-flex; flex-direction: column; align-items: center; gap: 4px; }
+.tsline { display: flex; align-items: center; gap: 6px; }
+.nbadge, .lbox { display: inline-flex; align-items: center; justify-content: center; flex: none; } .nbadge img, .lbox img { max-width: 100%; max-height: 100%; object-fit: contain; }
+/* 16.1 star moments on the champion screen */
+.ce-stars { margin-top: 8px; animation: ce-fade .6s 1s both; text-align: center; }
+.ce-stars .ce-sr { display: flex; justify-content: center; }
+.ce-stars .tstars { gap: 4px; }
+.ce-stars .tstars svg:last-child { animation: ce-pop .7s 1.2s both; }
+.ce-stars.fold .tstars svg { filter: drop-shadow(0 0 6px rgba(120,190,255,.8)); }
+.ce-stars .meta { margin-top: 2px; font-size: 12px; }
+@media (prefers-reduced-motion: reduce) { .ce-stars, .ce-stars .tstars svg:last-child { animation: none; } }
+a + .lbox, .lbox + a { margin-left: 4px; } .lbox { vertical-align: middle; margin-right: 4px; }
+
 </style>
 
 <div id="top">
@@ -8888,6 +8903,11 @@ function v_compsum(cid, season = null) {
   }
   $setidx(out, "season", w.season);
   $setidx(out, "season_label", cal.season_label(w.cfg.start_year, w.season));
+  // 16.1: how many titles the winner holds now (the star moment on the champion screen); the World Cup is counted on the nation, the Club World Cup from the history
+  if ($T($idx(out, "winner")) && c.finished) {
+    if ($idx(out, "kind") === "wc" && $in($idx(out, "winner"), w.nations)) $setidx(out, "star_n", $idx($idx(w.nations, $idx(out, "winner")), "wc_titles"));
+    else if ($idx(out, "kind") === "cwc") $setidx(out, "star_n", w.cwc_history.filter((x) => $eq(x[1], $idx(out, "winner"))).length);
+  }
   return out;
 }
 function bracket_upcoming(w, x) {
@@ -9433,6 +9453,8 @@ window.SIM = { request: $mods.shim.request, init: $mods.shim.init, store: $mods.
 /* Trophy emblems: original SVG illustrations in the spirit of real trophies (big-eared cup,
    lidded league cup, globe on a column, golden ball, boot...). Colours come from the server. */
 let _eid = 0;
+// a competition or league: the imported logo when there is one, else the generated trophy illustration (champion screens and trophy rooms always keep the trophy)
+function compEmb(name, spec, size) { return logoBox("comps", name, size) || logoBox("leagues", name, size) || (spec ? emblem(spec, size) : ""); }
 function emblem(spec, size) {
   size = size || 48;
   const id = "e" + (++_eid), k = spec.kind, c = spec.color || "#f5c542";
@@ -9656,13 +9678,36 @@ function _logoUrl(name) {
   else if (b64) { try { const bin = atob(b64), a = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i); u = URL.createObjectURL(new Blob([a], { type: "image/webp" })); } catch (e) { u = "data:image/webp;base64," + b64; } }
   return (_lg[name] = u);
 }
-// logos: the baked-in set (personal builds) plus whatever the player imported. imp = { clubs: { name: dataUrl } } or null to drop the imported ones.
-let _logoBase = null;
+// logos: the baked-in set (personal builds) plus whatever the player imported.
+// imp = { clubs, nations, leagues, comps } (each { name: dataUrl }) or null to drop the imported ones. Clubs live in window.__LOGOS; the rest in window.__LOGOS2.
+let _logoBase = null, _logoImp = null;
+const _lg2 = {};
+// only what the player imported (not the baked-in club set)
+function importedLogos() { const i = _logoImp || {}; return { clubs: i.clubs || {}, nations: i.nations || {}, leagues: i.leagues || {}, comps: i.comps || {} }; }
 function setLogos(imp) {
   if (_logoBase === null) _logoBase = window.__LOGOS || {};
   for (const k in _lg) delete _lg[k];
+  for (const k in _lg2) delete _lg2[k];
+  _logoImp = imp || null;
   const m = Object.assign({}, _logoBase, imp && imp.clubs ? imp.clubs : {});
   window.__LOGOS = Object.keys(m).length ? m : undefined;
+  window.__LOGOS2 = imp ? { nations: imp.nations || {}, leagues: imp.leagues || {}, comps: imp.comps || {} } : undefined;
+}
+// an imported picture for a nation, a league or a competition (a data URL), or null
+function logo2(kind, name) {
+  const s = window.__LOGOS2 && window.__LOGOS2[kind]; if (!s) return null;
+  const k = kind + "|" + name; if (k in _lg2) return _lg2[k];
+  const u = s[name]; return (_lg2[k] = typeof u === "string" && u.startsWith("data:") ? u : null);
+}
+// the federation badge when one was imported, else the flag. size = height of the box.
+function natBadge(nat, size) {
+  const u = logo2("nations", nat);
+  return u ? `<span class="nbadge" style="width:${size}px;height:${size}px"><img src="${u}" alt="" decoding="async" title="${esc(nat)}"></span>` : flag(nat, size);
+}
+// a league or competition logo (img in a square box), or "" so the caller can fall back to its own emblem
+function logoBox(kind, name, size) {
+  const u = logo2(kind, name);
+  return u ? `<span class="lbox" style="width:${size}px;height:${size}px"><img src="${u}" alt="" decoding="async" title="${esc(name)}"></span>` : "";
 }
 function crest(name, size) {
   size = size || 18;
@@ -9682,6 +9727,17 @@ function crest(name, size) {
     _cr[name] = `<defs><clipPath id="c${h}"><path d="${S}"/></clipPath></defs><g clip-path="url(#c${h})">${fill}</g><path d="${S}" fill="none" stroke="#06210f" stroke-width="1.6"/><text x="16" y="21.5" text-anchor="middle" font-family="Arial,sans-serif" font-weight="700" font-size="${fs}" fill="${txt}" stroke="rgba(0,0,0,.45)" stroke-width=".5" paint-order="stroke">${ini}</text>`;
   }
   return `<svg class="crest" width="${size}" height="${Math.round(size * 1.0)}" viewBox="0 0 32 32" aria-hidden="true">${_cr[name]}</svg>`;
+}
+
+/* title stars: one gold star per title, five gold fold into one blue, five blue fold into one ice star
+   (so a nation shows at most 4 gold + 4 blue + ice stars, however many seasons are played) */
+const STAR_COL = { g: "#f5c542", b: "#4aa8ff", w: "#e9f4ff" };
+function starLadder(n) { n = Math.max(0, Math.floor(n || 0)); const w = Math.floor(n / 25), b = Math.floor((n % 25) / 5), g = n % 5; return [].concat(Array(w).fill("w"), Array(b).fill("b"), Array(g).fill("g")); }
+const _starPath = (() => { let p = ""; for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + (i * Math.PI) / 5, r = i % 2 ? 3.6 : 9; p += (i ? "L" : "M") + (10 + r * Math.cos(a)).toFixed(2) + " " + (10.5 + r * Math.sin(a)).toFixed(2); } return p + "Z"; })();
+function titleStars(n, size, what) {
+  const k = starLadder(n); if (!k.length) return "";
+  size = size || 13;
+  return `<span class="tstars" role="img" aria-label="${n} ${what || "title"}${n > 1 ? "s" : ""}" title="${n} ${what || "title"}${n > 1 ? "s" : ""}">${k.map((c) => `<svg width="${size}" height="${size}" viewBox="0 0 20 20" aria-hidden="true"><path d="${_starPath}" fill="${STAR_COL[c]}" ${c === "w" ? 'stroke="#8ec5ff" stroke-width="1.2" style="filter:drop-shadow(0 0 3px #9fd0ff)"' : 'stroke="rgba(0,0,0,.35)" stroke-width="1"'}/></svg>`).join("")}</span>`;
 }
 </script>
 <script>// v15.2 pages: league page with tabs, continent pages for every confederation, and competition pages (History and Stats)
@@ -9799,7 +9855,7 @@ function compCard(c) {
     const fin = cur.total > 0 && cur.done >= cur.total;
     status = `<div class="st"><span>Season ${cur.season}: ${fin ? "finished" : cur.next ? esc(cur.next) + (cur.next_date ? " · " + esc(cur.next_date.text) : "") : "in progress"}</span><span>${cur.done} of ${cur.total}</span></div><div class="bar"><i style="width:${cur.total ? Math.round(cur.done / cur.total * 100) : 0}%"></i></div>`;
   } else status = `<div class="st"><span>Between tournaments${c.next_label ? " · next in " + esc(c.next_label) : ""}</span><span>${c.editions_n} played</span></div>`;
-  return `<div class="cc"><div class="t"><span class="cem">${emblem(c.emblem, 38)}</span><div class="m"><b>${esc(c.title)}</b><span><span class="tag ${c.scope === "clubs" ? "blue" : "gold"}">${c.scope === "clubs" ? "Clubs" : "National teams"}</span> · ${everyTxt(c)}</span></div></div>
+  return `<div class="cc"><div class="t"><span class="cem">${compEmb(c.title, c.emblem, 38)}</span><div class="m"><b>${esc(c.title)}</b><span><span class="tag ${c.scope === "clubs" ? "blue" : "gold"}">${c.scope === "clubs" ? "Clubs" : "National teams"}</span> · ${everyTxt(c)}</span></div></div>
     ${status}
     <div class="kv"><div><span>HOLDERS</span><b>${hd ? lk(hd.name) : "None yet"}</b></div><div><span>MOST TITLES</span><b>${mostTxt(c)}</b></div></div>
     <a class="go" href="#/c/${enc(c.key)}"><span>${cur ? "Current edition, history and stats" : "History, winners and stats"}</span><span>&rsaquo;</span></a></div>`;
@@ -9815,7 +9871,7 @@ async function viewContinent(code) {
   const clubsN = c.leagues.reduce((a, l) => a + l.clubs, 0);
   const compsHTML = `<h2 class="lbl2">Competitions</h2>${cards.length ? cards.map(compCard).join("") : '<div class="card"><div class="dim small">This confederation has no tournaments yet.</div></div>'}
     ${quals.length ? `<div class="card"><h3>World Cup qualifying</h3>${quals.map((x) => progressRow({ link: `<a href="#/comp/${enc(x.id)}">${esc(x.title)}</a>`, sub: x.next ? "next: " + esc(x.next) + (x.next_date ? " · " + x.next_date.text : "") : "finished", done: x.done, total: x.total })).join("")}</div>` : ""}`;
-  const leaguesHTML = `<h2 class="lbl2">Leagues</h2><div class="card" style="margin-top:0">${c.leagues.map((l) => `<a class="lg" href="#/league/${enc(l.name)}"><div class="t"><span>${esc(l.name)}</span><span class="dim small">${l.done} / ${l.total}</span></div><div class="s"><span>Leader ${esc(l.leader)} · ${l.pts} pts</span><span>OVR ${l.avg}</span></div><div class="bar"><i style="width:${l.total ? Math.round(l.done / l.total * 100) : 0}%"></i></div></a>`).join("")}</div>
+  const leaguesHTML = `<h2 class="lbl2">Leagues</h2><div class="card" style="margin-top:0">${c.leagues.map((l) => `<a class="lg" href="#/league/${enc(l.name)}"><div class="t"><span>${logoBox("leagues", l.name, 20)} ${esc(l.name)}</span><span class="dim small">${l.done} / ${l.total}</span></div><div class="s"><span>Leader ${esc(l.leader)} · ${l.pts} pts</span><span>OVR ${l.avg}</span></div><div class="bar"><i style="width:${l.total ? Math.round(l.done / l.total * 100) : 0}%"></i></div></a>`).join("")}</div>
     <a class="more" href="#/nations/${code}"><span>National teams of ${esc(c.name)}</span><span>&rsaquo;</span></a>`;
   const tab = (location.hash.split("/")[3] || "ov");
   $("#view").innerHTML = `<div class="v2">${crumbHTML([`<a href="#/world">World</a>`, esc(code)])}
@@ -9856,7 +9912,7 @@ async function viewCompPage(key, tab) {
   if (cf !== "WORLD") crumb.push(`<a href="#/continent/${esc(cf)}">${esc(cf)}</a>`);
   crumb.push(esc(h.title));
   $("#view").innerHTML = `<div class="v2">${crumbHTML(crumb)}
-    <div style="display:flex;align-items:center;gap:12px"><span class="cem big-e">${emblem(h.emblem, 48)}</span><div><h1>${esc(h.title)}</h1><div class="sub">${sub}</div></div></div>
+    <div style="display:flex;align-items:center;gap:12px"><span class="cem big-e">${compEmb(h.title, h.emblem, 48)}</span><div><h1>${esc(h.title)}</h1><div class="sub">${sub}</div></div></div>
     ${stat4}${compTabsHTML(key, tab, cur && cur.cid)}<div id="cp-body"></div></div>`;
   const body = $("#cp-body");
   if (tab === "stats") {
@@ -9962,7 +10018,7 @@ async function viewLeague(name, season) {
     ${!inProg && d.next.length ? `<div class="card"><h3>Next matchweek <small>${d.next_date ? esc(d.next_date.text) : ""}</small></h3>${d.next.map((f) => `<div class="fix"><span class="h">${clubLink(f.h)}</span><span class="s">v</span><span>${clubLink(f.a)}</span></div>`).join("")}</div>` : ""}`;
   const subBits = [esc(d.confed), d.games + " games", "top " + d.slots + " reach the " + esc(d.cup)];
   $("#view").innerHTML = `<div class="v2">${crumbHTML([`<a href="#/world">World</a>`, `<a href="#/continent/${d.confed}">${esc(d.confed)}</a>`, esc(d.name)])}
-    <div style="display:flex;align-items:center;gap:12px"><span class="cem big-e">${emblem(d.emblem, 48)}</span><div><h1>${esc(d.name)}</h1><div class="sub">${subBits.join(" · ")}${past ? ` · <span class="tag gold">season ${past.season} final table</span>` : ""}</div></div></div>
+    <div style="display:flex;align-items:center;gap:12px"><span class="cem big-e">${compEmb(d.name, d.emblem, 48)}</span><div><h1>${esc(d.name)}</h1><div class="sub">${subBits.join(" · ")}${past ? ` · <span class="tag gold">season ${past.season} final table</span>` : ""}</div></div></div>
     <div class="stat4"><div><b>${d.avg}</b><span>AVG OVR</span></div><div><b>${mon && mon.season ? money(mon.avg_income) : "-"}</b><span>CLUB INCOME</span></div><div><b>x${(+d.tv).toFixed(2)}</b><span>TV MONEY</span></div><div><b>${mon && mon.season ? "#" + mon.rank : "-"}</b><span>${mon && mon.season ? "RICHEST OF " + mon.of : "RICHEST"}</span></div></div>
     <nav class="tabs2" id="lg-tabs" aria-label="League sections">${LTABS.map(([k, t]) => `<button data-lt="${k}" class="${k === S.tab ? "on" : ""}">${t}</button>`).join("")}</nav>
     <div id="lg-table">${tablePane}</div><div id="lg-money" hidden>${leagueMoneyHTML(mon, d)}</div><div id="lg-hof" hidden>${leagueHofHTML(hof, d)}</div><div id="lg-fix" hidden>${fixPane}</div><div id="lg-halls" hidden></div><div id="lg-stats" hidden></div></div>`;
@@ -10312,7 +10368,7 @@ const mvPos = (r) => (r.pos ? `<span class="pos-${esc(r.pos)}">${esc(r.pos)}</sp
 // the one emblem on a row: the club the person ends up at, or the one they leave; a flag for a national job
 function mvBadge(r, size) {
   size = size || 22;
-  if (r.k === "n") return flag(r.nation, size - 4);
+  if (r.k === "n") return natBadge(r.nation, size - 4);
   const club = r.to || r.from || r.club;
   return club ? crest(club, size) : "";
 }
@@ -10524,7 +10580,7 @@ function mvStory(r) {
 }
 function mvSlide(r, n, total) {
   const money_ = r.k === "t" ? `<div class="mvbig">${money(r.fee)}</div>` : r.k === "f" && r.wage ? `<div class="mvbig">${money(r.wage)}<small>/yr</small></div>` : "";
-  const fromTo = (r.k === "t" || r.k === "f" || r.k === "h") && r.to ? `<div class="mvft"><span>${r.from ? crest(r.from, 32) + `<i>${esc(r.from)}</i>` : `<i>${r.k === "h" ? "" : "free agent"}</i>`}</span><span class="mvar">&rarr;</span><span>${crest(r.to, 32)}<i>${esc(r.to)}</i></span></div>` : r.k === "n" ? `<div class="mvft"><span>${flag(r.nation, 32)}<i>${esc(r.nation)}</i></span></div>` : (r.from || r.club) ? `<div class="mvft"><span>${crest(r.from || r.club, 32)}<i>${esc(r.from || r.club)}</i></span></div>` : "";
+  const fromTo = (r.k === "t" || r.k === "f" || r.k === "h") && r.to ? `<div class="mvft"><span>${r.from ? crest(r.from, 32) + `<i>${esc(r.from)}</i>` : `<i>${r.k === "h" ? "" : "free agent"}</i>`}</span><span class="mvar">&rarr;</span><span>${crest(r.to, 32)}<i>${esc(r.to)}</i></span></div>` : r.k === "n" ? `<div class="mvft"><span>${natBadge(r.nation, 32)}<i>${esc(r.nation)}</i></span></div>` : (r.from || r.club) ? `<div class="mvft"><span>${crest(r.from || r.club, 32)}<i>${esc(r.from || r.club)}</i></span></div>` : "";
   const rating = r.ovr ? `${ovr(r.ovr)}` : "";
   return `<div class="hrv mvs"><div class="dim small">${esc(r.chapter)} &middot; ${r.n} of ${r.of}</div>
     <div class="hrv-n">${r.nat ? flag(r.nat, 24) : ""}<div><div class="hrv-name">${mvWho(r)} ${rating}</div><div class="dim small">${r.k === "p" || r.k === "t" || r.k === "f" || r.k === "r" ? mvPos(r) + " &middot; age " + r.age : "Coach &middot; age " + r.age}${r.nat ? " &middot; " + esc(r.nat) : ""}</div></div></div>
@@ -10604,8 +10660,8 @@ function ovrColor(o) {
 }
 const ovr = (o) => `<span class="ovr" style="background:${ovrColor(o)}">${o}</span>`;
 const clubLink = (n) => `${crest(n, 16)}<a href="#/club/${enc(n)}">${esc(n)}</a>`;
-const leagueLink = (n) => `<a href="#/league/${enc(n)}">${esc(n)}</a>`;
-const natLink = (n) => `${flag(n, 18)}<a href="#/nation/${enc(n)}">${esc(n)}</a>`;
+const leagueLink = (n) => `${logoBox("leagues", n, 16)}<a href="#/league/${enc(n)}">${esc(n)}</a>`;
+const natLink = (n) => `${natBadge(n, 18)}<a href="#/nation/${enc(n)}">${esc(n)}</a>`;
 const playerLink = (p, nm) => `${flag(p.nat, 18)}<a href="#/player/${p.uid}">${esc(nm || p.name)}</a>`;
 const bar = (d, t) => `<div class="bar"><i style="width:${t ? Math.round((100 * d) / t) : 0}%"></i></div>`;
 const form = (f) => `<span class="form">${[...f].map((c) => `<span class="${c}">${c}</span>`).join("")}</span>`;
@@ -10953,37 +11009,56 @@ function simOthersDialog(others, d) {
   $("#so-go").onclick = () => { closeModal(); simIds(others.map((r) => r.sim), { to_end: true }, "Simulating the other competitions..."); };
 }
 
-// ---------------------------------------------------------------- club logos
-// The game ships without any club logos. A logo file is one JSON file: { "format": "soccersim-logos", "version": 1, "mime": "image/webp", "clubs": { "<club name>": "<base64 or data URL>" } }
-const LOGO_FORMAT = "soccersim-logos", LOGO_MAX = 400000;
-function knownClubs() {
-  try { return new Set(JSON.parse(window.__DATA.leagues).leagues.flatMap((l) => String(l.clubs).split(",").map((x) => x.trim().replace(/ \d+$/, "")))); } catch (e) { return new Set(); }
-}
-// check a parsed logo file; returns { clubs: {name: dataUrl}, matched, unknown, skipped }
-function readLogoPack(obj) {
-  if (!obj || typeof obj !== "object" || !obj.clubs || typeof obj.clubs !== "object") throw new Error("That is not a Soccer Sim logo file (no \"clubs\" list).");
-  if (obj.format && obj.format !== LOGO_FORMAT) throw new Error("That file says it is \"" + obj.format + "\", not a Soccer Sim logo file.");
-  const mime = /^image\/(webp|png|jpeg)$/.test(obj.mime || "") ? obj.mime : "image/webp", known = knownClubs();
-  const out = { clubs: {}, matched: 0, unknown: [], skipped: [] };
-  for (const [name, v] of Object.entries(obj.clubs)) {
-    if (known.size && !known.has(name)) { out.unknown.push(name); continue; }
-    let url = null;
-    if (typeof v === "string" && /^data:image\/(webp|png|jpeg);base64,[A-Za-z0-9+/=]+$/.test(v)) url = v;
-    else if (typeof v === "string" && /^[A-Za-z0-9+/=]+$/.test(v)) url = "data:" + mime + ";base64," + v;
-    if (!url || url.length > LOGO_MAX) { out.skipped.push(name); continue; }
-    out.clubs[name] = url; out.matched++;
-  }
-  if (!out.matched) throw new Error("None of the club names in that file match this game" + (out.unknown.length ? " (for example \"" + out.unknown[0] + "\")." : "."));
+// ---------------------------------------------------------------- logos
+// The game ships without any logos. A logo file is one JSON file: { "format": "soccersim-logos", "version": 2, "mime": "image/webp",
+//   "clubs": {...}, "nations": {...}, "leagues": {...}, "comps": {...} }   (each section: { "<name>": "<base64 or data URL>" }, any section can be left out)
+// Importing a file adds to what is already imported (the same name is replaced), so clubs, nations and competitions can come in separate files.
+const LOGO_FORMAT = "soccersim-logos", LOGO_MAX = 400000, LOGO_SECTIONS = ["clubs", "nations", "leagues", "comps"];
+const COMP_NAMES = ["UEFA Champions League", "Copa Libertadores", "CONCACAF Champions Cup", "AFC Champions League Elite", "Club World Cup", "World Cup",
+  "European Championship", "Copa America", "Gold Cup", "Africa Cup of Nations", "Asian Cup", "OFC Nations Cup",
+  "UEFA Nations League", "CONMEBOL Nations League", "CONCACAF Nations League", "CAF Nations League", "AFC Nations League", "OFC Nations League"];
+function knownLogoNames() {
+  const out = { clubs: new Set(), nations: new Set(), leagues: new Set(), comps: new Set(COMP_NAMES) };
+  try { const L = JSON.parse(window.__DATA.leagues).leagues; for (const l of L) { out.leagues.add(l.name); for (const x of String(l.clubs).split(",")) out.clubs.add(x.trim().replace(/ \d+$/, "")); } } catch (e) { /* no data */ }
+  try { for (const n of JSON.parse(window.__DATA.nations).nations) out.nations.add(n.name); } catch (e) { /* no data */ }
   return out;
 }
+const knownClubs = () => knownLogoNames().clubs;
+// check a parsed logo file; returns { sections: {clubs, nations, leagues, comps: {name: dataUrl}}, matched: {section: n}, total, unknown, skipped }
+function readLogoPack(obj) {
+  if (!obj || typeof obj !== "object" || !LOGO_SECTIONS.some((k) => obj[k] && typeof obj[k] === "object")) throw new Error("That is not a Soccer Sim logo file (no \"clubs\", \"nations\", \"leagues\" or \"comps\" list).");
+  if (obj.format && obj.format !== LOGO_FORMAT) throw new Error("That file says it is \"" + obj.format + "\", not a Soccer Sim logo file.");
+  const mime = /^image\/(webp|png|jpeg)$/.test(obj.mime || "") ? obj.mime : "image/webp", known = knownLogoNames();
+  const out = { sections: {}, matched: {}, total: 0, unknown: [], skipped: [] };
+  for (const sec of LOGO_SECTIONS) {
+    out.sections[sec] = {}; out.matched[sec] = 0;
+    if (!obj[sec] || typeof obj[sec] !== "object") continue;
+    for (const [name, v] of Object.entries(obj[sec])) {
+      if (known[sec].size && !known[sec].has(name)) { out.unknown.push(name); continue; }
+      let url = null;
+      if (typeof v === "string" && /^data:image\/(webp|png|jpeg);base64,[A-Za-z0-9+/=]+$/.test(v)) url = v;
+      else if (typeof v === "string" && /^[A-Za-z0-9+/=]+$/.test(v)) url = "data:" + mime + ";base64," + v;
+      if (!url || url.length > LOGO_MAX) { out.skipped.push(name); continue; }
+      out.sections[sec][name] = url; out.matched[sec]++; out.total++;
+    }
+  }
+  if (!out.total) throw new Error("None of the names in that file match this game" + (out.unknown.length ? " (for example \"" + out.unknown[0] + "\")." : "."));
+  return out;
+}
+// what is imported right now, as one object (or null)
+function logoSet() {
+  const clubs = window.__LOGOS || {}, o2 = window.__LOGOS2 || {};
+  return { clubs, nations: o2.nations || {}, leagues: o2.leagues || {}, comps: o2.comps || {} };
+}
 function logoState() {
-  const total = knownClubs().size, n = window.__LOGOS ? Object.keys(window.__LOGOS).filter((k) => window.__LOGOS[k]).length : 0;
-  return n ? `Logos for <b>${n}</b> of ${total || "all"} clubs.` : "No logo file imported: the game uses its own generated crests.";
+  const k = knownLogoNames(), s = logoSet(), n = (sec) => Object.keys(s[sec]).filter((x) => s[sec][x]).length;
+  const parts = [["clubs", "clubs"], ["nations", "nations"], ["leagues", "leagues"], ["comps", "competitions"]].filter(([sec]) => n(sec)).map(([sec, w]) => `<b>${n(sec)}</b> of ${k[sec].size || "all"} ${w}`);
+  return parts.length ? `Logos for ${parts.join(", ")}.` : "No logo file imported: the game uses its own generated crests, flags and emblems.";
 }
 function logoPanel() {
-  return `<h2>Club logos</h2><div class="meta" id="logo-state">${logoState()}</div>
+  return `<h2>Logos</h2><div class="meta" id="logo-state">${logoState()}</div>
     <p style="margin:8px 0"><input type="file" id="logo-file" accept=".json,application/json" hidden><button id="logo-pick">Import logo file</button> <button id="logo-clear">Remove imported logos</button></p>
-    <details class="opts"><summary>What is a logo file?</summary><p class="meta">One .json file with a picture for each club (format ${LOGO_FORMAT}, see docs/LOGOS.md in the project). The game does not include any logos, so you bring your own. They are kept in this browser next to your saves, not inside them, and clubs without a picture keep their generated crest.</p></details>`;
+    <details class="opts"><summary>What is a logo file?</summary><p class="meta">One .json file with pictures for clubs, nations (federation badges), leagues and competitions (format ${LOGO_FORMAT}, see docs/LOGOS.md in the project). The game does not include any logos, so you bring your own. Importing a second file adds to the first. They are kept in this browser next to your saves, not inside them. Anything without a picture keeps its generated crest, flag or emblem.</p></details>`;
 }
 function wireLogoPanel() {
   const state = () => { const b = $("#logo-state"); if (b) b.innerHTML = logoState(); };
@@ -10992,13 +11067,15 @@ function wireLogoPanel() {
   $("#logo-file").onchange = async (e) => {
     const f = e.target.files[0]; e.target.value = ""; if (!f) return;
     try {
-      const pack = readLogoPack(JSON.parse(await f.text()));
-      setLogos({ clubs: pack.clubs });
+      const pack = readLogoPack(JSON.parse(await f.text())), cur = importedLogos();
+      const merged = {}; for (const sec of LOGO_SECTIONS) merged[sec] = Object.assign({}, cur[sec], pack.sections[sec]);
+      setLogos(merged);
       let kept = true;
-      try { kept = await SIM.logos.save({ format: LOGO_FORMAT, version: 1, clubs: pack.clubs }); } catch (err) { toast(err.message); kept = false; }
+      try { kept = await SIM.logos.save({ format: LOGO_FORMAT, version: 2, clubs: merged.clubs, nations: merged.nations, leagues: merged.leagues, comps: merged.comps }); } catch (err) { toast(err.message); kept = false; }
       state();
+      const what = [["clubs", "club"], ["nations", "nation"], ["leagues", "league"], ["comps", "competition"]].filter(([s]) => pack.matched[s]).map(([s, w]) => `${pack.matched[s]} ${w}`).join(", ");
       const extra = (pack.unknown.length ? ` ${pack.unknown.length} not recognized.` : "") + (pack.skipped.length ? ` ${pack.skipped.length} skipped (bad or too large).` : "");
-      toast(`Imported ${pack.matched} logos.${extra}${kept ? "" : " Not kept after you close the page."}`, kept);
+      toast(`Imported ${what} logos.${extra}${kept ? "" : " Not kept after you close the page."}`, kept);
       if (STATUS && STATUS.has_world) await route();
     } catch (err) { toast(err instanceof SyntaxError ? "That file is not valid JSON." : err.message); }
   };
@@ -11085,7 +11162,7 @@ async function viewWorld() {
        </div></div>` : ""}
     ${q ? `<div class="quick"><a class="stat" href="#/league/${enc(q.league.name)}"><div class="k">Strongest league</div><div class="v">${esc(q.league.name)}</div><div class="meta">avg OVR ${q.league.avg}</div></a>
       <a class="stat" href="#/club/${enc(q.club.name)}"><div class="k">Strongest club</div><div class="v">${crest(q.club.name, 18)} ${esc(q.club.name)}</div><div class="meta">rating ${q.club.eff}</div></a>
-      <a class="stat" href="#/nation/${enc(q.nation.name)}"><div class="k">Strongest nation</div><div class="v">${flag(q.nation.name, 22)} ${esc(q.nation.name)}</div><div class="meta">rating ${q.nation.eff}</div></a>
+      <a class="stat" href="#/nation/${enc(q.nation.name)}"><div class="k">Strongest nation</div><div class="v">${natBadge(q.nation.name, 22)} ${esc(q.nation.name)}</div><div class="meta">rating ${q.nation.eff}</div></a>
       <a class="stat" href="#/club/${enc(q.rich.name)}"><div class="k">Richest club</div><div class="v">${esc(q.rich.name)}</div><div class="meta">${money(q.rich.budget)} yearly income</div></a>
       <a class="stat" href="#/players"><div class="k">Players</div><div class="v">${q.players.toLocaleString()}</div><div class="meta">${q.clubs} clubs &middot; ${q.nations} nations</div></a></div>` : ""}`;
   $("#view").innerHTML = `<div class="whead"><h1>The world</h1>${chosen ? `<div class="seg" role="group"><button data-fv="all" class="${onlyFav ? "" : "on"}">All</button><button data-fv="fav" class="${onlyFav ? "on" : ""}">Favorites ${FAVS.length}</button></div>` : ""}</div>
@@ -11218,7 +11295,7 @@ async function viewClub(name) {
       <div class="cols"><span>Player</span><span>OVR</span><span>POT</span><span>Contr.</span></div>${body || `<div class="dim small" style="padding:14px 0">Nobody matches.</div>`}`;
   };
   $("#view").innerHTML = `<div class="v2"><div class="crumbs dim small" style="min-height:30px;display:flex;align-items:center;flex-wrap:wrap"><a href="#/world">World</a>&nbsp;›&nbsp;<a href="#/continent/${c.confed}">${esc(c.confed)}</a>&nbsp;›&nbsp;${leagueLink(c.league)}</div>
-    <div style="display:flex;align-items:center;gap:12px">${crest(c.name, 52)}<div><h1>${esc(c.name)}</h1><div class="sub">${leagueLink(c.league)} · last finish ${c.last_finish ? ordN(c.last_finish) : "-"}${c.cwc.length ? ` · ${c.cwc.length} Club World Cup${c.cwc.length > 1 ? "s" : ""}` : ""}</div></div></div>
+    <div style="display:flex;align-items:center;gap:12px">${crest(c.name, 52)}<div><h1>${esc(c.name)}</h1>${c.cwc.length ? `<div class="sub tsline">${titleStars(c.cwc.length, 13, "Club World Cup title")}<span>Club World Cup</span></div>` : ""}<div class="sub">${leagueLink(c.league)} · last finish ${c.last_finish ? ordN(c.last_finish) : "-"}</div></div></div>
     <div class="stat4"><div><b>${c.ovr}</b><span>TEAM OVR</span></div><div><b>${money(c.budget)}</b><span>INCOME</span></div><div><b>${money(c.funds)}</b><span>FUNDS</span></div><div><b>${c.squad_size}</b><span>SQUAD</span></div></div>
     <nav class="tabs2" id="ct-tabs" aria-label="Club sections">${tabs.map(([k, t]) => `<button data-ct="${k}" class="${k === CV.tab ? "on" : ""}">${t}</button>`).join("")}</nav></div>
     <div class="v2" id="ct-ov">${overview}</div><div class="v2" id="ct-sq" hidden></div><div id="ct-fin" hidden></div><div id="ct-acad" hidden></div><div id="ct-stad" hidden></div><div class="v2" id="ct-hon" hidden>${trophyRoom(c.trophies, "Trophy room")}</div>`;
@@ -11256,7 +11333,7 @@ function trophyRoom(list, title) {
     const items = list.filter((t) => t.group === g); return items.length ? `<div class="tro-group"><div class="lbl">${name}</div><div class="tro-grid">${items.map(tile).join("")}</div></div>` : "";
   }).join("")}</div>`;
 }
-const withEmb = (spec, size, inner) => `<span class="h1emb">${spec ? emblem(spec, size) : ""}<span>${inner}</span></span>`;
+const withEmb = (spec, size, inner, name) => `<span class="h1emb">${name ? compEmb(name, spec, size) : spec ? emblem(spec, size) : ""}<span>${inner}</span></span>`;
 
 // ---- brackets ------------------------------------------------------------------------------------
 // ties of the round being played that already have a result (single games simmed from the list) show it in the bracket before the round is over
@@ -11472,7 +11549,7 @@ async function viewComp(id) {
       <div id="tab-fld" hidden><div class="scroll"><table><thead><tr><th class="l">Club</th><th class="l">League</th><th>OVR</th></tr></thead><tbody>${x.field.map((f) => `<tr><td class="l">${clubLink(f.club)}</td><td class="l meta">${esc(f.league)}</td><td>${ovr(f.ovr)}</td></tr>`).join("")}</tbody></table></div></div>` : ""}`;
   }
   const finished = p.done >= p.total;
-  $("#view").innerHTML = `<div class="crumbs"><a href="#/world">World</a> / ${esc(x.title)}</div><h1>${withEmb(x.emblem, 44, esc(x.title))}</h1>${liveTabs(id)}
+  $("#view").innerHTML = `<div class="crumbs"><a href="#/world">World</a> / ${esc(x.title)}</div><h1>${withEmb(x.emblem, 44, esc(x.title), x.title)}</h1>${liveTabs(id)}
     ${locked ? `<div class="card" style="margin-bottom:14px"><span class="tag red">LOCKED</span> needs ${p.locked.map((m) => `<a href="#/comp/${enc(m.id)}">${esc(m.title)}</a>`).join(", ")} to finish first.
       <p style="margin:10px 0 0"><button id="k-up" class="pri">Sim up to here</button> <span class="meta">plays only what it needs, then stops so you can play it your way.</span></p>
       <p style="margin:8px 0 0"><button id="k-pre">Sim everything it needs, then this to the end</button></p></div>`
@@ -11558,7 +11635,7 @@ async function viewNations(confed) {
     let rows = d.rows.filter((r) => !q || r.name.toLowerCase().includes(q));
     rows = srt[2] ? rows.slice().sort((a, b) => srt[2](b) - srt[2](a) || a.rank - b.rank) : rows.slice().sort((a, b) => a.name.localeCompare(b.name));
     const shown = rows.slice(0, NV.show);
-    $("#nl-list").innerHTML = shown.length ? shown.map((r) => `<a class="nr" href="#/nation/${enc(r.name)}"><span class="no">${r.rank}</span>${flag(r.name, 34)}<span class="nm"><b>${esc(r.name)}</b><span>${r.confed} · coach ${esc(r.coach)}</span></span><span class="rt"><b>${srt[2] ? srt[2](r) : r.rating}</b><span>${srt[2] ? srt[1].toLowerCase() : "rating"}</span></span><span class="chev">›</span></a>`).join("") : `<div class="dim small" style="padding:14px">No nation matches.</div>`;
+    $("#nl-list").innerHTML = shown.length ? shown.map((r) => `<a class="nr" href="#/nation/${enc(r.name)}"><span class="no">${r.rank}</span>${natBadge(r.name, 34)}<span class="nm"><b>${esc(r.name)}</b>${r.titles ? titleStars(r.titles, 9, "World Cup title") : ""}<span>${r.confed} · coach ${esc(r.coach)}</span></span><span class="rt"><b>${srt[2] ? srt[2](r) : r.rating}</b><span>${srt[2] ? srt[1].toLowerCase() : "rating"}</span></span><span class="chev">›</span></a>`).join("") : `<div class="dim small" style="padding:14px">No nation matches.</div>`;
     const left = rows.length - shown.length, mb = $("#nl-more");
     mb.hidden = left <= 0; mb.textContent = `Show ${Math.min(25, left)} more`;
   };
@@ -11606,7 +11683,7 @@ async function viewNation(name) {
   };
   const draw = () => {
     $("#view").innerHTML = `<div class="v2"><a class="crumb" href="#/nations">‹ Nations</a>
-      <div style="display:flex;align-items:center;gap:12px">${flag(n.name, 52)}<div><h1>${esc(n.name)}</h1><div class="sub">${esc(n.confed)}${rk ? " · ranked " + rk + sfx(rk) + " in the world" : ""}</div></div></div>
+      <div style="display:flex;align-items:center;gap:12px"><span class="sbox">${titleStars(n.titles, 13, "World Cup title")}${natBadge(n.name, 52)}</span><div><h1>${esc(n.name)}</h1><div class="sub">${esc(n.confed)}${rk ? " · ranked " + rk + sfx(rk) + " in the world" : ""}</div></div></div>
       <div class="stat4"><div><b class="pos">${n.rating}</b><span>RATING</span></div><div><b>${n.talent}</b><span>TALENT</span></div><div><b>${n.pros}</b><span>PROS</span></div><div><b>${n.titles}</b><span>WC TITLES</span></div></div>
       <nav class="tabs2" aria-label="Nation sections">${tabs.map(([k, t]) => `<button data-nt="${k}" class="${NV.tab === k ? "on" : ""}">${t}</button>`).join("")}</nav>
       ${body()}</div>`;
@@ -11855,7 +11932,7 @@ async function viewTrophies(key, tab) {
     ? `<tr><td class="l meta">S${r.season}<div>${r.date || ""}</div></td><td class="l" colspan="2">${r.team.map((p) => `<span class="pos-${esc(p.pos)}">${esc(p.name)}</span> <span class="meta">(${esc(p.club)})</span>`).join(" &middot; ")}</td></tr>`
     : `<tr><td class="l meta nw">S${r.season}<div>${r.date ? esc(String(r.date).slice(-4)) : ""}</div></td><td class="l"><b>${aw() ? esc(r.winner) : L(r.winner)}</b>${r.club ? `<div class="meta">${clubOrNat(r.club)}</div>` : ""}
       ${r.runner_up ? `<div class="meta">${aw() ? "2nd " + esc(r.runner_up) : "beat " + L(r.runner_up)}</div>` : ""}${r.coach ? `<div class="meta">coach ${esc(r.coach)}</div>` : ""}</td><td class="nw">${esc(r.text || "")}</td></tr>`;
-  $("#view").innerHTML = `<h1>${sel ? withEmb(sel.emblem, 48, esc(sel.title)) : "Trophies"}</h1><div class="sub">Every winner so far. Pick any competition from the list.</div>${tabs}
+  $("#view").innerHTML = `<h1>${sel ? withEmb(sel.emblem, 48, esc(sel.title), sel.title) : "Trophies"}</h1><div class="sub">Every winner so far. Pick any competition from the list.</div>${tabs}
     <p><select id="tro-sel" style="min-width:min(300px,100%);max-width:100%">${Object.entries(groups).map(([g, os]) => `<optgroup label="${esc(g)}">${os.map((o) => `<option value="${esc(o.key)}" ${sel && sel.key === o.key ? "selected" : ""}>${esc(o.title)}</option>`).join("")}</optgroup>`).join("")}</select></p>
     ${sel && sel.rows.length ? `<div class="cols"><div><div class="scroll"><table class="hof"><thead><tr><th class="l">Season</th><th class="l">Winner</th><th>${aw() ? "Votes / stat" : "Final"}</th></tr></thead><tbody>${sel.rows.map(rowHTML).join("")}</tbody></table></div></div>
       <div><div class="card"><h3>Most successful</h3>${sel.board.map((b, i) => `<div class="row"><span>${i + 1}. ${sel.key.startsWith("award:") ? esc(b.name) : L(b.name)}</span><span class="meta"><b style="color:var(--accent2)">${b.count}</b> &middot; S${b.seasons.join(", S")}</span></div>`).join("")}</div></div></div>` : '<div class="empty">No winners yet. Sim a season first.</div>'}`;
@@ -12069,6 +12146,14 @@ function showQualEnd(s, more) {
     if ($("#ce-skip")) $("#ce-skip").onclick = () => done(true);
   });
 }
+// the star moment under the trophy: M1 a new gold star, M2 four gold fold into one blue on the fifth title (and so on up the ladder), M3 the Club World Cup
+function starMoment(s) {
+  const n = s.star_n | 0; if (!(s.winner && n > 0 && (s.kind === "wc" || s.kind === "cwc"))) return "";
+  const what = s.kind === "wc" ? "World Cup" : "Club World Cup", fold = n > 1 && n % 5 === 0, prev = starLadder(n - 1).length;
+  const row = titleStars(n, 22, what + " title");
+  const line = fold ? `Five titles fold into a ${n % 25 === 0 ? "ice" : "blue"} star` : n === 1 ? `First ${what} title: a star is earned` : `${ordN(n)} ${what} title: another star`;
+  return `<div class="ce-stars${fold ? " fold" : ""}" data-prev="${prev}"><div class="ce-sr">${row}</div><div class="meta">${line}</div></div>`;
+}
 function showCompEnd(s, more) {
   return new Promise((res) => {
     const tm = (n) => (s.nation ? natLink(n) : clubLink(n));
@@ -12083,7 +12168,7 @@ function showCompEnd(s, more) {
     const draw = (hof) => {
       const hofBlock = hof ? `<div class="ce-hof"><span class="hb W" style="width:36px;height:36px;--hc:#f5c542">${hofStar(24)}</span><div><b>Hall of Fame day</b><div class="meta">${hof.nLeague} league inductee${hof.nLeague === 1 ? "" : "s"} &middot; ${hof.nClubs} club inductee${hof.nClubs === 1 ? "" : "s"}</div></div></div>` : "";
       openModal(`<div class="ce"><div class="ce-emb">${emblem(s.emblem, window.innerWidth < 700 ? 72 : 96)}</div><div class="ce-t">${esc(s.name)} <span class="meta">${esc(s.season_label || "")}</span></div>
-        <div class="ce-w">${s.winner ? tm(s.winner) : "-"}</div><div class="ce-sub">${s.kind === "league" ? "Champions" : "Winners"}</div>
+        <div class="ce-w">${s.winner ? tm(s.winner) : "-"}</div><div class="ce-sub">${s.kind === "league" ? "Champions" : "Winners"}</div>${starMoment(s)}
         <div class="ce-facts">${facts.map((f, i) => `<div class="ce-f" style="animation-delay:${1.3 + i * 0.45}s">${f}</div>`).join("")}</div>${hofBlock}
         <div class="ce-btns">${hof ? '<button class="gold" id="ce-hw">Watch the ceremony</button> <button id="ce-hr">Hall of Fame results</button> ' : ""}<button class="pri" id="ce-next">${more ? "Next" : "Close"}</button>${more ? ' <button id="ce-skip">Skip all</button>' : ""}</div></div>`);
       const done = (skip) => { closeModal(); res(skip); };
@@ -12279,7 +12364,7 @@ window.addEventListener("hashchange", route);
 $("#brand").onclick = () => (location.hash = STATUS && STATUS.has_world ? "#/world" : "#/");
 (async () => {
   await SIM.init();
-  try { const imp = await SIM.logos.load(); if (imp && imp.clubs) setLogos(imp); } catch (e) { /* no logos stored */ }
+  try { const imp = await SIM.logos.load(); if (imp && LOGO_SECTIONS.some((k) => imp[k])) setLogos(imp); } catch (e) { /* no logos stored */ }
   if (!SIM.store.persistent) toast("Browser storage is blocked: saves will last only while this page is open.");
   await refreshStatus();
   if (STATUS.has_world && !location.hash) location.hash = "#/world";

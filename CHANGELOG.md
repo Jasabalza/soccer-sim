@@ -1,5 +1,13 @@
 # Changelog
 
+## v16.1: stars and logos
+- **Title stars.** One gold star per World Cup title on a nation page (above the badge), five gold fold into one blue, five blue into one ice star, so a nation never shows more than four of each. Club pages show the same ladder for Club World Cup titles beside the name. The Nations list shows small stars.
+- **Star moments** under the trophy on the champion screen: a new gold star, the fold into a blue star on the fifth title, and the Club World Cup. The compstats API now returns `star_n` for those.
+- **Federation badges instead of flags** on nation pages, the Nations list, national team links and national jobs (player flags stay flags).
+- **League and competition logos** on league pages and cards, competition cards and pages (the trophy illustration stays on champion screens and trophy rooms).
+- **Logo file version 2** adds `nations`, `leagues` and `comps`; importing adds to what is already stored. New `tools/make_nation_logos.py` (strips printed stars and printed host/year lines, light halo for dark badges). The game still ships no logos. See docs/LOGOS.md.
+- Tests: `tools/t_logos_ui.js`.
+
 ## v16: Hall of Fame
 - **Hall of Fame, four tiers.** Club, League, Country and World, for players and for coaches. A Hall of Fame is a vote by people: career points only set the odds. Eligible five years after retiring, up to ten years on the ballot, off after two years under 5%, 75% to get in, limited slots a year. A club and a league decide independently of each other. A world inductee is honoured by his federation unless his national record is poor (the veto and its reason are shown). A coach reaches the country tier by spending time coaching that nation.
 - **Induction day.** In the end-of-year awards: Final-year watch (swipe cards), The vote (one reveal at a time, then a summary with near misses and any veto) and who fell off the ballot. A league's own Hall of Fame day runs when that league's season ends: a popup with Watch the ceremony / Hall of Fame results / Close; results in League, Clubs and Ballot tabs with a club drill-down.
@@ -19,7 +27,7 @@
   - The stepper and nav say Off-season. A season's moves are one compact record (last 10 seasons); older saves show transfers only for seasons played before this update. API: `/api/moves`, `/api/movemoney`.
 - Engine: new modules `hof`, `hofpages`, `moves`, `movepages`. The move log writes down what happens and never changes it: all golden files are unchanged by it.
 - Known: new worlds see their first inductions around season 13 to 16; older saves get a founding class.
-- Next (16.1): league logos on league pages and cards. The trophy stays on the champion screen.
+- Next: see 16.1 above.
 
 ## v15.2 fixes (UI patch)
 - **All-time leaderboards:** rank numbers were wrong (28, 4, 1...). They now run 1, 2, 3 in every list, with ties sharing a rank.
