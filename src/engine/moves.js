@@ -14,10 +14,12 @@ $mods["moves"] = (function () {
   const r1 = (x) => Math.round(x * 10) / 10;
   const base = (w, p) => ({ n: p.name, u: 0, nat: p.nat, pos: p.pos, age: p.age, ovr: p.ovr, pot: p.pot, p: p });
 
-  function begin(w) { ensure(w); try { w.ensure_uids(); } catch (e) { } CUR = { w, buf: [], rel: new Map() }; }
+  function begin(w) { ensure(w); try { w.ensure_uids(); } catch (e) { } CUR = { w, buf: [], rel: new Map(), cl: new Map() }; }
   function transfer(w, p, seller, buyer, fee, kind, rival) {
     if (!on(w)) return;
     const a0 = att(w, seller), a1 = att(w, buyer), tl = w.transfers[w.transfers.length - 1], why = tl ? $idx(tl, "why") : null;
+    const cm = (n, i, v) => { if (!n) return; let a = CUR.cl.get(n); if (!a) CUR.cl.set(n, a = [0, 0, 0, 0]); a[i] += v; a[i + 2] += 1; };
+    cm(buyer, 0, fee); cm(seller, 1, fee);                   // club money: [spent, earned, buys, sells], never cut down
     CUR.buf.push(Object.assign(base(w, p), { why: why || undefined, k: "t", f: seller, t: buyer, fl: lg(w, seller), tl: lg(w, buyer), fee: r1(fee), kd: kind, a: a0 == null || a1 == null ? null : r1(a1 - a0), rv: rival ? 1 : 0, wg: r1(p.wage || 0) }));
   }
   // the bidding war behind the transfer that was just logged (called by the bids module right after it logs it)
@@ -69,7 +71,7 @@ $mods["moves"] = (function () {
   // end of the rollover: drop what is not interesting, store the rest as one string
   function finish(w, season) {
     if (!on(w)) return;
-    const M = ensure(w), buf = CUR.buf, rel = CUR.rel; CUR = null;
+    const M = ensure(w), buf = CUR.buf, rel = CUR.rel, cl = {}; for (const [n, a] of CUR.cl) cl[n] = [r1(a[0]), r1(a[1]), a[2], a[3]]; CUR = null;
     try { w.ensure_uids(); } catch (e) { }
     const fa = new Set(buf.filter((e) => e.k === "f").map((e) => e.p));
     for (const [p, club] of rel) if (!fa.has(p) && p.club == null && p.ovr >= 66) buf.push(Object.assign(base(w, p), { k: "r", f: club, fl: lg(w, club), wg: r1(p.wage || 0), a: null }));
@@ -84,7 +86,7 @@ $mods["moves"] = (function () {
     cnt.c = keep(["h", "x", "q", "cr", "n"], CAP.c, (e) => e.pr);
     cnt.h = buf.filter((e) => e.k === "h").length; cnt.x = buf.filter((e) => e.k === "x").length; cnt.q = buf.filter((e) => e.k === "q").length; cnt.cr = buf.filter((e) => e.k === "cr").length; cnt.n = buf.filter((e) => e.k === "n").length;
     cnt.fa = buf.filter((e) => e.k === "f" && !e.first).length; cnt.first = buf.filter((e) => e.k === "f" && e.first).length; cnt.rel = buf.filter((e) => e.k === "r").length; cnt.ac = buf.filter((e) => e.k === "h" && e.src === "acad").length;
-    M.s[season] = JSON.stringify({ ev: out, cnt });
+    M.s[season] = JSON.stringify({ ev: out, cnt, cl });
     for (const k of Object.keys(M.s)) if (+k <= season - KEEP) delete M.s[k];
   }
   const PARSED = new WeakMap();

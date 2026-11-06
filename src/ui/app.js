@@ -635,7 +635,7 @@ async function viewClub(name) {
       <div class="row"><span>${esc(co.name)}</span><span class="dim">prestige ${co.prestige} · ${co.stint} season${co.stint === 1 ? "" : "s"}</span></div>
       <div class="dim small">${esc(co.personality)} / ${esc(co.skill)} · career ${co.titles} titles, ${co.cups} cups, ${co.win}% wins</div></div>
     <div class="card"><h3>Recent transfers <small>last three</small></h3>${c.transfers.length ? c.transfers.slice(0, 3).map((t) => `<div class="row"><span class="l"><span class="tag ${t.dir === "IN" ? "green" : "red"}">${t.dir}</span><span>${esc(t.player)} <span class="dim small">${t.dir === "IN" ? "from" : "to"} ${esc(t.other)}</span></span></span><b>${money(t.fee)}</b></div>`).join("") : `<div class="dim small">None yet.</div>`}
-      <a class="more" href="#/ledger"><span>All transfers</span><span>&rsaquo;</span></a></div>
+      <a class="more" href="#/moves"><span>All transfers</span><span>&rsaquo;</span></a></div>
     <div class="card"><h3>Honours <small>the Honours tab has the trophy room</small></h3>
       <div class="hon"><div><b class="gold">${c.titles.length}</b><span>league titles</span></div><div><b>${c.cups.length}</b><span>continental</span></div><div><b>${c.cwc.length}</b><span>Club World Cups</span></div></div>
       <a class="more" data-goto="hon"><span>Trophy room</span><span>&rsaquo;</span></a></div>`;
@@ -1339,43 +1339,6 @@ async function viewMoney() {
   $("#view").querySelector(".sub").insertAdjacentHTML("afterend", `<div style="margin:12px 0">${econCard(ec)}</div>`);
   $("#view").insertAdjacentHTML("beforeend", `<div class="card" style="margin-top:14px"><h3>League strength over time <small>average OVR, top eight leagues</small></h3>${multiLine(ch.seasons, ch.leagues, 760, 240)}</div>`);
 }
-function bidDetail(x) {
-  const b = x.detail; if (!b) return "";
-  const tr = b.traits || {}, tn = (k, v) => v >= 0.66 ? k + ": high" : v <= 0.33 ? k + ": low" : null;
-  const traits = [tn("Money", tr.money), tn("Loyalty", tr.loyal), tn("Ambition", tr.ambition), tn("Trophies", tr.trophies)].filter(Boolean).join(", ");
-  return `<details class="bidd"><summary>How the price was set</summary>
-    <div class="row"><span>Base value</span><b>${money(b.base)}</b></div>
-    <div class="row"><span>Asking price after demand ${b.demand}x${b.premium > 1.001 ? ` and a ${Math.round((b.premium - 1) * 100)}% rival premium` : ""}</span><b>${money(b.asking)}</b></div>
-    <div class="row"><span>Paid</span><b class="pts">${money(x.fee)}</b></div>
-    ${b.comp > 0 ? `<div class="row"><span>Training compensation to ${clubLink(b.trainer)}</span><b>${money(b.comp)}</b></div>` : ""}
-    ${traits ? `<div class="meta" style="margin:4px 0">Player: ${traits}</div>` : ""}
-    <h4 class="sh" style="margin-top:6px">Bids</h4>
-    ${b.bids.map((c, i) => `<div class="row"><span>${i === 0 ? "&#127942; " : ""}${clubLink(c.club)}${c.rival ? ' <span class="tag red">rival</span>' : ""}</span><span class="meta">bid ${money(c.bid)} &middot; wage ${money(c.wage)} &middot; score ${c.score}</span></div>`).join("")}</details>`;
-}
-const TLG = { league: "" };       // the league chosen on the Transfers page (kept while you move around)
-async function viewLedger(season) {
-  const q = (season ? "season=" + enc(season) : "") + (TLG.league ? (season ? "&" : "") + "league=" + enc(TLG.league) : "");
-  const d = await api("/api/ledger" + (q ? "?" + q : ""));
-  if (!d.season) { $("#view").innerHTML = `<h1>Transfers</h1><div class="empty">No completed season yet.</div>`; return; }
-  const all = d.season === "all", st = d.stat, scope = d.league || "the world";
-  const seasons = Array.from({ length: d.seasons }, (_, i) => d.seasons - i);
-  const summary = d.league
-    ? `${d.n} moves involving ${esc(d.league)}${all ? " in all seasons" : ""} (${d.abroad} between leagues)`
-    : `${d.n} moves (${d.abroad} between leagues) &middot; ${money(d.total)} paid in fees`;
-  $("#view").innerHTML = `<a class="crumb" href="#/moves/${all ? "" : d.season}">&lsaquo; Off-season moves</a><h1>Transfer money - ${all ? "all seasons" : "season " + d.season}${d.league ? ` <small>${esc(d.league)}</small>` : ""}</h1>
-    <p class="filters"><select id="t-s"><option value="all" ${all ? "selected" : ""}>All seasons</option>${seasons.map((s) => `<option value="${s}" ${s === d.season ? "selected" : ""}>Season ${s}</option>`).join("")}</select>
-    <select id="t-l"><option value="">All leagues</option>${leagueOpts(d.leagues, d.league)}</select></p>
-    <div class="sub">${summary}</div>
-    ${st ? `<div class="quick" style="margin:8px 0"><div class="stat"><div class="k">Spent on signings</div><div class="v">${money(st.paid)}</div></div><div class="stat"><div class="k">Earned from sales</div><div class="v">${money(st.recv)}</div></div><div class="stat"><div class="k">Net</div><div class="v" style="color:${st.net >= 0 ? "var(--accent)" : "var(--red)"}">${moneyS(st.net)}</div></div></div>` : ""}
-    <div class="cols"><div><h2 style="margin-top:0">Biggest fees${d.league ? " involving " + esc(d.league) : ""}${all ? " of all time" : ""}</h2><div class="fees">
-    ${d.top.length ? d.top.map((x) => `<div class="fee"><div class="fee-top"><span><b>${esc(x.player)}</b> ${ovr(x.ovr)} <span class="meta">age ${x.age}${all ? " &middot; S" + x.season : ""}</span></span><b class="pts">${money(x.fee)}</b></div>
-      <div class="meta">${clubLink(x.frm)} &rarr; ${clubLink(x.to)} &middot; ${esc(x.why || (x.kind === "bid" ? "Won in a bidding contest" : x.kind === "abroad" ? "Moved to a different league" : x.kind === "league" ? "Moved within the league system" : x.kind))}</div>${bidDetail(x)}</div>`).join("") : '<div class="empty">No big moves recorded.</div>'}</div></div>
-    <div><h2 style="margin-top:0">Transfer money by league</h2><div class="meta" style="margin-bottom:6px">Fees a league's clubs received for sales minus fees they paid for signings. <span style="color:var(--accent)">Green</span>: the league made money on transfers. <span style="color:var(--red)">Red</span>: it spent more than it earned. Tap a league to see its biggest moves.</div>
-      <div class="card">${d.net.map((r) => `<div class="row"><span><a href="#" data-tl="${esc(r.league)}">${esc(r.league)}</a></span><b style="color:${r.net >= 0 ? "var(--accent)" : "var(--red)"}">${moneyS(r.net)}</b></div>`).join("")}</div></div></div>`;
-  $("#t-s").onchange = (e) => (location.hash = "#/ledger/" + e.target.value);
-  $("#t-l").onchange = (e) => { TLG.league = e.target.value; route(); };
-  document.querySelectorAll("[data-tl]").forEach((a) => a.onclick = (e) => { e.preventDefault(); TLG.league = a.dataset.tl; window.scrollTo(0, 0); route(); });
-}
 async function viewRecords() {
   const d = await api("/api/records");
   $("#view").innerHTML = `<h1>Records and Hall of Fame</h1>
@@ -1740,7 +1703,7 @@ async function routeInner(r, a, b) {
     if (r === "hofleague") { const q = location.hash.replace(/^#\/?/, "").split("/").map(decodeURIComponent); return await viewHofLeague(a, b ? +b : null, q[3], q[4]); }
     if (r === "trophies") return a === "winners" ? await viewTrophies(b, "winners") : await viewTrophies(null, a || "winners");
     if (r === "money") return await viewMoney();
-    if (r === "ledger") return await viewLedger(a);
+    if (r === "ledger") { MV.view = "money"; location.replace("#/moves/" + (a && a !== "all" ? a : "") + "/players"); return; }
     if (r === "moves") return await viewMoves(a, b);
     if (r === "records") return await viewRecords();
     location.hash = "#/world";

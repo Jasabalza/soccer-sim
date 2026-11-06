@@ -11,12 +11,12 @@
   - **Players** (the landing list): transfers with the biggest fees first, free agents signed (with who released them) and released players still looking. Switch between the whole world, any league or your favourite leagues. Tap a transfer to open its bidding war: how the price was set and every club's bid. Filter by step up / lateral / step down; sort by highest paid, hottest, best player, biggest jump or youngest.
   - **Coaches:** hired, academy shot, sacked, left, retired and national team jobs, with move type and sorts.
   - **Retired:** players and coaches ranked by prestige, peak level or age, with the Hall of Fame year they become eligible.
-  - **Money:** the old transfer money view (fees by league).
+  - **Money** (a List | Money switch inside Players; the old Transfer money page is gone, and old links open this view): with the whole world picked, bars for every league (Net, Spent or Earned chips) and an All leagues | Favorites tab. Pick a league and the same view shows that league's spent, earned, net and rank, then Biggest spenders and Biggest sellers bars for its clubs (top 6, show all). Tap a club for its buys and sells, with the bidding wars. One league picker drives both the list and the money; the numbers are that league's own clubs. API: `/api/movemoney`.
   - **Walk-through** (small optional button): 26 of the hottest moves one at a time in four chapters (transfers, free agents, coaches, retirements), with a heat meter.
   - One row per coach: someone who left and then retired, or was sacked and then hired, shows once with several bubbles.
   - Smaller boxes, rows and text on this page; short lines wrap instead of being cut off.
-  - Every long league list (Off-season, Players, Graduates, Transfer money, Academies) puts your favourite leagues at the top.
-  - The stepper and nav say Off-season. A season's moves are one compact record (last 10 seasons); older saves show transfers only for seasons played before this update. API: `/api/moves`.
+  - Every long league list (Off-season, Players, Graduates, Academies) puts your favourite leagues at the top.
+  - The stepper and nav say Off-season. A season's moves are one compact record (last 10 seasons); older saves show transfers only for seasons played before this update. API: `/api/moves`, `/api/movemoney`.
 - Engine: new modules `hof`, `hofpages`, `moves`, `movepages`. The move log writes down what happens and never changes it: all golden files are unchanged by it.
 - Known: new worlds see their first inductions around season 13 to 16; older saves get a founding class.
 - Next (16.1): league logos on league pages and cards. The trophy stays on the champion screen.

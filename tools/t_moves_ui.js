@@ -51,8 +51,23 @@ const URL='http://localhost:8791/test_artifact.html';
  ok(n>=12,'walked through at least 12 moves, got '+n); ok(chap.size>=4,'4 chapters seen: '+[...chap]);
  ok(/That was the off-season/.test(await p.innerText('#view h1')),'ends on summary'); await ox('walk end'); await shot('walk_end');
  await p.click('#mw-back'); await p.waitForTimeout(300); ok(await p.$('#mw-next')!==null,'back from summary');
- // money tab keeps the old ledger
- await go('#/ledger/'+S,1000); ok(/Transfer money/.test(await p.innerText('#view h1')),'ledger page'); await ox('ledger'); ok(await p.$('a.crumb')!==null,'ledger crumb');
+ // the Money view: leagues for the world, clubs for one league, one club's buys and sells
+ await go('#/moves/'+S+'/players',1200);
+ ok(await p.$('.mtabs [data-t="money"]')===null,'no separate Money tab any more');
+ await p.click('.mvsw [data-vw="money"]'); await p.waitForTimeout(900); await ox('money world'); await shot('money_world');
+ { const rows=await p.$$('#view .mvm[data-ml]'); ok(rows.length>=10,'league bars for the whole world: '+rows.length); ok(await p.$('#view .mvm-t')!==null,'tiles');
+   ok((await p.$$('#view .mvr')).length===0,'list is hidden in Money view'); }
+ await p.click('[data-me="spent"]'); await p.waitForTimeout(700); ok(await p.$('#view .mvm[data-ml]')!==null,'spent chip'); await p.click('[data-me="earned"]'); await p.waitForTimeout(500); await p.click('[data-me="net"]'); await p.waitForTimeout(500);
+ await p.click('[data-mt="fav"]'); await p.waitForTimeout(700); await ox('money favorites'); ok(/favorite leagues/i.test(await p.innerText('#view .mvm-card h3')),'favorites tab'); await p.click('[data-mt="all"]'); await p.waitForTimeout(600);
+ { const first=await p.$eval('#view .mvm[data-ml] .mvm-l',e=>e.textContent.replace('\u2605','').trim()); await p.click('#view .mvm[data-ml]'); await p.waitForTimeout(900);
+   ok(await p.$eval('#mv-l',e=>e.value)===first,'tapping a league sets the picker to '+first);
+   ok(/biggest spenders/i.test(await p.innerText('#view')) && /biggest sellers/i.test(await p.innerText('#view')),'spenders and sellers cards'); await ox('money league'); await shot('money_league');
+   const al=await p.$('[data-mall]'); if(al){ await al.click(); await p.waitForTimeout(500); ok((await p.$$('#view .mvm[data-mc]')).length>12,'show all clubs'); await p.click('[data-mall]'); await p.waitForTimeout(400); }
+   await p.click('#view .mvm[data-mc]'); await p.waitForTimeout(1000); ok(/bought/i.test(await p.innerText('#view'))&&/sold/i.test(await p.innerText('#view')),'club buys and sells'); await ox('money club'); await shot('money_club');
+   await p.click('#mv-back'); await p.waitForTimeout(700); ok(/biggest spenders/i.test(await p.innerText('#view')),'back to the league');
+   await p.click('.mvsw [data-vw="list"]'); await p.waitForTimeout(800); ok((await p.$$('#view .mvr')).length>0,'back to the list'); await p.selectOption('#mv-l',''); await p.waitForTimeout(500); }
+ // old links still land here
+ await go('#/ledger/'+S,1200); ok(/Off-season moves/.test(await p.innerText('#view h1')) && await p.$('.mvsw [data-vw="money"].on')!==null,'#/ledger opens the Money view');
  // the flow: after the awards the off-season button opens this page
  ok(errs.length===0,'page errors: '+errs.join(' | '));
  await b.close();

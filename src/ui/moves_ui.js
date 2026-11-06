@@ -4,8 +4,8 @@
 // managers getting their shot, national jobs) and Retired (players and coaches ranked by prestige or peak level).
 // Loaded before app.js; the helpers it uses (api, esc, enc, flag, crest, money, ovr, leagueLink, FAVS, STATUS, ...) are only touched when a page is drawn.
 
-const MV = { kind: "t", mv: "all", sorts: { players: "pay", coaches: "hot", retired: "prestige" }, league: "", who: "p", limit: 60, cokind: "all" };
-const MV_TABS = [["players", "Players"], ["coaches", "Coaches"], ["retired", "Retired"], ["money", "Money"]];
+const MV = { kind: "t", mv: "all", sorts: { players: "pay", coaches: "hot", retired: "prestige" }, league: "", who: "p", limit: 60, cokind: "all", view: "list", mtab: "all", metric: "net", club: "", mall: false };
+const MV_TABS = [["players", "Players"], ["coaches", "Coaches"], ["retired", "Retired"]];
 const mvChips = (attr, list, cur) => `<div class="mchips" role="group">${list.map(([k, t]) => `<button ${attr}="${esc(k)}" class="${k === cur ? "on" : ""}">${t}</button>`).join("")}</div>`;
 const mvTag = (m) => m === "up" ? `<span class="tag green">&#9650; Step up</span>` : m === "down" ? `<span class="tag red">&#9660; Step down</span>` : m === "side" ? `<span class="tag">&#9644; Lateral</span>` : "";
 const mvAgo = (n) => (n === 1 ? "a year" : n + " years");
@@ -88,10 +88,57 @@ function mvRow(r, i, attrs) {
 }
 const mvSeasonLabel = (d) => `Season ${d.season} &middot; ${esc(d.label)}`;
 
+
+// ---------------------------------------------------------------- the Money view (Players tab): leagues for the world, clubs for one league
+const mvCol = (v) => (v >= 0 ? "var(--accent)" : "var(--red)");
+// one bar row. mode "net": bar grows from the middle (green up, red down). Otherwise it grows from the left in `col`.
+function mvBarRow(label, v, mx, mode, col, attrs, star) {
+  const w = mx > 0 ? Math.min(100, Math.abs(v) / mx * (mode === "net" ? 50 : 100)) : 0;
+  const bar = mode === "net" ? `<i style="${v >= 0 ? "left:50%" : "right:50%"};width:${w}%;background:${mvCol(v)}"></i><u></u>` : `<i style="left:0;width:${w}%;background:${col}"></i>`;
+  const txt = mode === "net" ? `<b style="color:${mvCol(v)}">${moneyS(v)}</b>` : `<b>${money(v)}</b>`;
+  return `<a href="#" class="mvm" ${attrs}><span class="mvm-l">${star ? "&#9733; " : ""}${esc(label)}</span><span class="mvm-b">${bar}</span>${txt}<span class="mvm-c">&rsaquo;</span></a>`;
+}
+const mvTiles = (a, b, c) => `<div class="mvm-t">${[a, b, c].map((x) => `<div><b${x[2] ? ` style="color:${x[2]}"` : ""}>${x[0]}</b><span>${x[1]}</span></div>`).join("")}</div>`;
+async function mvMoneyHtml(S, favL) {
+  const lg = MV.league && MV.league !== "@favs" ? MV.league : "";
+  const m = await api("/api/movemoney?season=" + S + (lg ? "&league=" + enc(lg) : ""));
+  if (!m.season) return "";
+  if (!lg) {
+    MV.club = "";
+    const favT = MV.league === "@favs" || MV.mtab === "fav", key = MV.metric === "spent" ? "paid" : MV.metric === "earned" ? "recv" : "net";
+    const rows = m.leagues.filter((r) => !favT || favL.includes(r.league)).sort((a, b) => key === "net" ? b.net - a.net : b[key] - a[key]);
+    const mx = Math.max(0.1, ...rows.map((r) => Math.abs(r[key])));
+    const mode = key === "net" ? "net" : "abs", col = key === "paid" ? "var(--blue)" : "var(--accent2)";
+    return `${mvTiles([money(m.world.total), "fees paid"], [m.world.n, "moves"], [m.world.abroad, "between leagues"])}
+      <div class="card mvm-card"><h3>${favT ? "Favorite leagues" : "Leagues"} <small>tap one to see its clubs</small></h3>
+      <div class="seg mvsub" role="tablist"><button data-mt="all" class="${favT ? "" : "on"}">All leagues</button><button data-mt="fav" class="${favT ? "on" : ""}">&#9733; Favorites</button></div>
+      ${mvChips("data-me", [["net", "Net"], ["spent", "Spent"], ["earned", "Earned"]], MV.metric)}
+      ${rows.length ? rows.map((r) => mvBarRow(r.league, r[key], mx, mode, col, `data-ml="${esc(r.league)}"`, !favT && favL.includes(r.league))).join("") : `<div class="dim small" style="padding:6px 2px">No favorite leagues yet. Pick them on the World page.</div>`}
+      <div class="dim small" style="margin-top:6px">${key === "net" ? "Fees received for sales minus fees paid for signings." : key === "paid" ? "Fees each league's clubs paid for signings." : "Fees each league's clubs received for sales."}</div></div>`;
+  }
+  const st = m.stat || { paid: 0, recv: 0, net: 0 }, tiles = mvTiles([money(st.paid), "spent"], [money(st.recv), "earned"], [moneyS(st.net), `net &middot; ${ordN(m.rank)} of ${m.leagues.length}`, mvCol(st.net)]);
+  if (MV.club && !m.clubs.some((c) => c.club === MV.club)) MV.club = "";
+  if (MV.club) return await mvClubHtml(S, lg, m.clubs.find((c) => c.club === MV.club));
+  const card = (title, sub, key, col) => {
+    const list = m.clubs.slice().sort((a, b) => b[key] - a[key]), mx = Math.max(0.1, ...list.map((c) => c[key])), cut = MV.mall ? list.length : 6;
+    return `<div class="card mvm-card"><h3>${title} <small>${sub}</small></h3>${list.slice(0, cut).map((c) => mvBarRow(c.club, c[key], mx, "abs", col, `data-mc="${esc(c.club)}"`)).join("")}
+      ${list.length > 6 ? `<a href="#" class="mvm-all" data-mall="1">${MV.mall ? "Show fewer" : "Show all " + list.length + " clubs"}</a>` : ""}</div>`;
+  };
+  return `${tiles}${card("Biggest spenders", "fees paid", "spent", "var(--blue)")}${card("Biggest sellers", "fees received", "earned", "var(--accent2)")}<div class="dim small" style="margin-top:6px">Tap a club for its buys and sells.</div>`;
+}
+async function mvClubHtml(S, lg, c) {
+  const d = await api("/api/moves?season=" + S + "&tab=players&kind=t&club=" + enc(c.club) + "&sort=pay&limit=200");
+  const bought = d.rows.filter((r) => r.to === c.club), sold = d.rows.filter((r) => r.from === c.club);
+  const list = (rows, none) => rows.length ? `<div class="hlist">${rows.map((r) => mvRow(r, 0)).join("")}</div>` : `<div class="dim small" style="padding:4px 2px">${none}</div>`;
+  return `<a href="#" class="crumb" id="mv-back">&lsaquo; ${esc(lg)} clubs</a>
+    <div class="card mvm-card"><div class="mvm-ch">${clubLink(c.club)} <small>${esc(lg)}</small></div>${mvTiles([money(c.spent), `spent &middot; ${c.buys} buy${c.buys === 1 ? "" : "s"}`], [money(c.earned), `earned &middot; ${c.sells} sale${c.sells === 1 ? "" : "s"}`], [moneyS(c.net), "net", mvCol(c.net)])}</div>
+    <h4 class="sh">Bought</h4>${list(bought, "No signings for a fee.")}<h4 class="sh">Sold</h4>${list(sold, "No sales for a fee.")}`;
+}
+
 // ---------------------------------------------------------------- the page
 async function viewMoves(season, tab) {
   tab = tab === "walk" || MV_TABS.some((t) => t[0] === tab) ? tab : "players";
-  if (tab === "money") { location.replace("#/ledger/" + (season || "")); return; }
+  if (tab === "money") { MV.view = "money"; location.replace("#/moves/" + (season || "") + "/players"); return; }
   const walking = tab === "walk";
   const favL = (FAVS || []).filter((k) => k.startsWith("L:")).map((k) => k.slice(2));
   const lgq = MV.league === "@favs" ? (favL.length ? favL.join("|") : "") : MV.league;
@@ -103,7 +150,8 @@ async function viewMoves(season, tab) {
   if (tab === "coaches") { if (MV.cokind !== "all") q.set("kind", MV.cokind); if (MV.mv !== "all") q.set("mv", MV.mv); }
   if (tab === "retired") q.set("who", MV.who);
   if (!walking) q.set("sort", MV.sorts[tab]);
-  q.set("limit", MV.limit);
+  const moneyV = tab === "players" && MV.view === "money";
+  q.set("limit", moneyV ? 1 : MV.limit);
   const d = await api("/api/moves?" + q.toString());
   if (!d.season) { $("#view").innerHTML = `<div class="v2"><div class="hd"><div><h1>Off-season moves</h1></div></div><div class="card dim small">No completed season yet. Transfers, new coaches and retirements appear here once a season is over.</div></div>`; return; }
   if (walking) return mvWalk(d);
@@ -113,11 +161,14 @@ async function viewMoves(season, tab) {
     <select id="mv-l" aria-label="League"><option value="">Whole world</option>${favL.length ? `<option value="@favs" ${MV.league === "@favs" ? "selected" : ""}>My favourite leagues</option>` : ""}${leagueOpts(d.leagues, MV.league)}</select></p>
     <div class="seg mtabs" role="tablist">${MV_TABS.map(([k, t]) => `<button data-t="${k}" class="${k === tab ? "on" : ""}">${t}</button>`).join("")}</div>
     <div class="dim small mvsum">${c.transfers} transfers &middot; ${c.free} free agents signed &middot; ${c.hired + c.fired + c.left} coach moves &middot; ${c.retired} retired</div>`;
-  let body = "";
-  if (!d.recorded && tab !== "players") body = `<div class="card dim small">Coach moves and retirements were not written down for this season. Transfers were: see the Players tab.</div>`;
+  let body = "", moneyHtml = "";
+  if (tab === "players") body = `<div class="seg mvsw" role="tablist"><button data-vw="list" class="${moneyV ? "" : "on"}">List</button><button data-vw="money" class="${moneyV ? "on" : ""}">Money</button></div>`;
+  if (moneyV) moneyHtml = await mvMoneyHtml(S, favL);
+  if (moneyV) body += moneyHtml;
+  else if (!d.recorded && tab !== "players") body = `<div class="card dim small">Coach moves and retirements were not written down for this season. Transfers were: see the Players tab.</div>`;
   else if (tab === "players") {
     const mc = d.mvCounts || { up: 0, side: 0, down: 0 };
-    body = `${mvChips("data-k", [["t", "Transfers"], ["f", "Free agents"], ["r", "Released"], ["all", "All"]], MV.kind)}
+    body += `${mvChips("data-k", [["t", "Transfers"], ["f", "Free agents"], ["r", "Released"], ["all", "All"]], MV.kind)}
       <div class="dim small" style="margin:8px 2px 4px">Move</div>${mvChips("data-m", [["all", "All"], ["up", "&#9650; Up " + mc.up], ["side", "&#9644; Lateral " + mc.side], ["down", "&#9660; Down " + mc.down]], MV.mv)}
       <p class="filters" style="margin:8px 0"><select id="mv-o" aria-label="Sort">${[["pay", "Highest paid"], ["hot", "Hottest"], ["level", "Best player"], ["jump", "Biggest jump"], ["young", "Youngest"]].map(([k, t]) => `<option value="${k}" ${d.sort === k ? "selected" : ""}>Sort: ${t}</option>`).join("")}</select><span class="dim small">${d.total} moves${MV.kind === "t" ? " &middot; tap one for the bidding war" : ""}</span></p>`;
   } else if (tab === "coaches") {
@@ -128,15 +179,23 @@ async function viewMoves(season, tab) {
     body = `${mvChips("data-w", [["p", "Players"], ["c", "Coaches"]], MV.who)}
       <p class="filters" style="margin:8px 0"><select id="mv-o" aria-label="Sort">${[["prestige", "Prestige"], ["peak", "Peak level"], ["age", "Oldest"]].map(([k, t]) => `<option value="${k}" ${d.sort === k ? "selected" : ""}>Rank by: ${t}</option>`).join("")}</select><span class="dim small">${d.total} retired</span></p>`;
   }
-  if (d.recorded || tab === "players") {
+  if (!moneyV && (d.recorded || tab === "players")) {
     body += d.rows.length ? `<div class="hlist">${d.rows.map((r) => mvRow(r, 0)).join("")}</div>${d.total > d.rows.length ? `<button class="btn mvmore" id="mv-more">Show more (${d.total - d.rows.length} left)</button>` : ""}`
       : `<div class="card dim small">Nothing matches these filters.</div>`;
   }
   $("#view").innerHTML = `<div class="v2 mvp">${head}${body}</div>`;
   const go = (t) => { MV.limit = 60; if (location.hash === "#/moves/" + S + "/" + t) route(); else location.hash = "#/moves/" + S + "/" + t; };
   document.querySelectorAll(".mtabs [data-t]").forEach((b) => b.onclick = () => go(b.dataset.t));
-  $("#mv-s").onchange = (e) => { location.hash = "#/moves/" + e.target.value + "/" + tab; };
-  $("#mv-l").onchange = (e) => { MV.league = e.target.value; MV.limit = 60; route(); };
+  $("#mv-s").onchange = (e) => { MV.club = ""; location.hash = "#/moves/" + e.target.value + "/" + tab; };
+  $("#mv-l").onchange = (e) => { MV.league = e.target.value; MV.club = ""; MV.mall = false; MV.limit = 60; route(); };
+  document.querySelectorAll("[data-vw]").forEach((b) => b.onclick = () => { MV.view = b.dataset.vw; MV.club = ""; route(); });
+  document.querySelectorAll("[data-mt]").forEach((b) => b.onclick = () => { MV.mtab = b.dataset.mt; if (MV.league === "@favs") MV.league = ""; route(); });
+  document.querySelectorAll("[data-me]").forEach((b) => b.onclick = () => { MV.metric = b.dataset.me; route(); });
+  const goTop = (f) => (e) => { e.preventDefault(); f(e.currentTarget); window.scrollTo(0, 0); route(); };
+  document.querySelectorAll("[data-ml]").forEach((a) => a.onclick = goTop((x) => { MV.league = x.dataset.ml; MV.club = ""; MV.mall = false; }));
+  document.querySelectorAll("[data-mc]").forEach((a) => a.onclick = goTop((x) => { MV.club = x.dataset.mc; }));
+  document.querySelectorAll("[data-mall]").forEach((a) => a.onclick = (e) => { e.preventDefault(); MV.mall = !MV.mall; const y = window.scrollY; route(); setTimeout(() => window.scrollTo(0, y), 0); });
+  const bk = $("#mv-back"); if (bk) bk.onclick = (e) => { e.preventDefault(); MV.club = ""; route(); };
   const o = $("#mv-o"); if (o) o.onchange = (e) => { MV.sorts[tab] = e.target.value; MV.limit = 60; route(); };
   document.querySelectorAll(".mchips [data-k]").forEach((b) => b.onclick = () => { MV.kind = b.dataset.k; MV.sorts.players = b.dataset.k === "all" ? "hot" : "pay"; MV.limit = 60; route(); });
   document.querySelectorAll("[data-ck]").forEach((b) => b.onclick = () => { MV.cokind = b.dataset.ck; MV.limit = 60; route(); });

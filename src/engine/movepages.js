@@ -10,7 +10,7 @@ $mods["movepages"] = (function () {
   // the events of one season, with the old transfer list as a fallback for seasons before the log existed
   function eventsOf(w, S) {
     const d = M().dataOf(w, S);
-    if (d) return { ev: d.ev, cnt: d.cnt, recorded: true };
+    if (d) return { ev: d.ev, cnt: d.cnt, cl: d.cl || null, recorded: true };
     const ev = [];
     for (const t of w.transfers) if ($idx(t, "season") === S) ev.push({ k: "t", n: $idx(t, "player"), u: 0, nat: $idx(t, "nat"), pos: null, age: $idx(t, "age"), ovr: $idx(t, "ovr"), pot: $idx(t, "pot"), f: $idx(t, "frm"), t: $idx(t, "to"), fl: $idx(t, "frm_league"), tl: $idx(t, "to_league"), fee: $idx(t, "fee"), kd: $idx(t, "kind"), a: null, rv: 0, wg: 0 });
     return { ev, cnt: { t: ev.length }, recorded: false };
@@ -94,10 +94,10 @@ $mods["movepages"] = (function () {
     const seasons = w.hist.length, S = q.season >= 1 && q.season <= seasons ? q.season : seasons;
     if (!seasons) return { season: null };
     const { ev, cnt, recorded } = eventsOf(w, S), ctx = ctxOf(ev);
-    const tab = q.tab || "highlights", lg = q.league || null;
+    const tab = q.tab || "highlights", lg = q.league || null, cb = q.club || null;
     const leagues = w.leagues.keysArr().slice().sort((a, b) => (w.leagues.get_(b).get_("prestige") - w.leagues.get_(a).get_("prestige")) || (a < b ? -1 : 1));
     const all = ev.map((e, i) => ({ e, i }));
-    const rowsFor = (kinds) => all.filter((x) => kinds.includes(x.e.k) && inLeague(x.e, lg)).map((x) => rowOf(w, x.e, x.i, ctx));
+    const rowsFor = (kinds) => all.filter((x) => kinds.includes(x.e.k) && inLeague(x.e, lg) && (!cb || x.e.f === cb || x.e.t === cb)).map((x) => rowOf(w, x.e, x.i, ctx));
     const base = { season: S, label: label(w, S), seasons, recorded, league: lg, leagues, tab, counts: { transfers: cnt.t || 0, free: cnt.fa || 0, hired: cnt.h || 0, fired: cnt.x || 0, left: cnt.q || 0, coachRetired: cnt.cr || 0, academy: cnt.ac || 0, national: cnt.n || 0, retired: cnt.p || 0 }, sort: null, shown: 0, total: 0, rows: [] };
     if (tab === "highlights") {
       const rows = mergeCoaches(rowsFor(["t", "f", "p", "h", "x", "q", "cr", "n"]));
@@ -119,6 +119,25 @@ $mods["movepages"] = (function () {
     if (tab === "players") { const mvc = { up: 0, side: 0, down: 0 }; for (const r of rowsFor(["t", "f"])) if (r.mv) mvc[r.mv]++; base.mvCounts = mvc; }
     return markLinks(w, base);
   }
+  // v16 money view: fees by league (every league) and, for one league, by club. Leagues come from the season summary (complete);
+  // clubs come from the per-club totals the log keeps (for seasons logged before those existed: the logged transfers).
+  function v_money(w, q) {
+    const seasons = w.hist.length; if (!seasons) return { season: null };
+    const S = q.season >= 1 && q.season <= seasons ? q.season : seasons, k = kx(w), m = (v) => Math.round(v * k * 10) / 10;
+    const rec = w.hist[S - 1], t = $M.get(rec, "transfers"), st = t ? $M.get(t, "lg_stat", new $Dict()) : new $Dict();
+    const lgs = w.leagues.keysArr().slice().sort((a, b) => (w.leagues.get_(b).get_("prestige") - w.leagues.get_(a).get_("prestige")) || (a < b ? -1 : 1));
+    const leagues = lgs.map((ln) => { const s = st.has(ln) ? st.get_(ln) : null, paid = s ? $idx(s, "paid") : 0, recv = s ? $idx(s, "recv") : 0; return { league: ln, paid: m(paid), recv: m(recv), net: m(recv - paid), n: s ? $idx(s, "n") : 0 }; }).sort((a, b) => b.net - a.net);
+    const out = { season: S, label: label(w, S), seasons, leagues, world: { n: t ? $idx(t, "n") : 0, abroad: t ? $idx(t, "abroad") : 0, total: t ? m($idx(t, "total")) : 0 }, league: null, stat: null, clubs: [] };
+    const lg = q.league && w.leagues.has(q.league) ? q.league : null;
+    if (lg) {
+      out.league = lg; out.stat = leagues.find((r) => r.league === lg); out.rank = leagues.findIndex((r) => r.league === lg) + 1;
+      const { ev, cl } = eventsOf(w, S), tot = {};
+      if (cl) for (const n of Object.keys(cl)) tot[n] = cl[n];
+      else for (const e of ev) if (e.k === "t") { (tot[e.t] = tot[e.t] || [0, 0, 0, 0]); (tot[e.f] = tot[e.f] || [0, 0, 0, 0]); tot[e.t][0] += e.fee; tot[e.t][2]++; tot[e.f][1] += e.fee; tot[e.f][3]++; }
+      out.clubs = [...w.leagues.get_(lg).get_("clubs")].map((n) => { const a = tot[n] || [0, 0, 0, 0]; return { club: n, spent: m(a[0]), earned: m(a[1]), net: m(a[1] - a[0]), buys: a[2], sells: a[3] }; });
+    }
+    return out;
+  }
   // which people can be opened: active players have a page, retired ones through their Hall of Fame card
   function markLinks(w, d) {
     const act = new Set(); for (const p of w.players) if (p.uid) act.add(p.uid); for (const p of w.retired_players) if (p.uid) act.add(p.uid);
@@ -129,5 +148,5 @@ $mods["movepages"] = (function () {
     d.rows.forEach(fix); if (d.walk) d.walk.forEach(fix);
     return d;
   }
-  return { v_moves, eventsOf, hotOf, mvOf, UP, DOWN };
+  return { v_moves, v_money, eventsOf, hotOf, mvOf, UP, DOWN };
 })();
