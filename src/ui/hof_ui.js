@@ -15,7 +15,7 @@ function hofBadge(b, size) {
   let inner;
   if (b.tier === "W") inner = hofStar(size - 10);
   else if (b.tier === "C" && b.scope) inner = flag(b.scope, size - 10);
-  else if (b.tier === "L" && b.scope) inner = emblem({ kind: "league_cup", color: `hsl(${hueOf(b.scope)} 62% 58%)` }, size - 8);
+  else if (b.tier === "L" && b.scope) inner = compEmb(b.scope, { kind: "league_cup", color: `hsl(${hueOf(b.scope)} 62% 58%)` }, size - 8);   // the league's own logo, the cup only when it has none
   else if (b.tier === "K" && b.scope) inner = crest(b.scope, size - 10);
   else inner = `<i class="hb-s ${b.tier}"></i>`;
   const tip = HOF_LBL[b.tier] + " Hall of Fame" + (b.scope ? ": " + b.scope : "");
@@ -132,7 +132,7 @@ async function viewHofCard(id) {
     tail = `<div class="card"><h3>Career <small>${seasons} seasons &middot; peak ${c.peak}</small></h3>
       <div class="dim small">${clubs.map((x) => clubLink(x)).join(" &rarr; ")}</div>
       <div class="hhon">${Object.entries(hon).map(([k, v]) => `<span class="tag">${v}&times; ${esc(k)}</span>`).join(" ")}</div>
-      ${c.trn ? `<div class="dim small" style="margin-top:8px">Academy graduate of ${clubLink(c.trn)}</div>` : ""}
+      ${c.trn ? `<div class="dim small" style="margin-top:8px">Academy graduate of ${clubLink(c.trn)}</div>` : ""}${c.under && c.under.length ? `<div class="dim small" style="margin-top:8px">Played under ${c.under.map((u) => `${coachLink(u.cid, u.name)} (${clubLink(u.club)}, S${u.from}${u.to !== u.from ? "-S" + u.to : ""})`).join(", ")}</div>` : ""}
       ${c.nat_rec ? `<div class="dim small" style="margin-top:8px">For ${esc(c.nat)}: ${c.nat_rec.seasons} seasons of national-team football, ${c.nat_rec.g + c.nat_rec.a} goals and assists${c.nat_rec.world ? ", " + c.nat_rec.world + " World Cup" + (c.nat_rec.world > 1 ? "s" : "") : ""}</div>` : ""}</div>`;
   } else {
     const s = c.stats;
@@ -156,14 +156,22 @@ function hofPlayerBlock(h) {
 }
 
 // ---------------------------------------------------------------- reveal card, shared by both ceremonies
-function hofReveal(e, scopeText, idx, n) {
-  const gold = true;
-  return `<div class="hrv"><div class="dim small">${esc(scopeText)}${n ? ` &middot; ${idx + 1} of ${n}` : ""}</div>
+function hofReveal(e, scopeText, idx, n, icon) {
+  const an = !(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches), pc = Math.round(e.pct * 100);
+  return `<div class="hrv${an ? " live" : ""}"><div class="hrv-sc">${icon || ""}<div class="dim small">${esc(scopeText)}${n ? ` &middot; ${idx + 1} of ${n}` : ""}</div></div>
     <div class="hrv-n">${flag(e.nat, 34)}<div><div class="hrv-name">${esc(e.name)}</div><div class="dim small">${hofSub(Object.assign({}, e, { n: 0 }))}</div></div></div>
-    <div class="hrv-p"><span class="dim small">${e.n === 1 ? "First ballot" : "Year " + e.n + " on the ballot"}</span><b>${hofPct(e.pct)}</b></div>
-    <div class="hbar big"><i class="g" style="width:${Math.round(e.pct * 100)}%"></i><u style="left:75%"></u></div>
+    <div class="hrv-p"><span class="dim small">${e.n === 1 ? "First ballot" : "Year " + e.n + " on the ballot"}</span><b class="hrv-pct" data-p="${pc}">${hofPct(e.pct)}</b></div>
+    <div class="hbar big"><i class="g" style="width:${pc}%"></i><u style="left:75%"></u></div>
+    <div class="dim small hrv-need">75% of the votes are needed</div>
     <div class="dim small">${esc(e.line || "")}</div>
-    <div style="margin-top:12px"><span class="tag gold">Inducted</span> ${hofBadge(e.badge || { tier: e.tier || "W", scope: e.scope || null }, 26)}</div></div>`;
+    <div class="hrv-v"><span class="tag gold">Inducted</span> ${hofBadge(e.badge || { tier: e.tier || "W", scope: e.scope || null }, 26)}</div></div>`;
+}
+// the vote counts up and the verdict lands last (CSS does the bar and the stamp; this only counts the number)
+function hofCount() {
+  const el = document.querySelector(".hrv.live .hrv-pct"); if (!el) return;
+  const to = +el.dataset.p, t0 = performance.now(), D = 1500;
+  const step = (t) => { if (!el.isConnected) return; const k = Math.min(1, (t - t0) / D); el.textContent = Math.round(to * (1 - Math.pow(1 - k, 3))) + "%"; if (k < 1) requestAnimationFrame(step); };
+  el.textContent = "0%"; requestAnimationFrame(step);
 }
 
 // ---------------------------------------------------------------- world induction day
@@ -200,7 +208,7 @@ function hofDayWatch(d) {
     } else if (step === 1) {
       if (i < ind.length) {
         const e = ind[i];
-        h = head("The vote") + `<div class="dim small" style="margin:8px 2px">${ind.length} inducted, revealed from the lowest vote up.</div>${hofReveal(e, (e.k === "c" ? "World Hall of Fame · coach" : "World Hall of Fame"), i, ind.length)}
+        h = head("The vote") + `<div class="dim small" style="margin:8px 2px">${ind.length} inducted, revealed from the lowest vote up.</div>${hofReveal(e, (e.k === "c" ? "World Hall of Fame · coach" : "World Hall of Fame"), i, ind.length, hofBadge({ tier: "W" }, 30))}
           <div class="foot"><button class="btn" id="hd-skip">Skip to summary</button><button class="btn pri" id="hd-next">${i === ind.length - 1 ? "Summary" : "Next"}</button></div>`;
       } else {
         h = head("The vote: summary") + `<h2 class="lbl2">Inducted</h2>${ind.length ? `<div class="hlist">${ind.slice().reverse().map((r) => hofRow(r, { right: hofPct(r.pct), bar: r.pct, gold: true })).join("")}</div>` : '<div class="card dim small">Nobody reached 75% this year.</div>'}
@@ -213,7 +221,7 @@ function hofDayWatch(d) {
       h = head("Fell off the ballot") + (d.fell.length ? `<div class="dim small" style="margin:8px 2px">Their time is up. They keep their other halls.</div><div class="hlist">${d.fell.map((r) => hofRow(r, { right: r.why === "time" ? "ten years" : "no support", sub: `${hofSub(Object.assign({}, r, { n: 0 }))} &middot; ${esc(r.line)}` })).join("")}</div>` : '<div class="card dim small">Nobody fell off the world ballot this year.</div>')
         + `<div class="foot"><button class="btn" id="hd-back">Back</button><a class="btn pri" href="#/hofday/${S}">Results</a></div>`;
     }
-    $("#view").innerHTML = `<div class="v2 hday">${h}</div>`;
+    $("#view").innerHTML = `<div class="v2 hday">${h}</div>`; hofCount();
     const nx = $("#hd-next"), sk = $("#hd-skip"), bk = $("#hd-back");
     if (nx) nx.onclick = () => { if (step === 0) { step = 1; i = 0; } else if (step === 1) { if (i < ind.length) i++; else step = 2; } draw(); window.scrollTo(0, 0); };
     if (sk) sk.onclick = () => { if (step === 0) { step = 1; i = 0; } else i = ind.length; draw(); };
@@ -249,17 +257,35 @@ async function viewHofLeague(league, season, sub, club) {
     <a class="more" href="#/hof/L/${enc(league)}"><span>Full ${esc(league)} Hall of Fame</span><span>&rsaquo;</span></a></div>`;
   document.querySelectorAll("[data-ltab]").forEach((b) => (b.onclick = () => { HLG.tab = b.dataset.ltab; route(); }));
 }
+// the ceremony of a league's Hall of Fame day: opening, the club halls one by one (the vote counts up, then the verdict), the league hall last, the class
 function hofLeagueWatch(d) {
+  const lg = d.league, spec = { kind: "league_cup", color: `hsl(${hueOf(lg)} 62% 58%)` };
   const items = [];
-  for (const e of d.league_ind) items.push({ e, scope: d.league + " Hall of Fame" + (e.k === "c" ? " · coach" : "") });
-  for (const c of d.clubs) for (const e of c.inducted) items.push({ e, scope: c.club + " Hall of Fame" + (e.k === "c" ? " · coach" : "") });
-  let i = 0;
+  for (const c of d.clubs) for (const e of c.inducted) items.push({ e: Object.assign({}, e, { tier: "K", scope: c.club }), scope: c.club + " Hall of Fame" + (e.k === "c" ? " · coach" : ""), icon: crest(c.club, 30) });
+  const lh = d.league_ind.slice().sort((a, b) => a.pct - b.pct);
+  for (const e of lh) items.push({ e: Object.assign({}, e, { tier: "L", scope: lg }), scope: lg + " Hall of Fame" + (e.k === "c" ? " · coach" : ""), icon: compEmb(lg, spec, 30), main: true });
+  let i = -1;
+  const back = `<a class="crumb" href="#/hofleague/${enc(lg)}/${d.season}">&lsaquo; Results</a>`;
   const draw = () => {
     const last = i >= items.length;
-    $("#view").innerHTML = `<div class="v2 hday"><a class="crumb" href="#/hofleague/${enc(d.league)}/${d.season}">&lsaquo; Results</a>
-      <div class="hd"><div><div class="dim small">${esc(d.league)} &middot; ${esc(d.label)}</div><h1>Hall of Fame day</h1></div></div>
-      ${items.length ? (last ? `<div class="card" style="text-align:center;padding:22px 14px"><div class="eyebrow gold">That is the class</div><div style="font-size:18px;font-weight:700;margin:8px 0">${d.nLeague} league and ${d.nClubs} club inductees</div></div>` : hofReveal(items[i].e, items[i].scope, i, items.length)) : `<div class="card dim small">Nobody was inducted this year.</div>`}
-      <div class="foot">${last || !items.length ? `<a class="btn" href="#/hof/L/${enc(d.league)}">League hall</a><a class="btn pri" href="#/hofleague/${enc(d.league)}/${d.season}">Results</a>` : `<a class="btn" href="#/hofleague/${enc(d.league)}/${d.season}">Skip to results</a><button class="btn pri" id="hl-next">${i === items.length - 1 ? "Finish" : "Next"}</button>`}</div></div>`;
+    let body, foot;
+    if (i < 0) {
+      body = `<div class="hday-open"><div class="hday-logo">${compEmb(lg, spec, 84)}</div><div class="eyebrow gold">Hall of Fame day</div><h1 style="margin:6px 0">${esc(lg)}</h1><div class="dim">${esc(d.label)}</div>
+        <div class="hday-n"><div><b>${d.nClubs}</b><span>club inductees</span></div><div><b>${d.nLeague}</b><span>league inductees</span></div></div>
+        <div class="dim small">${items.length ? "The clubs vote first, then the league. Each name needs 75% of the votes." : "Nobody reached 75% this year."}</div></div>`;
+      foot = items.length ? `<a class="btn" href="#/hofleague/${enc(lg)}/${d.season}">Skip to results</a><button class="btn pri" id="hl-next">Begin</button>` : `<a class="btn" href="#/hof/L/${enc(lg)}">League hall</a><a class="btn pri" href="#/hofleague/${enc(lg)}/${d.season}">Results</a>`;
+    } else if (!last) {
+      const it = items[i], nxt = items[i + 1], phase = it.main ? "The league hall" : "The club halls";
+      body = `<div class="dim small" style="margin:8px 2px">${phase}${it.main && i === items.length - 1 ? " · the final name" : ""}</div>${hofReveal(it.e, it.scope, i, items.length, it.icon)}`;
+      foot = `<a class="btn" href="#/hofleague/${enc(lg)}/${d.season}">Skip to results</a><button class="btn pri" id="hl-next">${nxt ? (nxt.main && !it.main ? "The league hall" : "Next") : "The class"}</button>`;
+    } else {
+      body = `<div class="card" style="text-align:center;padding:22px 14px"><div class="hday-logo">${compEmb(lg, spec, 56)}</div><div class="eyebrow gold">That is the class</div><div style="font-size:18px;font-weight:700;margin:8px 0">${d.nLeague} league and ${d.nClubs} club inductees</div></div>
+        ${items.length ? `<div class="hlist">${items.slice().reverse().map((it) => hofRow(it.e, { right: hofPct(it.e.pct), bar: it.e.pct, gold: true, sub: esc(it.scope) })).join("")}</div>` : ""}
+        ${d.ballot.length ? `<h2 class="lbl2">Still on the league ballot</h2><div class="hlist">${d.ballot.slice(0, 4).map((r) => hofRow(r, { right: hofPct(r.pct), bar: r.pct, tag: r.left <= 1 ? (r.left === 0 ? "last year" : "1 year left") : "", tagc: "red" })).join("")}</div>` : ""}`;
+      foot = `<a class="btn" href="#/hof/L/${enc(lg)}">League hall</a><a class="btn pri" href="#/hofleague/${enc(lg)}/${d.season}">Results</a>`;
+    }
+    $("#view").innerHTML = `<div class="v2 hday">${back}<div class="hd"><div><div class="dim small">${esc(lg)} &middot; ${esc(d.label)}</div><h1>Hall of Fame day</h1></div></div>${body}<div class="foot">${foot}</div></div>`;
+    hofCount();
     const nx = $("#hl-next"); if (nx) nx.onclick = () => { i++; draw(); window.scrollTo(0, 0); };
   };
   draw();

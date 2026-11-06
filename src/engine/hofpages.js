@@ -155,7 +155,7 @@ $mods["hofpages"] = (function () {
     if (card.k === "p") {
       const d = H.dataOf(card); out.peak = card.peak; out.trn = card.trn; out.home = card.home; out.scores = { W: d.sc.W, C: d.sc.C }; out.nat_rec = d.nat_rec;
       out.clubs = Object.entries(d.sc.K).map(([c, s]) => ({ club: c, score: s })).sort((a, b) => b.score - a.score).slice(0, 4);
-      out.career = d.cr.map((r) => ({ season: r[0], label: label(w, r[0]), club: r[1], ovr: r[2] }));
+      out.career = d.cr.map((r) => ({ season: r[0], label: label(w, r[0]), club: r[1], ovr: r[2] })); out.under = underOf(w, d.cr);
       out.honours = d.hon.map((r) => ({ season: r[0], kind: r[1], title: r[2] }));
     } else {
       const co = card.co, sc = H.cscores(w, co); out.scores = { W: sc.W }; out.stats = { seasons: co.seasons, w: co.w, d: co.d, l: co.l, titles: co.titles, cups: co.cups, cwc: co.cwc };
@@ -196,5 +196,26 @@ $mods["hofpages"] = (function () {
     for (const id of Object.keys(h.cards)) { const c = h.cards[id]; if (c.k !== "p") continue; const s = c.st.W; if (s && s.status === "ballot" && s.n >= H.CFG.window - 2) out.push(row(w, c, { n: s.n, left: H.CFG.window - s.n, pct: s.pct })); }
     out.sort((a, b) => b.pct - a.pct); return out.slice(0, 10);
   }
-  return { TIERS, TIER_NAME, label, badge, chain, row, entryRow, v_day, v_leagueday, v_hof, v_card, v_coach, chainFor, v_watch, favourites, line, cardOf };
+  // the managers a player played under: for every club season of his career, the coach whose spell there covered that season.
+  // career rows are [season, club, ovr]; consecutive seasons under the same coach at the same club are one line. Old saves without spells show nothing.
+  function underOf(w, career) {
+    const bySeason = {}, spells = [];
+    for (const co of w.coach_people()) {
+      if (!co.stints) continue;
+      for (const st of co.stints) if (st.k === "club" && !st.est && st.f) spells.push({ co, club: st.t, f: st.f, u: st.u === null || st.u === undefined ? w.season : st.u });
+    }
+    const out = [];
+    for (const r of career || []) {
+      const season = r[0], club = r[1]; if (!club) continue;
+      const sp = spells.filter((x) => x.club === club && x.f <= season && season <= x.u);
+      const hit = sp.length ? sp[sp.length - 1] : null; if (!hit) continue;
+      const cid = w.coach_id(hit.co), last = out[out.length - 1];
+      if (last && last.cid === cid && last.club === club && last.to === season - 1) { last.to = season; last.seasons++; }
+      else out.push({ cid, name: hit.co.name, nat: hit.co.nat, club, from: season, to: season, seasons: 1 });
+    }
+    for (const x of out) { x.fromLabel = label(w, x.from); x.toLabel = label(w, x.to); }
+    return out;
+  }
+  const extras = (w, p) => ({ academy: p.trn || null, under: underOf(w, p.career) });
+  return { TIERS, TIER_NAME, label, badge, chain, row, entryRow, v_day, v_leagueday, v_hof, v_card, v_coach, chainFor, v_watch, favourites, line, cardOf, underOf, extras };
 })();

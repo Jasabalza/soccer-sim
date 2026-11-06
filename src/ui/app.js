@@ -326,7 +326,7 @@ function wireSaves(inGame) {
 
 // ---------------------------------------------------------------- favorites
 // A favorite is a key: "L:<league>" or "<kind>:<confed>" (cup, ct, nl, qual). The list is kept inside the world, so it travels with every save.
-const APP_VERSION = "v16.1.1", APP_TAG = "Show Your Worth";
+const APP_VERSION = "v16.1.2", APP_TAG = "Show Your Worth";
 let FAVS = null, PICK_ASKED = false;                    // FAVS: null until the player has chosen, then an array of keys
 const CT_NAMES = { UEFA: "European Championship", CONMEBOL: "Copa America", CONCACAF: "Gold Cup", CAF: "Africa Cup of Nations", AFC: "Asian Cup", OFC: "OFC Nations Cup" };
 const NL_NAMES = { UEFA: "UEFA Nations League", CONMEBOL: "CONMEBOL Nations League", CONCACAF: "CONCACAF Nations League", CAF: "CAF Nations League", AFC: "AFC Nations League", OFC: "OFC Nations League" };
@@ -1581,8 +1581,7 @@ function showCompEnd(s, more) {
     draw(null);
     if (lg) hofLeagueBlock(lg).then((h) => {
       if (!h || !$("#ce-next")) return;
-      draw(h);
-      if (FAVS && FAVS.includes("L:" + lg) && (h.nLeague + h.nClubs) > 0) $("#ce-hw").click();     // a followed league plays its ceremony by itself
+      draw(h);                                                  // the overview stays up: the ceremony is a button, never a jump
     });
   });
 }
@@ -1617,6 +1616,15 @@ function lineChart(pts, w, h, color, invert) {
     <text x="4" y="${Y(y1 - 2) + 4}" class="axis">${y1 - 2}</text><text x="4" y="${Y(y0 + 2) + 4}" class="axis">${y0 + 2}</text>
     <text x="${X(x0)}" y="${h - 4}" class="axis" text-anchor="middle">S${x0}</text><text x="${X(x1)}" y="${h - 4}" class="axis" text-anchor="middle">S${x1}</text></svg>`;
 }
+// where a player came from and who managed him: the academy (if he came through one) and the coaches of his club seasons
+function playerOriginHTML(p) {
+  const acad = p.academy ? `<div class="row"><span>Academy</span><span>${clubLink(p.academy)} <span class="tag">graduate</span></span></div>` : `<div class="row"><span>Academy</span><span class="meta">none, signed as a professional</span></div>`;
+  const under = (p.under || []).slice().reverse().map((u) => `<div class="row"><span>${coachLink(u.cid, u.name)} <span class="meta">${natLink(u.nat)}</span></span><span class="meta">${clubLink(u.club)} &middot; ${u.from === u.to ? "S" + u.from : "S" + u.from + "-S" + u.to}</span></div>`).join("");
+  const have = (p.under || []).reduce((n, u) => n + u.seasons, 0), seasons = (p.career || []).filter((c) => c.club).length;
+  const gap = have && have < seasons ? `<div class="meta" style="margin-top:6px">No manager is recorded for his earlier seasons.</div>` : "";
+  return `<div class="card" style="margin-top:14px"><h3>Origins</h3>${acad}</div>
+    <div class="card" style="margin-top:14px"><h3>Played under</h3>${under || '<div class="meta">No manager history recorded for his seasons.</div>'}${gap}</div>`;
+}
 async function viewPlayer(uid) {
   const p = await api("/api/player?uid=" + enc(uid));
   const grp = {};
@@ -1634,7 +1642,7 @@ async function viewPlayer(uid) {
       <div class="card"><h3>Rating by season</h3>${lineChart(p.career.map((c) => [c.season, c.ovr]), 520, 170)}</div>
       <div class="card" style="margin-top:14px"><h3>League seasons</h3>${p.seasons.length ? `<div class="scroll"><table><thead><tr><th>Season</th><th class="l">Club</th><th>Goals</th><th>Assists</th><th>CS</th></tr></thead><tbody>${p.seasons.slice().reverse().map((x) => `<tr><td>${x.season}${x.live ? " <span class=\"tag\">so far</span>" : ""}</td><td class="l">${clubLink(x.club)}</td><td>${x.goals}</td><td>${x.assists}</td><td>${x.cs || ""}</td></tr>`).join("")}</tbody></table></div>` : '<div class="meta">No completed seasons yet.</div>'}</div>
       <div class="card" style="margin-top:14px"><h3>Cups and tournaments</h3>${p.cups.length ? `<div class="scroll"><table><thead><tr><th>Season</th><th class="l">Competition</th><th class="l">Team</th><th>Goals</th><th>Assists</th><th>CS</th></tr></thead><tbody>${p.cups.slice().reverse().map((x) => `<tr><td>${x.season}</td><td class="l">${esc(x.comp)}</td><td class="l">${esc(x.team)}</td><td>${x.goals}</td><td>${x.assists}</td><td>${x.cs || ""}</td></tr>`).join("")}</tbody></table></div>` : '<div class="meta">Nothing yet.</div>'}</div></div>
-    <div>${hofPlayerBlock(p.hof)}<div class="card"><h3>Honours</h3>${hon.length ? hon.map(([t, ys]) => `<div class="row"><span>${esc(t)}${ys.length > 1 ? " x" + ys.length : ""}</span><span class="meta">${ys.map((y) => "S" + y).join(", ")}</span></div>`).join("") : '<div class="meta">None yet.</div>'}</div>
+    <div>${hofPlayerBlock(p.hof)}${playerOriginHTML(p)}<div class="card"><h3>Honours</h3>${hon.length ? hon.map(([t, ys]) => `<div class="row"><span>${esc(t)}${ys.length > 1 ? " x" + ys.length : ""}</span><span class="meta">${ys.map((y) => "S" + y).join(", ")}</span></div>`).join("") : '<div class="meta">None yet.</div>'}</div>
       <div class="card" style="margin-top:14px"><h3>Career</h3>${p.career.length ? p.career.slice().reverse().map((c) => `<div class="row"><span>S${c.season} ${c.club ? clubLink(c.club) : "free agent"}</span><span>${ovr(c.ovr)}</span></div>`).join("") : '<div class="meta">No history yet.</div>'}</div></div></div>`;
   if ($("#g-edit-p")) $("#g-edit-p").onclick = () => godPlayer(p);
 }

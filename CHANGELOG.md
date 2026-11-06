@@ -1,5 +1,13 @@
 # Changelog
 
+## v16.1.2: Hall of Fame day, origins and managers
+- **A league's Hall of Fame day is a ceremony.** Opening screen (league logo, club and league inductee counts), then the club halls one at a time and the league hall last. Each name shows its hall's crest or logo, the bar fills, the vote counts up to its number against the 75% line, and the verdict ("Inducted" with the hall badge) lands last. A closing "That is the class" page lists the class and who is still on the league ballot. The World day's vote uses the same reveal. Reduced-motion devices skip the animation.
+- **The league overview is no longer skipped.** A followed league with inductees used to close its overview popup (champions, top three, scorers) and jump into the Hall of Fame day; now the overview stays and "Watch the ceremony" is a button.
+- **League halls show the league's logo** (your imported pack, via the same lookup as league pages) on the four-halls card, player and card headers and the reveal; the cup illustration only appears when no logo is imported.
+- **Player page: Origins and Played under.** Academy (graduate of which club, or signed as a professional) and the managers of every club season, grouped by spell with seasons. Seasons from before managers' spells were recorded show a note. The Hall of Fame card shows the same managers. API: `/api/player` gains `academy` and `under`, `/api/hofcard` gains `under`.
+- The Hall of Fame rules are unchanged on purpose: it is a prestigious award, so early seasons stay slow (first classes arrive around season 9-13).
+- Tests: `tools/t_hofday_ui.js <save>`. The API golden was re-recorded for the new fields only (checked: nothing else differs).
+
 ## v16.1.1: coach pages
 - **Every coach has a page** (`#/coach/<id>`), working or retired: job (head coach, academy manager, national team coach, without a job, retired), record, win rate, titles and cups, the career stepper with every spell, honours, and a link to the Hall of Fame page for retired coaches. Before this only retired coaches in the Hall of Fame had one.
 - **Coach names link to it** on the club page, the nation page, the Off-season Coaches tab (hired, sacked, left, academy shots, national jobs, retired), Coach of the Year (results, ceremony, runners-up), and "coach of the competition" lines. Records written down before this patch are matched by name and nation when only one coach fits; finals lists keep plain names.

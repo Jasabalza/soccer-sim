@@ -811,3 +811,17 @@ button.wide { width: 100%; min-height: 44px; margin-top: 10px; }
 .ce-stars .meta { margin-top: 2px; font-size: 12px; }
 @media (prefers-reduced-motion: reduce) { .ce-stars, .ce-stars .tstars svg:last-child { animation: none; } }
 a + .lbox, .lbox + a { margin-left: 4px; } .lbox { vertical-align: middle; margin-right: 4px; }
+
+/* Hall of Fame ceremony: the bar fills, the vote counts up, the verdict lands last */
+.hrv-sc { display: flex; align-items: center; gap: 8px; } .hrv-sc .lbox, .hrv-sc .hb, .hrv-sc .emb { flex: none; }
+.hrv .hrv-v { margin-top: 12px; display: flex; align-items: center; gap: 8px; } .hrv .hrv-need { margin-top: 2px; }
+@keyframes hbfill { from { width: 0; } }
+@keyframes hvstamp { 0% { opacity: 0; transform: scale(1.8); } 60% { opacity: 1; transform: scale(0.94); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes hvfade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.hrv.live .hbar i { animation: hbfill 1.5s cubic-bezier(.2,.7,.2,1) both; }
+.hrv.live .hrv-v { opacity: 0; animation: hvstamp .5s 1.6s both; }
+.hrv.live .hrv-name, .hrv.live .hrv-n { animation: hvfade .5s both; }
+.hday-open { text-align: center; padding: 26px 14px 22px; border-radius: 16px; border: 1px solid #6b5a1c; background: #17190f; margin-top: 12px; animation: hvfade .6s both; }
+.hday-logo { display: flex; justify-content: center; margin-bottom: 8px; } .hday-logo .lbox, .hday-logo .emb { flex: none; }
+.hday-n { display: flex; justify-content: center; gap: 28px; margin: 16px 0 12px; } .hday-n b { display: block; font-size: 30px; color: var(--accent2); } .hday-n span { font-size: 12px; color: var(--dim); }
+@media (prefers-reduced-motion: reduce) { .hrv.live .hrv-v { opacity: 1; animation: none; } .hrv.live .hbar i { animation: none; } }
