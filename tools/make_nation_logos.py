@@ -7,6 +7,7 @@ The game never ships any logos. This is a personal tool, like tools/make_logo_js
   --nations DIR   folders of FootyLogos style files named <slug>-national-team-logo-footylogos.png (first folder wins)
   --league N=PNG a league picture (a league name from data/leagues.json)
   --comp N=PNG    a competition picture; N must be a name the game knows (see COMP_NAMES in src/ui/app.js)
+  --erase N=x0,y0,x1,y1 / --shift N=x0,y0,x1,y1,dx  clear or move a box of a picture (to take a printed year off by hand)
   --strip-loc N   remove a printed host/year line (green footer) from that competition picture
   --keep-stars S  badges (slug) whose printed stars stay (default: germany)
 What it does: 1) takes printed title stars off the badges that have them (a transparent row gap above the crest),
@@ -95,9 +96,20 @@ def encode(im, px=256):
     if s < 1: im = im.resize((max(1, round(im.width * s)), max(1, round(im.height * s))), Image.LANCZOS)
     buf = io.BytesIO(); im.save(buf, "WEBP", quality=88, method=6); return base64.b64encode(buf.getvalue()).decode()
 
-def process(im, name, keep_stars=False, strip_loc=False, comp=False):
+def apply_edits(im, edits):
+    """edits: ("erase", x0, y0, x1, y1) clears a box; ("shift", x0, y0, x1, y1, dx) moves a box sideways. Coordinates are in the original picture."""
+    im = im.convert("RGBA")
+    for e in edits:
+        x0, y0, x1, y1 = e[1:5]
+        if e[0] == "erase": im.paste((0, 0, 0, 0), (x0, y0, x1, y1))
+        elif e[0] == "shift":
+            piece = im.crop((x0, y0, x1, y1)); im.paste((0, 0, 0, 0), (x0, y0, x1, y1)); im.alpha_composite(piece, (x0 + e[5], y0))
+    return im
+
+def process(im, name, keep_stars=False, strip_loc=False, comp=False, edits=()):
     notes = []
     im = im.convert("RGBA")
+    if edits: im = apply_edits(im, edits); notes.append("edited")
     if strip_loc:
         n0 = trim(im.convert("RGBA")).height; im = strip_last_band(im); im = strip_green_footer(im) if trim(im).height == n0 else im; notes.append("location removed")
     if name in STAR_BADGES and not keep_stars:
@@ -116,6 +128,7 @@ def process(im, name, keep_stars=False, strip_loc=False, comp=False):
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument("out"); ap.add_argument("--nations", nargs="*", default=[]); ap.add_argument("--comp", nargs="*", default=[]); ap.add_argument("--league", nargs="*", default=[])
     ap.add_argument("--strip-loc", nargs="*", default=[]); ap.add_argument("--keep-stars", nargs="*", default=["germany"]); ap.add_argument("--clean", nargs="*", default=[])
+    ap.add_argument("--erase", nargs="*", default=[], help="Name=x0,y0,x1,y1 clear a box of that picture (original pixels)"); ap.add_argument("--shift", nargs="*", default=[], help="Name=x0,y0,x1,y1,dx move a box sideways")
     ap.add_argument("--preview", help="write a contact sheet PNG here")
     o = ap.parse_args()
     names = [n["name"] for n in json.load(open(os.path.join(HERE, "..", "data", "nations.json")))["nations"]]
@@ -136,7 +149,9 @@ def main():
     for sec, specs in (("comps", o.comp), ("leagues", o.league)):
       for spec in specs:
         name, path = spec.split("=", 1)
-        im, notes = process(Image.open(path), "", strip_loc=name in o.strip_loc, comp=True)
+        ed = [("erase",) + tuple(int(v) for v in s.split("=", 1)[1].split(",")) for s in o.erase if s.split("=", 1)[0] == name] + \
+             [("shift",) + tuple(int(v) for v in s.split("=", 1)[1].split(",")) for s in o.shift if s.split("=", 1)[0] == name]
+        im, notes = process(Image.open(path), "", strip_loc=name in o.strip_loc, comp=True, edits=ed)
         out[sec][name] = "data:image/webp;base64," + encode(im, 256); prev.append((name, im)); print(f"  {name}: {', '.join(notes) or 'as is'}")
     json.dump(out, open(o.out, "w"), separators=(",", ":"))
     print(f"{len(out['nations'])} nations, {len(out['leagues'])} leagues, {len(out['comps'])} competitions -> {o.out} ({os.path.getsize(o.out)//1024} KB)")
