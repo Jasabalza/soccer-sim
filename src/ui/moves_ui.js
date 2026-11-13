@@ -41,7 +41,7 @@ function mvLine(r) {
   const age = r.age ? `age ${r.age}` : "";
   const who = r.k === "t" || r.k === "f" || r.k === "r" || r.k === "p" ? [mvPos(r), age].filter(Boolean).join(" &middot; ") : "Coach &middot; " + age;
   let mid = "";
-  if (r.k === "t") mid = `${esc(r.from)} &rarr; ${esc(r.to)}`;
+  if (r.k === "t") mid = `${esc(r.from)} &rarr; ${crest(r.to, 14)} ${esc(r.to)}`;
   else if (r.k === "f") mid = r.first ? `first pro contract &rarr; ${esc(r.to)}` : r.from ? `${esc(r.from)} &rarr; ${esc(r.to)}` : `free agent &rarr; ${esc(r.to)}`;
   else if (r.k === "r") mid = `released by ${esc(r.from)}`;
   else if (r.k === "p") mid = `${r.club ? "last at " + esc(r.club) : "no club"} &middot; peak ${r.pk || r.ovr}`;
@@ -80,9 +80,10 @@ function mvBid(r) {
 }
 function mvRow(r, i, attrs) {
   const star = (r.k === "t" || r.k === "f" || r.k === "r" || r.k === "p") && r.ovr ? " " + ovr(r.k === "p" ? (r.pk || r.ovr) : r.ovr) : "";
+  const plr = (r.k === "t" || r.k === "f" || r.k === "r" || r.k === "p") && r.ovr;
   const hot = r.hot >= 70 ? `<span class="mvhot" title="hot move">&#128293;</span>` : "";
   const nb = r.bid ? r.bid.bids.length : 0, war = nb > 1 ? ` &middot; <span class="mvwar">${nb} clubs bid</span>` : "";
-  const inner = `<div class="hr-a"><span class="mvb">${mvBadge(r)}</span><div class="hr-m"><b>${r.nat ? flag(r.nat, 16) + " " : ""}${mvWho(r)}${star}${hot}</b><span class="dim small">${mvLine(r)}${war}${r.k === "p" && r.hofFrom ? ` &middot; Hall of Fame from ${esc(r.hofFrom)}` : ""}</span></div><span class="hr-r mvR">${mvRight(r)}</span></div>`;
+  const inner = `<div class="hr-a"><span class="mvb${plr ? " mvo" : ""}">${plr ? ovr(r.k === "p" ? (r.pk || r.ovr) : r.ovr) : mvBadge(r)}</span><div class="hr-m"><b>${r.nat ? flag(r.nat, 16) + " " : ""}${mvWho(r)}${plr ? "" : star}${hot}</b><span class="dim small">${mvLine(r)}${war}${r.k === "p" && r.hofFrom ? ` &middot; Hall of Fame from ${esc(r.hofFrom)}` : ""}</span></div><span class="hr-r mvR">${mvRight(r)}</span></div>`;
   if (r.bid || r.why) return `<details class="hr mvr mvd" ${attrs || ""}><summary>${inner}</summary>${mvBid(r)}</details>`;
   return `<div class="hr mvr" ${attrs || ""}>${inner}</div>`;
 }
@@ -156,8 +157,12 @@ async function viewMoves(season, tab) {
   if (!d.season) { $("#view").innerHTML = `<div class="v2"><div class="hd"><div><h1>Off-season moves</h1></div></div><div class="card dim small">No completed season yet. Transfers, new coaches and retirements appear here once a season is over.</div></div>`; return; }
   if (walking) return mvWalk(d);
   const S = d.season, c = d.counts;
-  const head = `<div class="hd"><div><h1>Off-season moves</h1><div class="sub">${mvSeasonLabel(d)}</div></div>${d.recorded ? `<a class="btn sm" href="#/moves/${S}/walk">Walk-through</a>` : ""}</div>
-    <p class="filters"><select id="mv-s" aria-label="Season">${Array.from({ length: d.seasons }, (_, i) => d.seasons - i).map((s) => `<option value="${s}" ${s === S ? "selected" : ""}>Season ${s}</option>`).join("")}</select>
+  const nMoves = c.transfers + c.free + c.hired + c.fired + c.left + c.retired;
+  const stepTo = (n) => `#/moves/${n}/${tab}`;
+  const head = `<div class="hd"><div><div class="dim small">Season ${S} &middot; ${esc(d.label)} &middot; ${nMoves} moves</div><h1>Moves</h1></div>
+      <div class="mv-st"><a class="${S <= 1 ? "off" : ""}" href="${S <= 1 ? "#" : stepTo(S - 1)}" aria-label="Previous season">&lsaquo;</a><b>S${S}</b><a class="${S >= d.seasons ? "off" : ""}" href="${S >= d.seasons ? "#" : stepTo(S + 1)}" aria-label="Next season">&rsaquo;</a></div></div>
+    ${d.recorded ? `<a class="more" href="#/moves/${S}/walk"><span>Walk-through: the hottest moves one by one</span><span>&rsaquo;</span></a>` : ""}
+    <p class="filters"><select id="mv-s" aria-label="Season" hidden><option value="${S}" selected></option></select>
     <select id="mv-l" aria-label="League"><option value="">Whole world</option>${favL.length ? `<option value="@favs" ${MV.league === "@favs" ? "selected" : ""}>My favourite leagues</option>` : ""}${leagueOpts(d.leagues, MV.league)}</select></p>
     <div class="seg mtabs" role="tablist">${MV_TABS.map(([k, t]) => `<button data-t="${k}" class="${k === tab ? "on" : ""}">${t}</button>`).join("")}</div>
     <div class="dim small mvsum">${c.transfers} transfers &middot; ${c.free} free agents signed &middot; ${c.hired + c.fired + c.left} coach moves &middot; ${c.retired} retired</div>`;
@@ -252,14 +257,14 @@ function mvWalk(d) {
       body = `<div class="mtiles"><a><b>${c.transfers}</b><span>transfers</span></a><a><b>${c.free}</b><span>free agents signed</span></a><a><b>${c.hired + c.fired + c.left}</b><span>coach moves</span></a><a><b>${c.retired}</b><span>retired</span></a></div>
         <div class="dim small" style="margin:8px 2px">Want more? Every move is in the tabs, sorted the way you like.</div>
         <div class="foot"><button class="btn" id="mw-back">Back</button><a class="btn pri" href="#/moves/${S}/players">Browse all moves</a></div>
-        ${inFlow ? `<div style="text-align:center;margin-top:8px"><button class="linkbtn" id="mw-grad">Continue to graduates</button></div>` : ""}`;
+        ${inFlow ? `<div style="text-align:center;margin-top:8px"><button class="pri" id="mw-grad" style="min-height:48px;width:100%">Start season</button></div>` : ""}`;
     }
     $("#view").innerHTML = `<div class="v2 hday mvp">${head}${body}</div>`;
     const nx = $("#mw-next"), bk = $("#mw-back"), sk = $("#mw-skip"), gr = $("#mw-grad");
     if (nx) nx.onclick = () => { i++; draw(); window.scrollTo(0, 0); };
     if (bk) bk.onclick = () => { i = Math.max(0, i - 1); draw(); window.scrollTo(0, 0); };
     if (sk) sk.onclick = () => { const cur = r.chapter; while (i < w.length && w[i].chapter === cur) i++; draw(); window.scrollTo(0, 0); };
-    if (gr) gr.onclick = () => flowStep("graduates");
+    if (gr) gr.onclick = () => flowStep("done");
     document.querySelectorAll(".stp [data-c]").forEach((s) => s.onclick = () => { i = +s.dataset.c; draw(); });
   };
   draw();

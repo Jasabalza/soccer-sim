@@ -14,6 +14,7 @@ On Android or desktop, open the link in Chrome/Edge and use **Install** or just 
 
 ## What's in it
 
+- **The new look (v16.2):** one theme on every page, a bottom tab bar on phones, a Scores Leagues | Competitions switch, remembered favourites, fixture previews, a World Cup host banner, logo packs you can import (see `docs/LOGOS.md`), and academy graduates made before the transfer market (Graduates, then Moves).
 - **Hall of Fame (v16):** four-tier Halls of Fame for players and coaches decided by votes, induction days, league ceremonies, academy prestige and academy managers, and an Off-season moves page (transfer list with bidding wars, coaches, retired, optional walk-through).
 - **League & Competition Pages (v15.2):** league pages with Table, Money, Hall of Fame, Fixtures and Stats tabs; continent pages for all confederations; History and Stats pages for every cup, championship, Nations League, World Cup and Club World Cup.
 - **The Season Loop (v15.1):** a guided Season, Summer, Awards, Transfers loop; awards, Nations and club pages split into short tabs.

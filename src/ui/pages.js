@@ -150,7 +150,11 @@ async function worldCompCards() {
   if (!hub) return;
   const cards = hub.cards.filter((x) => x.confed === "WORLD");
   if (!cards.length || !$("#view") || !$("#view").querySelector(".grid")) return;
-  $("#view").insertAdjacentHTML("beforeend", `<div class="v2"><h2 class="lbl2">World competitions</h2>${cards.map(compCard).join("")}</div>`);
+  const h = STATUS && STATUS.header, folded = !!(h && h.flow && ["awards", "transfers", "graduates"].includes(h.phase));
+  // in the off-season the page is the checklist: the world tournaments wait folded below it
+  $("#view").insertAdjacentHTML("beforeend", folded
+    ? `<div class="v2"><details class="acc2" style="margin-top:14px"><summary><b>World competitions</b><div class="dim small" style="margin-top:3px">${cards.map((x) => esc(x.title || x.name || "")).filter(Boolean).join(" · ")}</div></summary>${cards.map(compCard).join("")}</details></div>`
+    : `<div class="v2"><h2 class="lbl2">World competitions</h2>${cards.map(compCard).join("")}</div>`);
 }
 
 // ---------------------------------------------------------------- competition page: History and Stats tabs
@@ -169,8 +173,7 @@ async function viewCompPage(key, tab) {
   const crumb = [`<a href="#/world">World</a>`];
   if (cf !== "WORLD") crumb.push(`<a href="#/continent/${esc(cf)}">${esc(cf)}</a>`);
   crumb.push(esc(h.title));
-  $("#view").innerHTML = `<div class="v2">${crumbHTML(crumb)}
-    <div style="display:flex;align-items:center;gap:12px"><span class="cem big-e">${compEmb(h.title, h.emblem, 48, editionYear(h), hostFor(h.editions_n))}</span><div><h1>${esc(h.title)}</h1><div class="sub">${sub}</div></div></div>
+  $("#view").innerHTML = `<div class="v2">${heroBlock(h.title, compEmb(h.title, h.emblem, 220), compEmb(h.title, h.emblem, 52, editionYear(h), hostFor(h.editions_n)), esc(h.title), `<div class="sub">${sub}</div>`)}
     ${stat4}${compTabsHTML(key, tab, cur && cur.cid)}<div id="cp-body"></div></div>`;
   const body = $("#cp-body");
   if (tab === "stats") {
@@ -201,7 +204,7 @@ function historyHTML(h, lk, nation) {
 function liveTabs(cid) { const key = famKey(cid); return key ? `<div class="v2">${compTabsHTML(key, "now", cid)}</div>` : ""; }
 
 // ---------------------------------------------------------------- league page
-const LTABS = [["table", "Table"], ["money", "Money"], ["hof", "Honours"], ["halls", "Hall of Fame"], ["fix", "Fixtures"], ["stats", "Stats"]];
+const LTABS = [["table", "Table"], ["fix", "Fixtures"], ["stats", "Stats"], ["money", "Money"], ["hof", "Honours"], ["halls", "Hall of Fame"]];
 const HEALTH_TAG = { Strong: "green", Steady: "", Tight: "gold", "In debt": "red" };
 function leagueMoneyHTML(mon, d) {
   if (!mon || !mon.season) return `<div class="card"><h3>League health</h3><div class="dim small">The books open after the first completed season.</div></div>`;
@@ -250,17 +253,16 @@ async function viewLeague(name, season) {
   const past = season ? await api(`/api/league_season?name=${enc(name)}&season=${season}`) : null;
   const rows = past ? past.rows.map((r) => ({ ...r, form: "", zone: "", ovr: null, gd: r.gf - r.ga })) : d.rows;
   const p = d.progress, inProg = !past && d.next.some((f) => f.hg !== undefined);
-  const fx = past ? null : await api("/api/fixtures?name=" + enc(name)).catch(() => null);
+  const FS = LGS[name] || (LGS[name] = { tab: "table" });
+  const fx = past ? null : await api("/api/fixtures?name=" + enc(name) + (FS.fxw ? "&week=" + FS.fxw : "")).catch(() => null);
+  if (fx && fx.week === fx.cur) FS.fxw = 0;
   const S = LGS[name] || (LGS[name] = { tab: "table" });
   if (past) S.tab = "table";
   const titles = {}; if (hof) for (const b of hof.board) titles[b.club] = b.titles;
   const fin = p.done >= p.total;
   const tablePane = `<div class="card"><div class="hd"><div><div style="font-size:15px;font-weight:700">${past ? "Season " + past.season + " final table" : "Season " + STATUS.header.season + " · matchweek " + p.done + " of " + p.total}</div>
       <div class="dim small">${past ? "Champion " + esc(past.champion) : d.next_date ? "Next: matchweek " + Math.min(p.total, p.done + 1) + " · " + esc(d.next_date.text) : fin ? "Season finished" : ""}</div></div></div>
-      ${past ? `<div style="margin-top:10px"><button class="btn" id="l-now">Back to this season</button></div>` : `
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px"><button class="btn pri" id="l-one" ${fin ? "disabled" : ""}>Next game</button>
-        ${inProg ? `<button class="btn" id="l-rest">Matchweek</button>` : `<button class="btn" data-m="1" ${fin ? "disabled" : ""}>Matchweek</button>`}<button class="btn" id="l-end" ${fin ? "disabled" : ""}>Rest of season</button></div>
-      <details class="acc" style="margin-top:6px"><summary>More ways to sim</summary><div class="b"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="btn sm" data-m="4" ${fin ? "disabled" : ""}>Next 4</button><span class="dim small">go to matchweek</span><input type="number" id="l-goto" min="1" max="${p.total}" value="${Math.min(p.total, p.done + 1)}" style="width:64px;min-height:36px"><button class="btn sm" id="l-go">Go</button></div></div></details>`}
+      ${past ? `<div style="margin-top:10px"><button class="btn" id="l-now">Back to this season</button></div>` : ""}
       <div style="margin-top:10px"><select class="sel" id="l-past" style="width:100%" aria-label="Past season"><option value="">Past season: choose</option>${d.seasons.slice().reverse().map((s) => `<option value="${s}" ${past && past.season === s ? "selected" : ""}>Season ${s}</option>`).join("")}</select></div></div>
     <div class="card"><div class="dim small" style="margin-bottom:6px">${hof && hof.seasons_n ? "Gold number = league titles won. " : ""}</div><div class="scroll"><table><thead><tr><th>#</th><th class="l">Club</th><th>P</th><th>GD</th><th>Pts</th>${past ? "" : "<th>Form</th>"}</tr></thead><tbody>
       ${rows.map((r) => `<tr class="${r.pos === 1 ? "champ" : !past && r.pos <= d.slots ? "cup" : ""}"><td>${r.pos}</td><td class="l">${clubLink(r.club)}${titles[r.club] ? ` <span class="ttl">${titles[r.club]}</span>` : ""}${r.hot ? ' <span class="tag red">hot seat</span>' : ""}</td><td>${r.p}</td><td>${r.gd > 0 ? "+" : ""}${r.gd}</td><td class="pts">${r.pts}</td>${past ? "" : `<td>${form(r.form)}</td>`}</tr>`).join("")}</tbody></table></div>
@@ -268,15 +270,18 @@ async function viewLeague(name, season) {
       <a class="more" data-lgo="hof"><span>Titles, champions and records</span><span>&rsaquo;</span></a></div>
     ${!past && d.last.length ? `<div class="card"><h3>Last matchweek <small>${d.last_date ? esc(d.last_date.text) : ""}</small></h3>${d.last.map((f) => `<div class="fix"><span class="h">${clubLink(f.h)}</span><span class="s">${f.hg}-${f.ag}</span><span>${clubLink(f.a)}</span></div>`).join("")}<a class="more" data-lgo="fix"><span>All fixtures and previews</span><span>&rsaquo;</span></a></div>` : ""}
     <a class="card" data-lgo="stats" style="display:block"><h3>Player stats <small>${past ? "season " + past.season : "this season"}</small></h3><div class="dim small">Top scorers, assists and ratings live on the Stats tab.</div><div class="more" style="color:#6db8ff"><span>Open player stats</span><span>&rsaquo;</span></div></a>`;
-  const fixPane = `${fx && fx.rows.length ? `<div class="card"><h3>Matchweek ${fx.week} <small>${fx.rows.filter((f) => f.done).length}/${fx.rows.length} played${d.next_date ? " · " + esc(d.next_date.text) : ""}</small></h3>
-      <div class="dim small" style="margin-bottom:6px">Pick any game to sim it now, or open its preview first.</div>
-      ${fx.rows.map((f, i) => `<div class="fix2"><div class="fix"><span class="h">${clubLink(f.h)}</span><span class="s">${f.done ? f.hg + "-" + f.ag : "v"}</span><span>${clubLink(f.a)}</span></div>
-        <div class="fx-m">${f.rivalry ? `<span class="tag red">${esc(f.rivalry.name)}</span>` : ""}<a href="#/matchup/${enc(d.id)}/${enc(f.h)}/${enc(f.a)}">${f.done ? "Match info" : "Preview"}</a>${f.done ? "" : `<button class="mini" data-fx="${i}">Sim this game</button>`}</div></div>`).join("")}</div>` : `<div class="card"><h3>Fixtures</h3><div class="dim small">${past ? "Past seasons keep the final table only." : "No fixtures left this season."}</div></div>`}
+  const simCard = past ? "" : `<div class="card"><div class="dim small">${d.next_date ? "Next: matchweek " + Math.min(p.total, p.done + 1) + " &middot; " + esc(d.next_date.text) : fin ? "Season finished" : ""}</div>      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px"><button class="btn pri" id="l-one" ${fin ? "disabled" : ""}>Next game</button>
+        ${inProg ? `<button class="btn" id="l-rest">Matchweek</button>` : `<button class="btn" data-m="1" ${fin ? "disabled" : ""}>Matchweek</button>`}<button class="btn" id="l-end" ${fin ? "disabled" : ""}>Rest of season</button></div>
+      <details class="acc" style="margin-top:6px"><summary>More ways to sim</summary><div class="b"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="btn sm" data-m="4" ${fin ? "disabled" : ""}>Next 4</button><span class="dim small">go to matchweek</span><input type="number" id="l-goto" min="1" max="${p.total}" value="${Math.min(p.total, p.done + 1)}" style="width:64px;min-height:36px"><button class="btn sm" id="l-go">Go</button></div></div></details></div>`;
+  const fut = fx && fx.rows.length && fx.week > fx.cur;
+  const fixPane = `${simCard}${fx && fx.rows.length ? `<div class="card fxc"><div class="fx-step"><button id="fx-prev" aria-label="Previous matchweek" ${fut ? "" : "disabled"}>&lsaquo;</button><div><b>Matchweek ${fx.week}</b><span class="dim small">${fut ? "Coming up" : "Next matchweek"} &middot; ${fx.rows.length} games${fut ? "" : " &middot; " + fx.rows.filter((f) => f.done).length + " played"}</span></div><button id="fx-next" aria-label="Next matchweek" ${fx.week < fx.weeks ? "" : "disabled"}>&rsaquo;</button></div>
+      ${fx.rows.map((f, i) => `<div class="fx3"><a class="fx3-h" href="#/club/${enc(f.h)}">${crest(f.h, 22)}<span>${esc(f.h)}</span></a>${f.done ? `<b class="fx3-s">${f.hg}-${f.ag}</b>` : `<i class="fx3-v">v</i>`}<a class="fx3-a" href="#/club/${enc(f.a)}"><span>${esc(f.a)}</span>${crest(f.a, 22)}</a>
+        ${f.done || fut ? `<a class="fx3-go" href="#/matchup/${enc(d.id)}/${enc(f.h)}/${enc(f.a)}">${f.done ? "Info" : "View"}</a>` : `<button class="fx3-go sim" data-fx="${i}">Sim</button><a class="fx3-pv" href="#/matchup/${enc(d.id)}/${enc(f.h)}/${enc(f.a)}">Preview</a>`}${f.rivalry ? `<span class="tag red fx3-t">${esc(f.rivalry.name)}</span>` : ""}</div>`).join("")}</div>` : `<div class="card"><h3>Fixtures</h3><div class="dim small">${past ? "Past seasons keep the final table only." : "No fixtures left this season."}</div></div>`}
     ${d.last.length ? `<div class="card"><h3>Last matchweek <small>${d.last_date ? esc(d.last_date.text) : ""}</small></h3>${d.last.map((f) => `<div class="fix"><span class="h">${clubLink(f.h)}</span><span class="s">${f.hg}-${f.ag}</span><span>${clubLink(f.a)}</span></div>`).join("")}</div>` : ""}
     ${!inProg && d.next.length ? `<div class="card"><h3>Next matchweek <small>${d.next_date ? esc(d.next_date.text) : ""}</small></h3>${d.next.map((f) => `<div class="fix"><span class="h">${clubLink(f.h)}</span><span class="s">v</span><span>${clubLink(f.a)}</span></div>`).join("")}</div>` : ""}`;
   const subBits = [esc(d.confed), d.games + " games", "top " + d.slots + " reach the " + esc(d.cup)];
-  $("#view").innerHTML = `<div class="v2">${crumbHTML([`<a href="#/world">World</a>`, `<a href="#/continent/${d.confed}">${esc(d.confed)}</a>`, esc(d.name)])}
-    <div style="display:flex;align-items:center;gap:12px"><span class="cem big-e">${compEmb(d.name, d.emblem, 48)}</span><div><h1>${esc(d.name)}</h1><div class="sub">${subBits.join(" · ")}${past ? ` · <span class="tag gold">season ${past.season} final table</span>` : ""}</div></div></div>
+  $("#view").innerHTML = `<div class="v2">
+    ${heroBlock(d.name, compEmb(d.name, d.emblem, 220), `<span class="cem big-e">${compEmb(d.name, d.emblem, 48)}</span>`, esc(d.name), `<div class="sub">${subBits.join(" · ")}${past ? ` · <span class="tag gold">season ${past.season} final table</span>` : ""}</div>`, `<button class="fpill ${FAVS && FAVS.includes("L:" + d.name) ? "on" : ""}" id="lg-follow">${FAVS && FAVS.includes("L:" + d.name) ? "&#9733; Following" : "&#9734; Follow"}</button>`)}
     <div class="stat4"><div><b>${d.avg}</b><span>AVG OVR</span></div><div><b>${mon && mon.season ? money(mon.avg_income) : "-"}</b><span>CLUB INCOME</span></div><div><b>x${(+d.tv).toFixed(2)}</b><span>TV MONEY</span></div><div><b>${mon && mon.season ? "#" + mon.rank : "-"}</b><span>${mon && mon.season ? "RICHEST OF " + mon.of : "RICHEST"}</span></div></div>
     <nav class="tabs2" id="lg-tabs" aria-label="League sections">${LTABS.map(([k, t]) => `<button data-lt="${k}" class="${k === S.tab ? "on" : ""}">${t}</button>`).join("")}</nav>
     <div id="lg-table">${tablePane}</div><div id="lg-money" hidden>${leagueMoneyHTML(mon, d)}</div><div id="lg-hof" hidden>${leagueHofHTML(hof, d)}</div><div id="lg-fix" hidden>${fixPane}</div><div id="lg-halls" hidden></div><div id="lg-stats" hidden></div></div>`;
@@ -287,14 +292,7 @@ async function viewLeague(name, season) {
     LTABS.forEach(([k]) => { $("#lg-" + k).hidden = k !== t; });
     if (t === "halls" && !built.halls) {
       built.halls = 1;
-      Promise.all([api("/api/hof?tier=L&kind=p&name=" + enc(name)), api("/api/hof?tier=L&kind=c&name=" + enc(name))]).then(([hp, hc]) => {
-        const last = hp.classes[0], lastC = hc.classes[0], fin = (STATUS.header.season - (p.done >= p.total ? 0 : 1));
-        $("#lg-halls").innerHTML = `<div class="card"><h3>${esc(name)} Hall of Fame <small>${hp.total} players &middot; ${hc.total} coaches</small></h3>
-          ${last ? `<div class="dim small" style="margin-bottom:6px">Class of ${esc(last.label)}</div><div class="hlist">${last.rows.map((r) => hofRow(r, { right: "year " + r.n })).join("")}</div>` : '<div class="dim small">Nobody inducted yet. People become eligible five years after they retire.</div>'}
-          ${lastC ? `<div class="dim small" style="margin:10px 0 6px">Latest coach: class of ${esc(lastC.label)}</div><div class="hlist">${lastC.rows.map((r) => hofRow(r, { right: "year " + r.n })).join("")}</div>` : ""}
-          <a class="more" href="#/hof/L/${enc(name)}"><span>Full league Hall of Fame</span><span>&rsaquo;</span></a>
-          ${fin > 0 ? `<a class="more" href="#/hofleague/${enc(name)}/${p.done >= p.total ? STATUS.header.season : STATUS.header.season - 1}"><span>Latest Hall of Fame day</span><span>&rsaquo;</span></a>` : ""}</div>`;
-      }).catch((e) => { $("#lg-halls").innerHTML = `<div class="card dim small">${esc(e.message)}</div>`; });
+      hallPanel("#lg-halls", [{ tier: "L", name, title: name + " Hall of Fame" }]);
     }
     if (t === "stats" && !built.stats) {
       built.stats = 1;
@@ -303,10 +301,13 @@ async function viewLeague(name, season) {
     }
   };
   document.querySelectorAll("#lg-tabs [data-lt]").forEach((b) => (b.onclick = () => show(b.dataset.lt)));
+  const fl = $("#lg-follow"); if (fl) fl.onclick = async () => { const cur = new Set(FAVS || []), k = "L:" + name; if (cur.has(k)) cur.delete(k); else cur.add(k); try { await saveFavs([...cur]); } catch (e) { toast(e.message); return; } route(); };
   document.querySelectorAll("[data-lgo]").forEach((b) => (b.onclick = () => { show(b.dataset.lgo); window.scrollTo(0, 0); }));
   document.querySelectorAll("#lg-money [data-fin]").forEach((a) => (a.onclick = () => { CV_OPEN = "fin"; }));
   document.querySelectorAll("[data-m]").forEach((b) => (b.onclick = () => simComp(d.id, { matches: +b.dataset.m })));
   if ($("#l-one")) $("#l-one").onclick = () => simComp(d.id, { fixtures: 1 });
+  if ($("#fx-next")) $("#fx-next").onclick = () => { FS.fxw = fx.week + 1; route(); };
+  if ($("#fx-prev")) $("#fx-prev").onclick = () => { FS.fxw = fx.week - 1 > fx.cur ? fx.week - 1 : 0; route(); };
   document.querySelectorAll("[data-fx]").forEach((b) => (b.onclick = () => { const f = fx.rows[+b.dataset.fx]; simComp(d.id, { fixture: { h: f.h, a: f.a } }); }));
   if ($("#l-rest")) $("#l-rest").onclick = () => simComp(d.id, { matches: 1 });
   if ($("#l-end")) $("#l-end").onclick = () => simComp(d.id, { to_end: true });

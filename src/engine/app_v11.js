@@ -778,6 +778,8 @@ function _a_sim(body) {
       break;
     }
     n = n + 1;
+    // "Rest of season" from the season phase stops when only the summer tournaments are left, so they can be played (or skipped) on purpose
+    if (scope === "world" && $M.get(body, "until", null) === "summer" && phase_of(w) === "summer") break;
   }
   return $dict($kw({"ok": true, "weeks": n}));
 }
@@ -855,15 +857,15 @@ function a_rollover(body) {
   }
   rec = w.rollover();
   ST.last_review = review(rec, ST.stops.evaluate(w, rec));
-  w.flow = $dict($kw({"season": $idx(rec, "season"), "step": "awards"}));      // the off-season: awards ceremony, then transfers, then the new season
+  w.flow = $dict($kw({"season": $idx(rec, "season"), "step": "awards"}));      // the off-season: awards ceremony, then graduates, then transfers, then the new season
   return $dict($kw({"ok": true, "review": ST.last_review, "header": header(w)}));
 }
-// move through the off-season: awards -> transfers -> done (the new season starts). Anything else is refused.
+// move through the off-season: awards -> graduates -> transfers -> done (the new season starts). Anything else is refused.
 function a_flow(body) {
   const w = need_world(), step = $M.get(body, "step", "done"), cur = $T(w.flow) ? w.flow.get_("step") : null;
   if (!cur) return $dict($kw({"ok": true, "header": header(w)}));
-  if (step === "transfers" && cur === "awards") w.flow.set("step", "transfers");
-  else if (step === "graduates" && (cur === "transfers" || cur === "awards")) w.flow.set("step", "graduates");
+  if (step === "graduates" && cur === "awards") w.flow.set("step", "graduates");
+  else if (step === "transfers" && (cur === "graduates" || cur === "awards")) w.flow.set("step", "transfers");
   else if (step === "done") w.flow = null;
   else if (step !== cur) throw $new(ApiError, ["That step does not follow the current one.", 409]);
   return $dict($kw({"ok": true, "header": header(w)}));
@@ -914,6 +916,14 @@ function a_favnations(body) {
   w.fav_nations = $list(($T($M.get(body, "set")) ? $idx(body, "set") : [])).map((k) => String(k)).filter((n) => w.nations.has(n));
   return $dict($kw({"ok": true, "nations": $list(w.fav_nations)}));
 }
+function v_hofseen() { const w = need_world(); return $dict($kw({"season": (w.hof_seen === undefined ? null : w.hof_seen)})); }
+function a_hofseen(body) { const w = need_world(); w.hof_seen = $int($idx(body, "season")); return $dict($kw({"ok": true, "season": w.hof_seen})); }
+function v_favclubs() { const w = need_world(); return $dict($kw({"clubs": (w.fav_clubs ? $list(w.fav_clubs) : [])})); }
+function a_favclubs(body) {
+  const w = need_world();
+  w.fav_clubs = $list(($T($M.get(body, "set")) ? $idx(body, "set") : [])).map((k) => String(k)).filter((n) => w.clubs.has(n));
+  return $dict($kw({"ok": true, "clubs": $list(w.fav_clubs)}));
+}
 function a_favs(body) {
   const w = need_world();
   w.favs = $list(($T($M.get(body, "set")) ? $idx(body, "set") : [])).map((k) => String(k));
@@ -935,9 +945,9 @@ function v_qualstats(cid) {
   return $dict($kw({"id": cid, "name": c.title, "confed": c.confed, "season_label": cal.season_label(w.cfg.start_year, w.season), "finished": !!c.finished, "qualified": qual, "missed": missed, "best_missing": (missed.length ? missed[0] : null), "weakest": weakest, "playoff_places": c.R}));
 }
 GET = $lit_dict([["/api/status", ((q) => v_status())],
-["/api/favs", ((q) => v_favs())], ["/api/favnations", ((q) => v_favnations())],
+["/api/favs", ((q) => v_favs())], ["/api/favnations", ((q) => v_favnations())], ["/api/favclubs", ((q) => v_favclubs())], ["/api/hofseen", ((q) => v_hofseen())],
 ["/api/prospects", ((q) => v_prospects(q))], ["/api/qualstats", ((q) => v_qualstats($idx(q, "id")))], ["/api/world", ((q) => v_world())], ["/api/leaguemoney", ((q) => v_leaguemoney($idx(q, "name")))], ["/api/leaguehof", ((q) => { const w = need_world(); if (!$in($idx(q, "name"), w.leagues)) throw $new(ApiError, ["unknown league", 404]); return $mods.pages.league_hof(w, $idx(q, "name")); })], ["/api/comphub", ((q) => $dict($kw({"cards": $mods.pages.cards(need_world(), (c) => comp_progress(need_world(), c), (n) => cal.season_label(need_world().cfg.start_year, n))})))], ["/api/comphist", ((q) => { const w = need_world(); if (!$mods.pages.is_valid(w, $idx(q, "key")) || $idx(q, "key").startsWith("league:")) throw $new(ApiError, ["unknown competition", 404]); return $mods.pages.history(w, $idx(q, "key"), (n) => cal.season_label(w.cfg.start_year, n)); })], ["/api/compalltime", ((q) => { const w = need_world(); if (!$mods.pages.is_valid(w, $idx(q, "key"))) throw $new(ApiError, ["unknown competition", 404]); return $mods.pages.alltime(w, $idx(q, "key")); })], ["/api/worldmoney", ((q) => v_worldmoney())], ["/api/continent", ((q) => v_continent($idx(q, "code")))], ["/api/map", ((q) => v_map())], ["/api/league", ((q) => v_league($idx(q, "name")))], ["/api/league_season", ((q) => v_league_season($idx(q, "name"), $int($idx(q, "season"))))], ["/api/club", ((q) => v_club($idx(q, "name")))], ["/api/player", ((q) => { const r = v_player($idx(q, "uid")), w = need_world(), p = w.player_by_uid($int($idx(q, "uid"))); r.set("hof", $mods.hofpages.chainFor(w, p)); { const x = $mods.hofpages.extras(w, p); r.set("academy", x.academy); r.set("under", x.under); } return r; })], ["/api/players", ((q) => v_players(q))], ["/api/compstats", ((q) => v_compsum($idx(q, "id"), ($T($M.get(q, "season")) ? $int($idx(q, "season")) : null)))], ["/api/settings", ((q) => $dict($kw({"god": ST.god, "money_x": ($T(ST.world) ? ST.world.cfg.money_x : 3.5), "clubs": ($T(ST.world) ? $sorted(ST.world.clubs) : [])})))], ["/api/comp", ((q) => v_comp($idx(q, "id")))], ["/api/nations", ((q) => v_nations($M.get(q, "confed")))], ["/api/nation", ((q) => v_nation($idx(q, "name")))], ["/api/news", ((q) => v_news())], ["/api/money", ((q) => v_money())], ["/api/ledger", ((q) => v_ledger(($T($M.get(q, "season")) && $idx(q, "season") !== "all" ? $int($idx(q, "season")) : null), ($T($M.get(q, "league")) ? $idx(q, "league") : null), $M.get(q, "season") === "all"))], ["/api/records", ((q) => v_records())], ["/api/review", ((q) => $dict($kw({"review": ST.last_review})))], ["/api/awards", ((q) => v_awards(($T($M.get(q, "season")) ? $int($idx(q, "season")) : null)))], ["/api/trophies", ((q) => $dict($kw({"options": T.options(need_world()), "selected": ($T($M.get(q, "key")) ? T.winners(need_world(), $idx(q, "key")) : null)})))], ["/api/edits", ((q) => v_edits())], ["/api/charts", ((q) => v_charts())], ["/api/halloffame", ((q) => T.halloffame(need_world()))]]);
-POST = $lit_dict([["/api/favs", a_favs], ["/api/favnations", a_favnations],
+POST = $lit_dict([["/api/favs", a_favs], ["/api/favnations", a_favnations], ["/api/favclubs", a_favclubs], ["/api/hofseen", a_hofseen],
 ["/api/settings_set", a_settings], ["/api/export", a_export], ["/api/edit", a_edit], ["/api/new", a_new], ["/api/sim", a_sim], ["/api/years", a_year], ["/api/rollover", a_rollover], ["/api/flow", a_flow], ["/api/stops", a_stops], ["/api/save", a_save], ["/api/load", a_load], ["/api/delete", a_delete], ["/api/beat", a_beat], ["/api/quit", a_quit]]);
 // v16 Hall of Fame routes
 {

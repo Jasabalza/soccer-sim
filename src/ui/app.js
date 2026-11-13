@@ -26,8 +26,9 @@ async function busy(text, fn) {
   $("#busy-text").textContent = text; $("#busy").hidden = false;
   try { return await fn(); } catch (e) { toast(e.message); } finally { $("#busy").hidden = true; }
 }
-function openModal(html) { $("#modal-box").innerHTML = html; $("#modal").hidden = false; }
-function closeModal() { $("#modal").hidden = true; }
+function openModal(html) { $("#modal-box").innerHTML = html; $("#modal").classList.remove("sh"); $("#modal").hidden = false; }
+function openSheet(html) { openModal(html); $("#modal").classList.add("sh"); }
+function closeModal() { $("#modal").hidden = true; $("#modal").classList.remove("sh"); }
 $("#modal").addEventListener("pointerdown", (e) => { if (e.target.id === "modal") closeModal(); });
 document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeModal(); });
 
@@ -38,6 +39,7 @@ function ovrColor(o) {
 }
 const ovr = (o) => `<span class="ovr" style="background:${ovrColor(o)}">${o}</span>`;
 const clubLink = (n) => `${crest(n, 16)}<a href="#/club/${enc(n)}">${esc(n)}</a>`;
+const leagueHref = (n) => `#/league/${enc(n)}`;
 const leagueLink = (n) => `${logoBox("leagues", n, 16)}<a href="#/league/${enc(n)}">${esc(n)}</a>`;
 const natLink = (n) => `${natBadge(n, 18)}<a href="#/nation/${enc(n)}">${esc(n)}</a>`;
 // a coach name that opens the coach page (names stay plain text for old records that have no coach id)
@@ -50,11 +52,20 @@ const money = (m) => { m = Number(m); const a = Math.abs(m), sg = m < 0 ? "-" : 
 const moneyS = (m) => (m > 0 ? "+" : "") + money(m);
 
 // ---------------------------------------------------------------- shell
+const SIM_ROUTES = new Set(["world", "moves", "ledger", "prospects", "ceremony"]);   // the sim controls live on the Season tab (and the awards step), as in the mock-up
+function seasonLine(h) {
+  return h.flow ? `Off-season after season ${h.flow.season} &middot; season ${h.season} (${esc(h.season_label)}) starts ${h.date ? h.date.text : "week " + h.week}`
+    : `Season ${h.season} &middot; ${esc(h.season_label)} &middot; year ${h.cycle_year}/4 (${esc(h.cycle_text)})${h.done ? " &middot; season complete" : " &middot; next " + (h.date ? h.date.text : "week " + h.week)}`;
+}
 function renderShell() {
+  applyDense();
   const has = STATUS && STATUS.has_world;
   const route = location.hash.split("/")[1] || "";
   const items = [["world", "World"], ["nations", "Nations"], ["news", "News"], ["money", "Money"], ["moves", "Off-season"], ["rivals", "Rivals"], ["players", "Players"], ["ceremony", "Awards"], ["hof", "Hall of Fame"], ["trophies", "Trophies"], ["records", "Records"]];
   $("#nav").innerHTML = has ? items.map(([k, t]) => `<a href="#/${k}" class="${route === k || (k === "moves" && route === "ledger") ? "on" : ""}">${t}</a>`).join("") : "";
+  renderTabbar(has, route);
+  document.body.classList.toggle("inapp", !!has);
+  document.body.classList.toggle("nosim", !has || !SIM_ROUTES.has(route));
   const h = STATUS && STATUS.header;
   $("#season-info").innerHTML = h
     ? (h.flow
@@ -64,11 +75,68 @@ function renderShell() {
     : "";
   renderSimBar();
 }
+
+// ---------------------------------------------------------------- bottom tab bar (phones): Season, Leagues, Players, History, More. Every old top-nav page is still reachable.
+const TAB_ICONS = {
+  season: '<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/>',
+  leagues: '<path d="M4 6h16M4 12h16M4 18h10"/>',
+  players: '<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/>',
+  history: '<path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H4v1a4 4 0 0 0 4 4M16 6h4v1a4 4 0 0 1-4 4M12 13v4M8 21h8M10 17h4"/>',
+  more: '<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>',
+};
+const TAB_OF = { more: "more", history: "history", leagues: "leagues", world: "season", moves: "season", ledger: "season", prospects: "season", ceremony: "history", continent: "leagues", league: "leagues", club: "leagues", comp: "leagues", c: "leagues", matchup: "leagues", rivals: "leagues", nations: "leagues", nation: "leagues", players: "players", player: "players", coach: "players", academies: "players", news: "history", hof: "history", hofcard: "history", hofday: "history", hofnation: "history", hofleague: "history", trophies: "history", prestige: "history", records: "history", money: "more" };
+function renderTabbar(has, route) {
+  const el = $("#tabbar"); if (!el) return;
+  if (!has) { el.innerHTML = ""; el.hidden = true; return; }
+  el.hidden = false;
+  const cur = TAB_OF[route] || "season";
+  const tab = (k, t, href) => `<a data-tab="${k}" href="${href || "#"}" class="${cur === k ? "on" : ""}"><svg width="22" height="22" viewBox="0 0 24 24" fill="${k === "more" ? "currentColor" : "none"}" stroke="${k === "more" ? "none" : "currentColor"}" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${TAB_ICONS[k]}</svg><span>${t}</span></a>`;
+  el.innerHTML = tab("season", "Season", "#/world") + tab("leagues", "Leagues", "#/leagues") + tab("players", "Players", "#/players") + tab("history", "History", "#/history") + tab("more", "More", "#/more");
+}
+const CHEV = '<svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>';
+const MENU_ICON = (d) => `<span class="mi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg></span>`;
+const MI = { pres: '<path d="M4 18l-1-10 5 4 4-7 4 7 5-4-1 10zM5 21h14"/>', money: '<circle cx="12" cy="12" r="8"/><path d="M12 8v8M9.5 10c0-1 1-1.6 2.5-1.6s2.5.6 2.5 1.6-1 1.5-2.5 1.8-2.5.8-2.5 1.8 1 1.6 2.5 1.6 2.5-.6 2.5-1.6"/>', moves: '<path d="M7 7h11l-3-3M17 17H6l3 3"/>', grad: '<path d="M3 9l9-4 9 4-9 4zM7 11v5c0 1 2.2 2 5 2s5-1 5-2v-5"/>', rivals: '<path d="M6 4l12 16M18 4L6 20"/>', nations: '<circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4c3 3 3 13 0 16M12 4c-3 3-3 13 0 16"/>', acad: '<path d="M4 20V10l8-5 8 5v10zM9 20v-6h6v6"/>', save: '<path d="M5 4h11l3 3v13H5zM8 4v5h7V4M8 20v-6h8v6"/>', gear: '<circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/>', aw: '<path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H4v1a4 4 0 0 0 4 4M16 6h4v1a4 4 0 0 1-4 4M12 13v4M8 21h8M10 17h4"/>', hof: '<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>', news: '<path d="M5 4h12v16H5zM8 8h6M8 12h6M8 16h4M17 8h2v10a2 2 0 0 1-2 2"/>', trophy: '<path d="M8 4h8v5a4 4 0 0 1-8 0zM12 13v4M8 21h8"/>', rec: '<path d="M4 20V8M10 20V4M16 20v-9M22 20H2"/>', ppl: '<circle cx="9" cy="8" r="3.5"/><path d="M2 20c0-3.5 3-5.5 7-5.5s7 2 7 5.5M17 5a3.5 3.5 0 0 1 0 7M19 15c2 .7 3 2.2 3 5"/>' };
+function menuPage(title, sub, groups) {
+  $("#view").innerHTML = `<div class="v2"><h1>${title}</h1><div class="sub">${sub}</div>${groups.map(([g, rows]) => `<div class="card menu"><h3>${g}</h3>${rows.map(([ic, t, d, href, id]) => `<a class="mrow" ${href ? `href="${href}"` : `href="#" id="${id}"`}>${MENU_ICON(MI[ic])}<span class="mt"><b>${t}</b><span class="dim small">${d}</span></span>${CHEV}</a>`).join("")}</div>`).join("")}</div>`;
+}
+function viewMore() {
+  menuPage("More", "Everything else, in one place.", [
+    ["Money and moves", [["money", "Money", "finances across the world", "#/money"], ["moves", "Off-season moves", "transfers, retirements, new players", "#/moves"], ["grad", "Graduates", "academy prospects", "#/prospects"]]],
+    ["Explore", [["nations", "Nations", "national teams and rankings", "#/nations"], ["rivals", "Rivals", "derbies and rivalries", "#/rivals"]]],
+    ["Game", [["save", "Save and load", "slots, export, import", "", "mr-save"], ["gear", "Settings", "animations, god mode, logos", "", "mr-set"]]],
+  ]);
+  $("#mr-save").onclick = (e) => { e.preventDefault(); saveDialog(); };
+  $("#mr-set").onclick = (e) => { e.preventDefault(); settingsDialog(); };
+}
+function viewHistory() {
+  menuPage("History", "Look back at what happened.", [
+    ["Seasons", [["aw", "Awards", "ceremony, overview, winners", "#/ceremony"], ["hof", "Hall of Fame", "inductees and ceremonies", "#/hof"], ["news", "News", "everything that happened", "#/news"]]],
+    ["Records", [["trophy", "Trophies", "winners and club ranking", "#/trophies"], ["rec", "Records", "world records", "#/records"]]],
+  ]);
+}
+const plTabs = (cur) => `<nav class="tabs2 lgtabs" aria-label="Players and academies">${[["players", "Players"], ["academies", "Academies"]].map(([k, t]) => `<a href="#/${k}" class="${k === cur ? "on" : ""}">${t}</a>`).join("")}</nav>`;
+const lgTabs = (cur) => `<nav class="tabs2 lgtabs" aria-label="Leagues and nations">${[["leagues", "Leagues"], ["nations", "Nations"], ["rivals", "Rivals"]].map(([k, t]) => `<a href="#/${k}" class="${k === cur ? "on" : ""}">${t}</a>`).join("")}</nav>`;
+function injectLgTabs(cur) { const v = $("#view"); if (v && !v.querySelector(".lgtabs")) v.insertAdjacentHTML("afterbegin", `<div class="v2">${lgTabs(cur)}</div>`); }
+async function viewLeagues() {
+  const d = await api("/api/world");
+  if (location.hash === "#/leagues" && !viewLeagues.keep) LGV.c = "";
+  viewLeagues.keep = false;
+  const conts = d.continents.filter((c) => c.leagues.length);
+  const sel = LGV.c && conts.some((c) => c.code === LGV.c) ? LGV.c : "";
+  const shown = conts.filter((c) => !sel || c.code === sel);
+  $("#view").innerHTML = `<div class="v2">${lgTabs("leagues")}<h1>Leagues</h1><div class="sub">${conts.reduce((n, c) => n + c.leagues.length, 0)} leagues across ${conts.length} continents.</div>
+    <nav class="chips" aria-label="Continent"><button data-c="" class="${sel ? "" : "on"}">All</button>${conts.map((c) => `<button data-c="${c.code}" class="${sel === c.code ? "on" : ""}">${esc(c.name)}</button>`).join("")}</nav>
+    ${shown.map((c) => `<div class="sep">${esc(c.name)}</div><div class="card lg">${c.leagues.map((l) => `<a class="lrow" href="#/league/${enc(l.name)}">${logoBox("leagues", l.name, 40) || `<span class="lph">${esc(l.name.split(" ").map((w) => w[0]).join("").slice(0, 3))}</span>`}<span class="mt"><b>${esc(l.name)}</b><span class="dim small">${l.done >= l.total ? "finished · champion " : "leader "}${esc(l.leader)}${l.done >= l.total ? "" : " · " + l.pts + " pts"}</span><span class="bar"><i style="width:${l.total ? Math.round(100 * l.done / l.total) : 0}%"></i></span></span><span class="dim small">${l.done}/${l.total}</span>${CHEV}</a>`).join("")}</div>`).join("")}</div>`;
+  document.querySelectorAll("#view .chips [data-c]").forEach((b) => (b.onclick = () => { LGV.c = b.dataset.c; viewLeagues.keep = true; viewLeagues(); }));
+}
+const LGV = { c: "" };
 let SBOPEN = false;
 // the season loop: Season -> Summer tournaments -> Awards -> Transfers -> next season (the engine's header.phase says where we are)
-const FLOW_STEPS = [["season", "Season"], ["summer", "Summer"], ["awards", "Awards"], ["transfers", "Off-season"], ["graduates", "Graduates"]];
+const FLOW_STEPS = [["season", "Season"], ["summer", "Summer"], ["awards", "Awards"], ["hall", "Hall"], ["graduates", "Grads"], ["transfers", "Moves"]];
+let HOFSEEN = null;                          // the season whose Hall of Fame day was played or skipped to its results (this visit)
+const hofSeenNow = (h) => !!(h.flow && HOFSEEN === h.flow.season);
 function flowBar(h) {
-  const at = { season: 0, summer: 1, done: 2, awards: 2, transfers: 3, graduates: 4 }[h.phase] ?? 0;
+  const at = { season: 0, summer: 1, done: 2, awards: hofSeenNow(h) ? 3 : 2, graduates: 4, transfers: 5 }[h.phase] ?? 0;
   const cell = (i, [k, t]) => `<div class="${i < at ? "done" : i === at ? "on" : ""}"${i === at ? ' aria-current="step"' : ""}>${i < at ? "&#10003; " : ""}${t}</div>`;
   return `<div class="stages flow" id="flowbar" aria-label="Season loop">${FLOW_STEPS.map((x, i) => cell(i, x)).join("")}</div>`;
 }
@@ -76,15 +144,17 @@ function renderSimBar() {
   const bar_ = $("#simbar");
   if (!STATUS || !STATUS.has_world) { bar_.innerHTML = ""; return; }
   const h = STATUS.header, ph = h.phase || (h.done ? "done" : "season"), fs = h.flow ? h.flow.season : h.season - 1;
-  bar_.classList.toggle("open", SBOPEN);
   const play = ph === "season" || ph === "summer";
   const main = play
     ? `<button class="main" id="sb-week">Next week</button><button class="main" id="sb-4">4 weeks</button><button class="pri main" id="sb-end">${ph === "summer" ? "Finish summer" : "Rest of season"}</button>`
     : ph === "done" ? `<button class="pri main" id="sb-roll">Wrap up season ${h.season}</button>`
-    : ph === "awards" ? `<button class="main" id="sb-cer">Awards</button><button class="pri main" id="sb-tr">Continue to off-season</button>`
-    : ph === "transfers" ? `<button class="main" id="sb-mk">Off-season moves</button><button class="pri main" id="sb-gr">Continue to graduates</button>`
-    : `<button class="main" id="sb-pg">Graduates</button><button class="pri main" id="sb-next">Start season ${h.season}</button>`;
+    : ph === "awards" ? `<button class="main${hofSeenNow(h) ? "" : " hofgo"}" id="sb-hof">${hofSeenNow(h) ? "Hall results" : "Hall of Fame day"}</button><button class="pri main" id="sb-tr">Continue to off-season</button>`
+    : ph === "graduates" ? `<button class="main" id="sb-pg">Graduates</button><button class="pri main" id="sb-gr">Continue to moves</button>`
+    : `<button class="main" id="sb-mk">Off-season moves</button><button class="pri main" id="sb-next">Start season ${h.season}</button>`;
+  bar_.className = (SBOPEN ? "open " : "") + "ph-" + (h.flow ? (ph === "awards" ? "awards" : "off") : ph === "summer" ? "summer" : ph === "done" ? "awards" : "season");
+  const chip = h.flow ? `Season ${fs} &middot; off-season` : ph === "summer" ? `Season ${h.season} &middot; summer` : ph === "done" ? `Season ${h.season} &middot; complete` : `Season ${h.season} &middot; ${esc(h.season_label)}`;
   bar_.innerHTML = `
+    <div class="phchip"><span>${chip}</span></div>
     ${flowBar(h)}
     <span class="lbl wl">WORLD</span>
     ${main}
@@ -100,12 +170,13 @@ function renderSimBar() {
   const on = (id, f) => { const e = $(id); if (e) e.onclick = f; };
   on("#sb-week", () => simWorld({ weeks: 1 }));
   on("#sb-4", () => simWorld({ weeks: 4 }));
-  on("#sb-end", () => simWorld({ to_end: true }));
+  on("#sb-end", () => simWorld(ph === "season" ? { to_end: true, until: "summer" } : { to_end: true }));
   on("#sb-roll", rollover);
   on("#sb-cer", () => (location.hash = "#/ceremony/" + fs + "/start"));
-  on("#sb-tr", () => flowStep("transfers"));
+  on("#sb-hof", () => (location.hash = "#/hofday/" + fs + (hofSeenNow(h) ? "/results" : "")));
+  on("#sb-tr", () => flowStep("graduates"));
   on("#sb-mk", () => (location.hash = "#/moves/" + fs));
-  on("#sb-gr", () => flowStep("graduates"));
+  on("#sb-gr", () => flowStep("transfers"));
   on("#sb-pg", () => (location.hash = "#/prospects"));
   on("#sb-next", () => flowStep("done"));
   on("#sb-tog", () => { SBOPEN = !SBOPEN; renderSimBar(); });
@@ -114,7 +185,12 @@ function renderSimBar() {
   $("#sb-save").onclick = saveDialog;
   $("#sb-set").onclick = settingsDialog;
 }
-async function refreshStatus() { STATUS = await api("/api/status"); if (STATUS.has_world) await loadFavs(); else FAVS = null; renderShell(); }
+async function refreshStatus() {
+  STATUS = await api("/api/status"); if (STATUS.has_world) await loadFavs(); else FAVS = null;
+  try { HOFSEEN = STATUS.has_world && STATUS.header.flow ? (await api("/api/hofseen")).season : null; } catch (e) { HOFSEEN = null; }
+  if (STATUS.has_world) { const k = STATUS.header.season + "|" + (STATUS.header.phase || ""); if (WC_KEY !== k) { WC_KEY = k; await loadWcHosts(); } } else WC_KEY = null;
+  renderShell();
+}
 
 // ---------------------------------------------------------------- actions
 async function afterSim() {
@@ -326,7 +402,7 @@ function wireSaves(inGame) {
 
 // ---------------------------------------------------------------- favorites
 // A favorite is a key: "L:<league>" or "<kind>:<confed>" (cup, ct, nl, qual). The list is kept inside the world, so it travels with every save.
-const APP_VERSION = "v16.1.4", APP_TAG = "Show Your Worth";
+const APP_VERSION = "v16.2.0", APP_TAG = "Show Your Worth";
 let FAVS = null, PICK_ASKED = false;                    // FAVS: null until the player has chosen, then an array of keys
 const CT_NAMES = { UEFA: "European Championship", CONMEBOL: "Copa America", CONCACAF: "Gold Cup", CAF: "Africa Cup of Nations", AFC: "Asian Cup", OFC: "OFC Nations Cup" };
 const NL_NAMES = { UEFA: "UEFA Nations League", CONMEBOL: "CONMEBOL Nations League", CONCACAF: "CONCACAF Nations League", CAF: "CAF Nations League", AFC: "AFC Nations League", OFC: "OFC Nations League" };
@@ -338,9 +414,20 @@ function favOf(id) {
   return null;                                           // Club World Cup, intercontinental play-off, World Cup: summer tournaments, never starred
 }
 const isFollowed = (id) => { const k = favOf(id); return FAVS === null || k === null || FAVS.includes(k); };
-const favView = () => { try { return localStorage.getItem("ss_favview") !== "all"; } catch (e) { return true; } };
-async function loadFavs() { try { FAVS = (await api("/api/favs")).favs; } catch (e) { FAVS = null; } }
-async function saveFavs(list) { const r = await api("/api/favs", { set: list }); FAVS = r.favs; }
+const favView = () => { try { return localStorage.getItem("ssb_favview") !== "all"; } catch (e) { return true; } };
+// what you follow is also remembered in this browser, so a save that never had favorites (or an older save) gets them back instead of asking again
+const favMem = () => { try { return JSON.parse(localStorage.getItem("ssb_favmem") || "{}") || {}; } catch (e) { return {}; } };
+const favMemSet = (k, v) => { try { const m = favMem(); m[k] = v; localStorage.setItem("ssb_favmem", JSON.stringify(m)); } catch (e) { /* storage blocked */ } };
+async function loadFavs() {
+  try { FAVS = (await api("/api/favs")).favs; } catch (e) { FAVS = null; }
+  const m = favMem();
+  if (FAVS === null && Array.isArray(m.favs)) {            // the save has none yet: put back the ones remembered here
+    try { FAVS = (await api("/api/favs", { set: m.favs })).favs; } catch (e) { /* keep null */ }
+    try { if (Array.isArray(m.nations) && m.nations.length && !((await api("/api/favnations")).nations || []).length) await api("/api/favnations", { set: m.nations }); } catch (e) { /* ignore */ }
+    try { if (Array.isArray(m.clubs) && m.clubs.length && !((await api("/api/favclubs")).clubs || []).length) await api("/api/favclubs", { set: m.clubs }); } catch (e) { /* ignore */ }
+  }
+}
+async function saveFavs(list) { const r = await api("/api/favs", { set: list }); FAVS = r.favs; favMemSet("favs", FAVS); }
 const starSvg = (w) => `<svg width="${w}" height="${w}" viewBox="0 0 24 24" aria-hidden="true"><polygon points="12,2.5 14.9,8.9 21.8,9.6 16.6,14.2 18.1,21 12,17.5 5.9,21 7.4,14.2 2.2,9.6 9.1,8.9"/></svg>`;
 const starBtn = (key, on) => `<button class="star${on ? " on" : ""}" data-fav="${esc(key)}" aria-pressed="${on}" aria-label="${on ? "Stop following" : "Follow"} this competition" title="${on ? "Following" : "Follow"}">${starSvg(20)}</button>`;
 // every competition that can be followed, by continent (national-team ones are listed even in seasons when they are not played)
@@ -492,7 +579,7 @@ async function viewStart() {
     const rules = {};
     if ($("#rules-on").checked) document.querySelectorAll("[data-rule]").forEach((i) => { if (i.value !== i.dataset.def) rules[i.dataset.rule] = i.value; });
     if ($("#start-year").value && $("#start-year").value !== String((st.rules || {}).start_year ?? 2026)) rules.start_year = $("#start-year").value;
-    try { localStorage.setItem("ss_anim", $("#su-anim").checked ? "1" : "0"); } catch (e) {}
+    try { localStorage.setItem("ssb_anim", $("#su-anim").checked ? "1" : "0"); } catch (e) {}
     await api("/api/settings_set", { god: $("#su-god").checked });
     const ok = await busy("Building the world (about 2 seconds)...", () => api("/api/new", { seed: $("#seed").value, rules }));
     if (ok) { PICK_ASKED = false; location.hash = "#/world"; await refreshStatus(); await route(); }
@@ -501,8 +588,32 @@ async function viewStart() {
 }
 
 function progressRow(c) {
-  const btn = c.sim && c.done < c.total ? `<button class="mini" data-lsim="${esc(c.sim)}" title="Sim this competition to the end of its season">Sim</button>` : "";
-  return `<div class="row prg"><span class="rl">${c.key ? starBtn(c.key, !!c.fav) : ""}<span class="rt">${c.link}<div class="meta">${c.sub || ""}</div></span></span><span class="prow" style="width:150px"><span style="flex:1">${bar(c.done, c.total)}<div class="meta" style="text-align:right">${c.done}/${c.total}</div></span>${btn}</span></div>`;
+  const open = c.sim && c.done < c.total;
+  const btn = open ? `<button class="mini" data-lwk="${esc(c.sim)}" title="Sim one week of this competition">Week</button><button class="mini pri" data-lsim="${esc(c.sim)}" title="Sim this competition to the end of its season">Season</button>` : "";
+  const mark = c.kind === "league" ? (logoBox("leagues", c.name, 34) || `<span class="lph">${esc(c.name.split(" ").map((w) => w[0]).join("").slice(0, 3))}</span>`) : "";
+  return `<div class="row prg"><span class="rl">${c.key ? starBtn(c.key, !!c.fav) : ""}${mark}<span class="rt">${c.link}<div class="meta">${c.sub || ""}</div></span></span><span class="prow"><span style="flex:1;min-width:60px">${bar(c.done, c.total)}<div class="meta" style="text-align:right">${c.done}/${c.total}</div></span>${btn}</span></div>`;
+}
+// the off-season "Next up" page (mock-up F5): the stages in order, where you are, one big button for the next one
+function nextUpHTML(h) {
+  const fs = h.flow.season, ph = h.phase, at = { awards: 1, graduates: 3, transfers: 4 }[ph] ?? 1;
+  const rows = [
+    ["Season and summer", "Played", "", true],
+    ["Awards", at > 1 || hofSeenNow(h) ? "Ceremony done" : "The ceremony and the results", "#/ceremony/" + fs, at > 1 || hofSeenNow(h)],
+    ["Hall of Fame", hofSeenNow(h) ? "Ceremonies played" : "Ceremonies: world, countries and leagues", "#/hofday/" + fs, hofSeenNow(h) || at > 2],
+    ["Graduates", "Academy prospects", "#/prospects", at > 3],
+    ["Moves", "Transfers, coaches, retirements", "#/moves/" + fs, false],
+    ["Season " + h.season + " begins", h.season_label, "", false],
+  ];
+  const cur = ph === "awards" ? (hofSeenNow(h) ? 3 : 2) : ph === "graduates" ? 3 : 4;
+  const btn = ph === "awards" ? ["Continue to graduates", "graduates"] : ph === "graduates" ? ["Continue to moves", "transfers"] : ["Start season " + h.season, "done"];
+  return `<div class="dim small" style="margin-bottom:2px">Season ${fs} &middot; off-season</div><h1>Next up</h1>
+    <div class="card nu">${rows.map(([t, sub, href, done], i) => {
+      const on = i === cur, mark = done ? "&#10003;" : String(i + 1);
+      const inner = `<span class="nu-m${done ? " done" : on ? " on" : ""}">${mark}</span><span class="nu-t"><b>${t}</b><span class="dim small">${esc(sub)}</span></span>${href ? CHEV : ""}`;
+      return href ? `<a class="nu-r" href="${href}">${inner}</a>` : `<div class="nu-r">${inner}</div>`;
+    }).join("")}</div>
+    ${ph === "awards" && !hofSeenNow(h) ? `<a class="btn wide" id="nu-hof" href="#/hofday/${fs}" style="display:flex;align-items:center;justify-content:center;width:100%;min-height:52px;font-size:15px;margin-top:12px;border:1px solid #d6b04a;border-radius:12px;color:#d6b04a;text-decoration:none">Hall of Fame day</a>` : ""}
+    <button class="btn pri wide" id="nu-go" style="width:100%;min-height:52px;font-size:15px;margin-top:12px">${btn[0]}</button>`;
 }
 async function viewWorld() {
   const d = await api("/api/world");
@@ -519,8 +630,14 @@ async function viewWorld() {
   const hiddenN = conts.flatMap((x) => x.rows).filter((r) => chosen && !r.fav).length;
   const leaguesDone = d.continents.every((c) => c.leagues.every((l) => l.done >= l.total));
   const summerOn = d.summer.length > 0 && leaguesDone;          // the World Cup and friends only show once every league has finished
-  const summerCard = summerOn ? `<div class="card summer"><h3>Summer tournaments<small>every league is finished</small></h3>
-      ${d.summer.map((x) => progressRow({ sim: x.locked.length ? "" : x.id, link: `<a href="#/comp/${enc(x.id)}">${esc(x.title)}</a>`, sub: x.locked.length ? "locked: needs " + x.locked.map((m) => esc(m.title)).join(", ") : x.next ? "next: " + esc(x.next) : "finished", done: x.done, total: x.total })).join("")}</div>` : "";
+  const sumState = (x) => (x.done >= x.total ? "done" : x.locked.length ? "locked" : x.done > 0 ? "going" : "new");
+  const sumAll = d.summer.filter((x) => !x.locked.length && x.done < x.total).map((x) => x.id);
+  const summerCard = summerOn ? `<div class="dim small" style="margin-bottom:2px">Season ${STATUS.header.season} &middot; summer</div><h1 style="margin-bottom:8px">Summer tournaments</h1>
+      <div class="card sum"><div class="gold-lbl">Tournaments</div>${d.summer.map((x) => { const st = sumState(x);
+        return `<div class="sum-r"><a class="sum-l" href="#/comp/${enc(x.id)}">${compEmb(x.title, null, 34) || ""}<span class="mt"><b>${esc(x.title)}</b><span class="dim small">${st === "locked" ? "locked: needs " + x.locked.map((m) => esc(m.title)).join(", ") : st === "done" ? "Finished" : x.next ? esc(x.next) : x.done + " of " + x.total + " played"}</span></span></a>${st === "done" ? `<span class="sum-b done">Done &#10003;</span>` : st === "locked" ? "" : `<button class="sum-b" data-lwk="${esc(x.id)}">${st === "going" ? "Next game" : "Play"}</button>`}</div>`; }).join("")}</div>
+      <div class="card dim small">Same controls as any tournament: one game at a time, a whole group, or sim it to the end.</div>
+      ${sumAll.length ? `<button class="btn wide" id="sum-all" style="width:100%;min-height:50px;margin-top:10px">Sim all summer tournaments</button>` : ""}
+      <button class="btn pri wide" id="sum-next" style="width:100%;min-height:52px;font-size:15px;margin-top:10px" ${sumAll.length ? "disabled" : ""}>Continue to awards</button>` : "";
   const card = ({ c, rows }) => {
     const shown = onlyFav ? rows.filter((r) => r.fav) : rows;
     if (onlyFav && !shown.length) return "";
@@ -547,17 +664,81 @@ async function viewWorld() {
       <a class="stat" href="#/nation/${enc(q.nation.name)}"><div class="k">Strongest nation</div><div class="v">${natBadge(q.nation.name, 22)} ${esc(q.nation.name)}</div><div class="meta">rating ${q.nation.eff}</div></a>
       <a class="stat" href="#/club/${enc(q.rich.name)}"><div class="k">Richest club</div><div class="v">${esc(q.rich.name)}</div><div class="meta">${money(q.rich.budget)} yearly income</div></a>
       <a class="stat" href="#/players"><div class="k">Players</div><div class="v">${q.players.toLocaleString()}</div><div class="meta">${q.clubs} clubs &middot; ${q.nations} nations</div></a></div>` : ""}`;
-  $("#view").innerHTML = `<div class="whead"><h1>The world</h1>${chosen ? `<div class="seg" role="group"><button data-fv="all" class="${onlyFav ? "" : "on"}">All</button><button data-fv="fav" class="${onlyFav ? "on" : ""}">Favorites ${FAVS.filter((k) => !k.startsWith("nation:")).length}</button></div>` : ""}</div>
-    <div class="sub">${chosen ? "Star the competitions you care about, then flip to Favorites to hide the rest." : "Click a continent to go deeper, or use the buttons at the top to sim everything."}</div>
-    ${onlyFav ? "" : info}
-    ${strip}
-    <div class="grid">${summerCard}${conts.map(card).join("")}</div><div id="w-halls"></div>${hidden}${onlyFav ? info : ""}${hint}`;
-  worldCompCards().catch(() => {}); worldHallsCard("#w-halls").catch(() => {});
+  // ---- v16.2 scores block (matches the mock-up): followed leagues as big cards, the rest as compact rows, competitions as chips, followed nations as flags
+  const allLg = d.continents.flatMap((c) => c.leagues.map((l) => ({ ...l, conf: c.code })));
+  const isFavL = (l) => chosen && FAVS.includes("L:" + l.name);
+  const bigL = chosen ? allLg.filter(isFavL) : [];
+  const smallL = allLg.filter((l) => !isFavL(l) && (!onlyFav));
+  const mw = (l) => (l.done >= l.total ? "Finished" : "Matchweek " + (l.done + 1) + " of " + l.total);
+  const mark = (l, n) => logoBox("leagues", l.name, n) || `<span class="lph" style="width:${n}px;height:${n}px">${esc(l.name.split(" ").map((w) => w[0]).join("").slice(0, 3))}</span>`;
+  const bigCard = (l) => `<div class="lcard" style="--hh:${lhue(l.name)}"><a class="lhead" href="#/league/${enc(l.name)}">${mark(l, 38)}<span class="mt"><b>${esc(l.name)}</b><span class="dim small">${mw(l)} &middot; ${esc(l.leader)} lead</span></span>${CHEV}</a>
+    <div class="bar"><i style="width:${l.total ? Math.round(100 * l.done / l.total) : 0}%"></i></div>
+    ${l.done < l.total ? `<div class="lbtns"><button class="pill pri" data-lsim="L:${esc(l.name)}">Sim rest of league</button><button class="pill" data-lwk="L:${esc(l.name)}">Next matchweek</button></div>` : `<button class="pill wide" data-lrev="L:${esc(l.name)}">Season review</button>`}</div>`;
+  const smallRow = (l) => `<div class="srow"><a class="sl" href="#/league/${enc(l.name)}">${mark(l, 30)}<b>${esc(l.name)}</b></a><span class="dim small">${l.done >= l.total ? "Finished" : "MW " + (l.done + 1)}</span>${l.done < l.total ? `<button class="mini pri" data-lsim="L:${esc(l.name)}">Sim &#9656;</button>` : `<button class="mini" data-lrev="L:${esc(l.name)}">Review</button>`}</div>`;
+  const compChips = d.continents.flatMap((c) => c.comps.map((x) => ({ ...x, c }))).filter((x) => !onlyFav || FAVS.includes(x.kind + ":" + x.c.code));
+  const favNat = chosen ? FAVS.filter((k) => k.startsWith("nation:")).map((k) => k.slice(7)) : [];
+  // the Leagues | Competitions switch: the chosen side gets the big cards, the other side stays as compact rows
+  const SM = (() => { try { return localStorage.getItem("ssb_scoremode") === "comps" ? "comps" : "leagues"; } catch (e) { return "leagues"; } })();
+  const compsAll = d.continents.flatMap((c) => c.comps.map((x) => ({ ...x, conf: c.code }))).filter((x) => !onlyFav || FAVS.includes(x.kind + ":" + x.conf));
+  const compCard = (x) => {
+    const fin = x.done >= x.total, lock = x.locked && x.locked.length;
+    return `<div class="lcard" style="--hh:${lhue(x.title)}"><a class="lhead" href="#/comp/${enc(x.id)}">${compEmb(x.title, null, 38) || `<span class="lph" style="width:38px;height:38px">${esc(x.title.split(" ").map((w) => w[0]).join("").slice(0, 3))}</span>`}<span class="mt"><b>${esc(x.title)}</b><span class="dim small">${fin ? "Finished" : lock ? "Locked" : nextTxt(x)}</span></span>${CHEV}</a>
+      <div class="bar"><i style="width:${x.total ? Math.round(100 * x.done / x.total) : 0}%"></i></div>
+      ${fin ? `<button class="pill wide" data-lrev="${esc(x.id)}">Season review</button>` : lock ? "" : `<div class="lbtns"><button class="pill pri" data-lsim="${esc(x.id)}">Sim to the end</button><button class="pill" data-lwk="${esc(x.id)}">Sim a week</button></div>`}</div>`;
+  };
+  const natInfo = {};
+  if (SM === "comps" && favNat.length) await Promise.all(favNat.map(async (n) => { try { natInfo[n] = await api("/api/nation?name=" + enc(n)); } catch (e) { /* skip */ } }));
+  const natCard = (n) => {
+    const cf = natInfo[n] && natInfo[n].confed, cs = cf ? compsAll.concat(d.continents.flatMap((c) => c.comps.map((x) => ({ ...x, conf: c.code })))).filter((x, i, a) => a.findIndex((y) => y.id === x.id) === i && x.conf === cf && x.kind !== "cup") : [];
+    const done = cs.reduce((t, x) => t + x.done, 0), total = cs.reduce((t, x) => t + x.total, 0), left = cs.filter((x) => x.done < x.total && !(x.locked && x.locked.length)).map((x) => x.id);
+    return `<div class="lcard" style="--hh:${lhue(n)}"><a class="lhead" href="#/nation/${enc(n)}">${natBadge(n, 38)}<span class="mt"><b>${esc(n)}</b><span class="dim small">${cf ? esc(cf) + " national team competitions" : "National team"}${total ? " &middot; " + done + "/" + total + " played" : ""}</span></span>${CHEV}</a>
+      <div class="bar"><i style="width:${total ? Math.round(100 * done / total) : 0}%"></i></div>
+      ${left.length ? `<div class="lbtns"><button class="pill pri" data-nsim="${esc(left.join("|"))}">Sim to the end</button><button class="pill" data-nwk="${esc(left.join("|"))}">Sim a week</button></div>` : `<div class="dim small" style="padding:6px 2px">${total ? "Nothing left to play this season." : "No competitions this season."}</div>`}</div>`;
+  };
+  const modeSw = `<div class="seg scmode" role="group" aria-label="Show"><button data-sm="leagues" class="${SM === "leagues" ? "on" : ""}">Leagues</button><button data-sm="comps" class="${SM === "comps" ? "on" : ""}">Competitions</button></div>`;
+  const compChipsHTML = `<div class="chiprow">${compChips.map((x) => `<a class="cchip" href="#/comp/${enc(x.id)}">${compEmb(x.title, null, 28, null, null) || ""}<span>${esc(x.title)}</span></a>`).join("")}</div>`;
+  const scores = SM === "leagues" ? `${modeSw}<div class="sec-h">LEAGUES${chosen ? `<button class="link" id="edit-favs2">Edit</button>` : ""}</div>
+    ${bigL.map(bigCard).join("")}
+    ${smallL.length ? `<div class="card srows">${smallL.slice(0, bigL.length ? 12 : 8).map(smallRow).join("")}${smallL.length > (bigL.length ? 12 : 8) ? `<a class="more" href="#/leagues"><span>All ${allLg.length} leagues</span><span>&rsaquo;</span></a>` : ""}</div>` : ""}
+    ${compChips.length || favNat.length ? `<div class="sec-h">COMPETITIONS AND NATIONS</div>
+    ${compChipsHTML}
+    ${favNat.length ? `<div class="flags">${favNat.map((n) => `<a href="#/nation/${enc(n)}"><span class="fb">${natBadge(n, 30)}</span><span>${esc(n)}</span></a>`).join("")}</div>` : ""}` : ""}`
+    : `${modeSw}<div class="sec-h">COMPETITIONS${chosen ? `<button class="link" id="edit-favs2">Edit</button>` : ""}</div>
+    ${compsAll.length ? compsAll.map(compCard).join("") : `<div class="dim small" style="padding:6px 2px">No competitions to show.</div>`}
+    ${favNat.length ? `<div class="sec-h">NATIONS</div>${favNat.map(natCard).join("")}` : ""}
+    <div class="sec-h">LEAGUES</div>
+    <div class="chiprow">${(allLg.filter((l) => !onlyFav || isFavL(l)).length ? allLg.filter((l) => !onlyFav || isFavL(l)) : allLg.slice(0, 8)).map((l) => `<a class="cchip" href="#/league/${enc(l.name)}">${logoBox("leagues", l.name, 28) || `<span class="lph" style="width:28px;height:28px">${esc(l.name.split(" ").map((w) => w[0]).join("").slice(0, 3))}</span>`}<span>${esc(l.name)}</span></a>`).join("")}<a class="cchip" href="#/leagues"><span>All ${allLg.length} leagues &rsaquo;</span></a></div>`;
+  const inFlow = !!STATUS.header.flow && ["awards", "transfers", "graduates"].includes(STATUS.header.phase);
+  const wrapIt = inFlow || summerOn;
+  $("#view").innerHTML = (wrapIt ? (inFlow ? nextUpHTML(STATUS.header) : summerCard) + `<details class="acc2" style="margin-top:14px"><summary><b>Season ${STATUS.header.season} scores</b></summary>` : "") + `<div class="dim small" style="margin-bottom:2px">${seasonLine(STATUS.header)}</div><div class="whead whero"><h1>Scores</h1>${chosen ? `<div class="seg" role="group"><button data-fv="all" class="${onlyFav ? "" : "on"}">All</button><button data-fv="fav" class="${onlyFav ? "on" : ""}">Favorites ${FAVS.filter((k) => !k.startsWith("nation:")).length}</button></div>` : ""}</div>
+    ${scores}
+    ${hint}
+    ${hidden}
+    <details class="acc2"><summary>By continent and everything else</summary>${strip}<div class="grid">${conts.map(card).join("")}</div>${info}</details>${wrapIt ? "</details>" : ""}`;
+  if ($("#sum-all")) $("#sum-all").onclick = async () => {
+    for (const k in HOLD) delete HOLD[k];
+    let fin = [];
+    await busy("Simulating...", async () => {
+      for (let i = 0; i < 5; i++) {                       // a tournament can unlock the next one (play-off -> World Cup), so keep going
+        const w = await api("/api/world"), ids = w.summer.filter((x) => x.total > 0 && !x.locked.length && x.done < x.total).map((x) => x.id);
+        if (!ids.length) break;
+        const r = await api("/api/sim", { scope: "ids", ids, to_end: true }); if (r && r.finished) fin = fin.concat(r.finished);
+      }
+    });
+    await afterSim(); await playFinished(fin);
+  };
+  if ($("#sum-next")) $("#sum-next").onclick = () => rollover();
+  if ($("#nu-go")) { const ph = STATUS.header.phase; $("#nu-go").onclick = () => flowStep(ph === "awards" ? "graduates" : ph === "graduates" ? "transfers" : "done"); }
+  worldCompCards().catch(() => {});
   const ids = (code) => { const c = d.continents.find((x) => x.code === code); return [...c.leagues.map((l) => "L:" + l.name), ...c.comps.map((x) => x.id)]; };
+  document.querySelectorAll("[data-sm]").forEach((b) => b.onclick = () => { try { localStorage.setItem("ssb_scoremode", b.dataset.sm); } catch (e) {} route(); });
+  document.querySelectorAll("[data-nwk]").forEach((b) => b.onclick = () => simIds(b.dataset.nwk.split("|"), { weeks: 1 }));
+  document.querySelectorAll("[data-nsim]").forEach((b) => b.onclick = () => simIds(b.dataset.nsim.split("|"), { to_end: true }));
+  document.querySelectorAll("[data-lwk]").forEach((b) => b.onclick = () => simIds([b.dataset.lwk], { weeks: 1 }));
   document.querySelectorAll("[data-lsim]").forEach((b) => b.onclick = () => simIds([b.dataset.lsim], { to_end: true }));
   document.querySelectorAll("[data-sim]").forEach((b) => b.onclick = () => simIds(ids(b.dataset.sim), { weeks: 1 }));
   document.querySelectorAll("[data-end]").forEach((b) => b.onclick = () => simIds(ids(b.dataset.end), { to_end: true }));
-  document.querySelectorAll("[data-fv]").forEach((b) => b.onclick = () => { try { localStorage.setItem("ss_favview", b.dataset.fv); } catch (e) {} route(); });
+  document.querySelectorAll("[data-fv]").forEach((b) => b.onclick = () => { try { localStorage.setItem("ssb_favview", b.dataset.fv); } catch (e) {} route(); });
   document.querySelectorAll("[data-fav]").forEach((b) => b.onclick = async () => {
     const k = b.dataset.fav, y = window.scrollY, cur = new Set(FAVS || []);
     if (cur.has(k)) cur.delete(k); else cur.add(k);
@@ -566,6 +747,7 @@ async function viewWorld() {
   });
   document.querySelectorAll(".sim-others").forEach((b) => b.onclick = () => simOthersDialog(others, d));
   if ($("#edit-favs")) $("#edit-favs").onclick = () => favPicker(d);
+  if ($("#edit-favs2")) $("#edit-favs2").onclick = () => favPicker(d);
   if (!chosen && !PICK_ASKED) { PICK_ASKED = true; favPicker(d); }
 }
 
@@ -591,15 +773,16 @@ function financeTab(c, sel) {
   L.forEach((r, i) => { const q = L[i - 1]; if (!q) return; if (r.acad != null && q.acad != null && r.acad - q.acad >= 0.4) surplus.push([r.season, `Academy level ${Math.round(q.acad)} to ${Math.round(r.acad)}`]); if (r.cap != null && q.cap != null && r.cap > q.cap) surplus.push([r.season, `Stadium expansion +${Math.round((r.cap - q.cap) * 10) / 10}k seats`]); });
   return `<div class="cols"><div>
     <div class="card"><h3>Cash <small>${c.finance.debt > 0 ? '<span class="tag red">in debt</span>' : ""}</small></h3>
-      <div style="display:flex;justify-content:space-between;align-items:flex-end"><span class="bigv">${money(c.funds)}</span><span class="meta">${prev ? moneyS(row.cash - prev.cash) + " vs last season" : ""}</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-end"><span class="bigv">${money(c.funds)}</span><span class="${prev ? (row.cash - prev.cash >= 0 ? "pts" : "neg") : "meta"} small">${prev ? moneyS(row.cash - prev.cash) + " vs last season" : ""}</span></div>
       <div class="mbar" style="margin:8px 0 4px"><i style="width:${Math.min(100, c.funds / Math.max(1e-9, f.comfort) * 100)}%"></i></div>
       <div class="meta">Comfort level: 2x yearly income = ${money(f.comfort)}. Cash above it is invested in the academy and stadium. ${f.debt > 0 ? "Debt: " + money(f.debt) + "." : ""}</div></div>
     <div class="card" style="margin-top:14px"><h3>Season ${row.season} ledger <small><select id="fin-s">${L.map((r) => `<option ${r.season === row.season ? "selected" : ""}>${r.season}</option>`).join("")}</select></small></h3>
-      ${LROWS.filter(([, k]) => row[k] || k !== "owner").map(([t, k]) => `<div class="row"><span>${t}</span><span class="pts">${moneyS(row[k])}</span></div>`).join("")}
-      <div class="row" style="font-weight:700"><span>Income</span><span>${money(row.income)}</span></div>
-      ${CROWS.map(([t, k]) => `<div class="row"><span>${t}</span><span class="${row[k] ? "neg" : ""}">${row[k] ? "-" + money(row[k]) : money(0)}</span></div>`).join("")}
-      <div class="row" style="font-weight:700"><span>Costs</span><span>-${money(costs)}</span></div>
+      <div class="row" style="font-weight:700"><span>Income</span><span class="pts">${money(row.income)}</span></div>
+      <div class="row" style="font-weight:700"><span>Costs</span><span class="neg">-${money(costs)}</span></div>
       <div class="row" style="font-weight:700"><span>Profit</span><span class="${row.profit >= 0 ? "pts" : "neg"}">${moneyS(row.profit)}</span></div>
+      <details class="fl-det"><summary>Full ledger: TV, gate, prize, sponsors, wages, running costs</summary>
+      ${LROWS.filter(([, k]) => row[k] || k !== "owner").map(([t, k]) => `<div class="row"><span>${t}</span><span class="pts">${moneyS(row[k])}</span></div>`).join("")}
+      ${CROWS.map(([t, k]) => `<div class="row"><span>${t}</span><span class="${row[k] ? "neg" : ""}">${row[k] ? "-" + money(row[k]) : money(0)}</span></div>`).join("")}</details>
       <div class="meta" style="margin-top:6px">Paid out to the transfer budget after the season: ${money(row.payout)}. Prize money from the Club World Cup arrives every fourth season; the yearly income counts a quarter of it each year.</div></div></div>
     <div><div class="card"><h3>Wage bill vs yearly income</h3>
       <div style="display:flex;justify-content:space-between"><span class="bigv" style="${over ? "color:var(--red)" : ""}">${Math.round(f.wage_ratio * 100)}%</span><span class="meta">limit ${Math.round(f.wage_cap * 100)}%</span></div>
@@ -642,6 +825,14 @@ const CV = { tab: "ov", pos: "ALL", sort: "pos", u23: false };
 const ordN = (n) => `${n}${["th", "st", "nd", "rd"][n % 100 >= 11 && n % 100 <= 13 ? 0 : n % 10] || "th"}`;
 const POS_ORDER = ["GK", "DEF", "MID", "FWD"], POS_NAME = { GK: "Goalkeepers", DEF: "Defenders", MID: "Midfielders", FWD: "Forwards" };
 const SQ_SORTS = [["pos", "Position"], ["ovr", "Overall"], ["pot", "Potential"], ["age", "Age"], ["wage", "Wage"], ["contract", "Contract"], ["value", "Value"]];
+
+const LHUE = { "Premier League": 275, "La Liga": 355, "Bundesliga": 8, "Serie A": 215, "Ligue 1": 225, "Eredivisie": 22, "Primeira Liga": 150, "Liga MX": 140, "MLS": 215, "Saudi Pro League": 135, "J1 League": 350, "UEFA Champions League": 232, "Copa Libertadores": 45, "World Cup": 330, "Club World Cup": 40 };
+const lhue = (n) => (LHUE[n] != null ? LHUE[n] : _hash(n) % 360);
+// ---- v16.2: shared hero (team-coloured gradient, faded watermark of the logo, same on club, league and nation pages)
+function heroBlock(seed, markBig, markSmall, h1, sub, right) {
+  const hue = LHUE[seed] != null ? LHUE[seed] : (typeof _hash === "function" ? _hash(seed) : 120) % 360;
+  return `<div class="hero2 hasbk" style="--hh:${hue}"><div class="wm" aria-hidden="true">${markBig}</div><div class="htop"><button class="hbk" type="button" onclick="history.back()" aria-label="Back">&lsaquo;</button>${right || ""}</div><div class="hrow">${markSmall}<div><h1>${h1}</h1>${sub}</div></div></div>`;
+}
 async function viewClub(name) {
   const [c] = await Promise.all([api("/api/club?name=" + enc(name)), loadWcHosts()]);
   const co = c.coach, key = c.squad.slice().sort((a, b) => b.ovr - a.ovr).slice(0, 5);
@@ -676,11 +867,13 @@ async function viewClub(name) {
       <select class="sel" id="sq-u" aria-label="Age filter"><option value="0" ${CV.u23 ? "" : "selected"}>All ages</option><option value="1" ${CV.u23 ? "selected" : ""}>Under 23 only</option></select></div>
       <div class="cols"><span>Player</span><span>OVR</span><span>POT</span><span>Contr.</span></div>${body || `<div class="dim small" style="padding:14px 0">Nobody matches.</div>`}`;
   };
-  $("#view").innerHTML = `<div class="v2"><div class="crumbs dim small" style="min-height:30px;display:flex;align-items:center;flex-wrap:wrap"><a href="#/world">World</a>&nbsp;›&nbsp;<a href="#/continent/${c.confed}">${esc(c.confed)}</a>&nbsp;›&nbsp;${leagueLink(c.league)}</div>
-    <div style="display:flex;align-items:center;gap:12px">${crest(c.name, 52)}<div><h1>${esc(c.name)}</h1>${c.cwc.length ? `<div class="sub tsline">${titleStars(c.cwc.length, 13, "Club World Cup title")}<span>Club World Cup</span></div>` : ""}<div class="sub">${leagueLink(c.league)} · last finish ${c.last_finish ? ordN(c.last_finish) : "-"}</div></div></div>
+  $("#view").innerHTML = `<div class="v2">
+    ${heroBlock(c.name, crest(c.name, 220), crest(c.name, 56), esc(c.name), `${c.cwc.length ? `<div class="sub tsline">${titleStars(c.cwc.length, 13, "Club World Cup title")}<span>Club World Cup</span></div>` : ""}<div class="sub">${leagueLink(c.league)} · last finish ${c.last_finish ? ordN(c.last_finish) : "-"}</div>`, `<button class="fpill${FAVC && FAVC.includes(c.name) ? " on" : ""}" id="cl-follow" type="button">${FAVC && FAVC.includes(c.name) ? "&#9733; Following" : "&#9734; Follow"}</button>`)}
     <div class="stat4"><div><b>${c.ovr}</b><span>TEAM OVR</span></div><div><b>${money(c.budget)}</b><span>INCOME</span></div><div><b>${money(c.funds)}</b><span>FUNDS</span></div><div><b>${c.squad_size}</b><span>SQUAD</span></div></div>
     <nav class="tabs2" id="ct-tabs" aria-label="Club sections">${tabs.map(([k, t]) => `<button data-ct="${k}" class="${k === CV.tab ? "on" : ""}">${t}</button>`).join("")}</nav></div>
-    <div class="v2" id="ct-ov">${overview}</div><div class="v2" id="ct-sq" hidden></div><div id="ct-fin" hidden></div><div id="ct-acad" hidden></div><div id="ct-stad" hidden></div><div class="v2" id="ct-hall" hidden></div><div class="v2" id="ct-hon" hidden>${trophyRoom(c.trophies, "Trophy room")}</div>`;
+    <div class="v2" id="ct-ov">${overview}</div><div class="v2" id="ct-sq" hidden></div><div id="ct-fin" class="gh" hidden></div><div id="ct-acad" class="gh" hidden></div><div id="ct-stad" class="gh" hidden></div><div class="v2" id="ct-hall" hidden></div><div class="v2" id="ct-hon" hidden>${trophyRoom(c.trophies, "Trophy room")}</div>`;
+  if (FAVC === null) loadFavClubs().then(() => { const b = $("#cl-follow"); if (b && FAVC.includes(c.name)) { b.classList.add("on"); b.innerHTML = "&#9733; Following"; } });
+  const fb = $("#cl-follow"); if (fb) fb.onclick = async () => { const cur = new Set(FAVC || []); if (cur.has(c.name)) cur.delete(c.name); else cur.add(c.name); try { await saveFavClubs([...cur]); } catch (e) { toast(e.message); return; } const on = cur.has(c.name); fb.classList.toggle("on", on); fb.innerHTML = on ? "&#9733; Following" : "&#9734; Follow"; };
   const built = {};
   const drawSquad = () => {
     $("#ct-sq").innerHTML = squad();
@@ -707,7 +900,7 @@ async function viewClub(name) {
 
 // ---- trophy rooms ------------------------------------------------------------------------------------
 // World Cup editions for the trophy rooms: season -> host nation (from the World Cup history), season -> the year it was played
-let WC_HOSTS = {};
+let WC_HOSTS = {}, WC_KEY = null;
 async function loadWcHosts() {
   try { const h = await api("/api/comphist?key=wc"); WC_HOSTS = {}; (h.hosts || []).forEach((x) => { WC_HOSTS[x.season] = x.host; }); } catch (e) { /* no history yet */ }
 }
@@ -728,7 +921,7 @@ function titleStrip(t) {
 function trophyRoom(list, title) {
   if (!list || !list.length) return `<div class="card"><h3>${title || "Trophy room"}</h3><div class="meta">No trophies yet.</div></div>`;
   const groups = [["world", "World"], ["continental", "Continental"], ["domestic", "Domestic"], ["individual", "Individual awards"]];
-  const tile = (t) => { const strip = titleStrip(t); return `<div class="tro ${t.count ? "" : "none"}${strip ? " wide" : ""}">${emblem(t.emblem, 54)}<div class="tro-info"><b>${esc(t.title)}</b>
+  const tile = (t) => { const strip = titleStrip(t); return `<div class="tro ${t.count ? "" : "none"}${strip ? " wide" : ""}">${compEmb(t.title, t.emblem, 54)}<div class="tro-info"><b>${esc(t.title)}</b>
     <div class="tro-n">${t.count ? "&times;" + t.count : "<span class='meta'>runner-up only</span>"}</div>
     <div class="meta">${t.count ? "S" + t.seasons.join(", S") : ""}${t.runner_up.length ? (t.count ? " &middot; " : "") + "2nd: S" + t.runner_up.join(", S") : ""}</div></div>${strip}</div>`; };
   return `<div class="card"><h3>${title || "Trophy room"}</h3>${groups.map(([g, name]) => {
@@ -951,7 +1144,7 @@ async function viewComp(id) {
       <div id="tab-fld" hidden><div class="scroll"><table><thead><tr><th class="l">Club</th><th class="l">League</th><th>OVR</th></tr></thead><tbody>${x.field.map((f) => `<tr><td class="l">${clubLink(f.club)}</td><td class="l meta">${esc(f.league)}</td><td>${ovr(f.ovr)}</td></tr>`).join("")}</tbody></table></div></div>` : ""}`;
   }
   const finished = p.done >= p.total;
-  $("#view").innerHTML = `<div class="crumbs"><a href="#/world">World</a> / ${esc(x.title)}</div><h1>${withEmb(x.emblem, 44, esc(x.title), x.title, editionYear({ current: true }), x.host)}</h1>${liveTabs(id)}
+  $("#view").innerHTML = `<div class="v2">${heroBlock(x.title, compEmb(x.title, x.emblem, 220), compEmb(x.title, x.emblem, 52, editionYear({ current: true }), x.host), esc(x.title), `<div class="sub">${p.done}/${p.total} played${p.next ? " · next: " + esc(p.next) : finished0 ? " · finished" : ""}</div>`)}${finished ? `<div style="margin:12px 0 0"><button class="pill" data-lrev="${esc(id)}">Season review</button></div>` : ""}</div>${liveTabs(id)}
     ${locked ? `<div class="card" style="margin-bottom:14px"><span class="tag red">LOCKED</span> needs ${p.locked.map((m) => `<a href="#/comp/${enc(m.id)}">${esc(m.title)}</a>`).join(", ")} to finish first.
       <p style="margin:10px 0 0"><button id="k-up" class="pri">Sim up to here</button> <span class="meta">plays only what it needs, then stops so you can play it your way.</span></p>
       <p style="margin:8px 0 0"><button id="k-pre">Sim everything it needs, then this to the end</button></p></div>`
@@ -1085,8 +1278,8 @@ async function viewNation(name) {
       <div class="card"><h3>National coach</h3><div class="row"><span>${coachLink(c.cid, c.name)}</span><span class="dim">prestige ${c.prestige} · ${esc(c.personality)} / ${esc(c.skill)}</span></div></div>`;
   };
   const draw = () => {
-    $("#view").innerHTML = `<div class="v2"><a class="crumb" href="#/nations">‹ Nations</a>
-      <div style="display:flex;align-items:center;gap:12px"><span class="sbox">${titleStars(n.titles, 13, "World Cup title")}${natBadge(n.name, 52)}</span><div><h1>${esc(n.name)}</h1><div class="sub">${esc(n.confed)}${rk ? " · ranked " + rk + sfx(rk) + " in the world" : ""}</div></div></div>
+    $("#view").innerHTML = `<div class="v2">
+      ${heroBlock(n.name, natBadge(n.name, 200), `<span class="sbox">${titleStars(n.titles, 13, "World Cup title")}${natBadge(n.name, 52)}</span>`, esc(n.name), `<div class="sub">${esc(n.confed)}${rk ? " · ranked " + rk + sfx(rk) + " in the world" : ""}</div>`)}
       <div class="stat4"><div><b class="pos">${n.rating}</b><span>RATING</span></div><div><b>${n.talent}</b><span>TALENT</span></div><div><b>${n.pros}</b><span>PROS</span></div><div><b>${n.titles}</b><span>WC TITLES</span></div></div>
       <nav class="tabs2" aria-label="Nation sections">${tabs.map(([k, t]) => `<button data-nt="${k}" class="${NV.tab === k ? "on" : ""}">${t}</button>`).join("")}</nav>
       ${body()}</div>`;
@@ -1149,17 +1342,20 @@ const PV = { scope: "grads", league: "" };
 async function viewProspects() {
   const q = "scope=" + PV.scope + (PV.league ? "&league=" + enc(PV.league) : "");
   const d = await api("/api/prospects?" + q);
-  const row = (p, i) => `<div class="pr"><span class="rk ${["g", "s", "b"][i] || ""}">${i + 1}</span><span class="p ${esc(p.pos)}">${esc(p.pos)}</span><div class="nm"><b>${playerLink(p)}</b><span>${p.age} \u00b7 ${p.club ? clubLink(p.club) : "no club yet"}${p.grad ? " \u00b7 academy" : ""}</span></div><span class="ovr m">${p.ovr}</span><span class="pt">${p.pot}</span></div>`;
-  const h = STATUS && STATUS.header, off = h && h.flow;
-  $("#view").innerHTML = `<div class="v2"><div class="hd"><div><h1>Top graduates</h1><div class="sub">${PV.scope === "grads" ? "Latest academy graduates" : "Every player aged 19 or under"}, best potential first</div></div></div>
-    <nav class="chips" aria-label="Which players">${[["grads", "Academy graduates"], ["all", "All young talent"]].map(([k, t]) => `<button data-ps="${k}" class="${PV.scope === k ? "on" : ""}">${t}</button>`).join("")}</nav>
-    <select class="sel" id="pv-l" aria-label="League" style="width:100%"><option value="">All leagues</option>${leagueOpts(d.leagues, PV.league)}</select>
-    <div class="cols"><span>Player</span><span>OVR</span><span>POT</span></div>
-    <div class="card" style="margin-top:6px;padding-top:2px;padding-bottom:2px">${d.rows.length ? d.rows.map(row).join("") : `<div class="dim small" style="padding:14px 0">Nobody here yet. Graduates appear after the first season.</div>`}</div>
-    <div class="dim small" style="margin-top:8px">${d.total} players match. POT is the most a player can reach.</div>${off ? `<div style="margin-top:12px"><button class="btn pri" id="pv-next" style="width:100%">${h.phase === "graduates" ? "Start season " + h.season : "Continue"}</button></div>` : ""}</div>`;
-  document.querySelectorAll("[data-ps]").forEach((b) => (b.onclick = () => { PV.scope = b.dataset.ps; viewProspects(); }));
-  $("#pv-l").onchange = (e) => { PV.league = e.target.value; viewProspects(); };
-  const nx = $("#pv-next"); if (nx) nx.onclick = () => flowStep(h.phase === "graduates" ? "done" : "graduates");
+  const h = STATUS && STATUS.header, off = h && h.flow, SHOW = PV.all ? 40 : 10;
+  const row = (p, i) => `<div class="gr-r"><span class="gr-n">${i + 1}</span><span class="p ${esc(p.pos)}">${esc(p.pos)}</span><div class="nm"><b>${playerLink(p)}</b><span>${p.age} &middot; ${p.club ? clubLink(p.club) : "no club yet"}${p.grad && PV.scope !== "grads" ? " &middot; academy" : ""}</span></div><span class="gr-o">${p.ovr} / <b>${p.pot}</b></span></div>`;
+  const hi = d.rows.filter((p) => p.pot >= 80).length;
+  $("#view").innerHTML = `<div class="v2 gh"><div class="hd"><div><h1>Graduates</h1><div class="sub">${PV.scope === "grads" ? "Latest academy graduates" : "Every player aged 19 or under"}</div></div></div>
+    <div class="stat3"><div><b>${d.total}</b><span>${PV.scope === "grads" ? "GRADUATES" : "YOUNG PLAYERS"}</span></div><div><b>${hi}${hi >= 40 ? "+" : ""}</b><span>80+ POTENTIAL</span></div><div><b>${d.rows.length ? d.rows[0].pot : "-"}</b><span>BEST POTENTIAL</span></div></div>
+    <nav class="chips gr-chips" aria-label="Which players">${[["grads", "Academy graduates"], ["all", "All 19 and under"]].map(([k, t]) => `<button data-ps="${k}" class="${PV.scope === k ? "on" : ""}">${t}</button>`).join("")}
+      <select class="sel" id="pv-l" aria-label="League"><option value="">All</option>${leagueOpts(d.leagues, PV.league)}</select></nav>
+    <div class="card gr-card"><h3>Top by potential &middot; OVR / potential</h3>${d.rows.length ? d.rows.slice(0, SHOW).map(row).join("") : `<div class="dim small" style="padding:14px 0">Nobody here yet. Graduates appear after the first season.</div>`}
+      ${d.rows.length > 10 && !PV.all ? `<button class="linkbtn gr-more" id="pv-more">Show ${Math.min(40, d.rows.length) - 10} more</button>` : ""}</div>
+    ${off ? `<div style="margin-top:12px"><button class="btn pri" id="pv-next" style="width:100%">${h.phase === "graduates" ? "Continue to moves" : "Continue"}</button></div>` : ""}</div>`;
+  document.querySelectorAll("[data-ps]").forEach((b) => (b.onclick = () => { PV.scope = b.dataset.ps; PV.all = false; viewProspects(); }));
+  $("#pv-l").onchange = (e) => { PV.league = e.target.value; PV.all = false; viewProspects(); };
+  const mo = $("#pv-more"); if (mo) mo.onclick = () => { PV.all = true; viewProspects(); };
+  const nx = $("#pv-next"); if (nx) nx.onclick = () => flowStep(h.phase === "graduates" ? "transfers" : "graduates");
 }
 // ---------------------------------------------------------------- awards (v15.1)
 // Results first: #/ceremony/<season> (the whole season at a glance), /ballon (top ten and votes), /team (Team of the Year and cup awards),
@@ -1193,6 +1389,10 @@ async function viewCeremony(season, sub) {
   $("#view").innerHTML = `<div class="v2">${html}</div>`;
   const sel = $("#aw-season"); if (sel) sel.onchange = (e) => (location.hash = "#/ceremony/" + e.target.value + (sub ? "/" + sub : ""));
   document.querySelectorAll("#view [data-go]").forEach((b) => (b.onclick = () => { document.getElementById(b.dataset.go).scrollIntoView({ behavior: "smooth", block: "start" }); document.querySelectorAll("#view .chips [data-go]").forEach((x) => x.classList.toggle("on", x === b)); }));
+  if (!sub && $("#aw-prev")) {
+    awPrevious(d);
+    document.querySelectorAll("#view [data-awh]").forEach((b) => (b.onclick = () => { AWH = b.dataset.awh; document.querySelectorAll("#view [data-awh]").forEach((x) => x.classList.toggle("on", x === b)); awPrevious(d); }));
+  }
   document.querySelectorAll("#view [data-cg]").forEach((b) => (b.onclick = () => { AWCG = b.dataset.cg; viewCeremony(season, sub); }));
 }
 let AWCG = "club";
@@ -1200,12 +1400,34 @@ let AWCG = "club";
 function awGate(d) {
   const S = d.season;
   $("#view").innerHTML = `<div class="v2"><div class="hd"><div><h1>Season ${S} awards</h1><div class="sub">${esc(d.season_label)}</div></div></div>
-    <div class="card" style="margin-top:16px;text-align:center;padding:22px 14px">
-      <div class="eyebrow gold">The season is over</div>
-      <div style="font-size:18px;font-weight:700;margin:8px 0 4px">Ballon d'Or, Golden Boot, Young Player, Coach and more</div>
-      <div class="dim small">Watch them revealed one at a time, or skip and see every winner on one page.</div>
-      <div style="display:grid;gap:10px;margin-top:18px"><a class="btn pri" href="#/ceremony/${S}/watch" style="min-height:52px;font-size:15px">Watch the ceremony</a><a class="btn" href="#/ceremony/${S}" style="min-height:52px;font-size:15px">Skip to results</a></div></div>
-    <a class="more" href="#/hofday/${S}"><span>World Hall of Fame induction day</span><span>&rsaquo;</span></a></div>`;
+    <div class="stage"><div style="font-size:34px;line-height:1">&#127942;</div>
+      <div style="font-size:20px;font-weight:800;margin:8px 0 12px">The season is over</div>
+      <div class="pillrow">${["Ballon d'Or", "Golden Boot", "Young player", "Coach", "Team of the Year"].map((t) => `<span>${t}</span>`).join("")}</div></div>
+    <div style="display:grid;gap:10px;margin-top:14px"><a class="btn pri" href="#/ceremony/${S}/watch" style="min-height:54px;font-size:16px;border-radius:99px">Watch the ceremony</a><a class="btn" href="#/ceremony/${S}" style="min-height:54px;font-size:16px;border-radius:99px">Skip to results</a></div>
+    <a class="more" data-hgo="W||bal"><span>Hall of Fame: check the candidates</span><span>&rsaquo;</span></a></div>`;
+}
+const AWH_KINDS = [["ballon", "Ballon d'Or"], ["boot", "Golden Boot"], ["young", "Young player"], ["coach", "Coach"]];
+let AWH = "ballon", AWH_CACHE = {};
+async function awPrevious(d) {
+  const box = $("#aw-prev-b"); if (!box) return;
+  const seasons = d.seasons.slice().reverse().slice(0, 15);
+  const rows = await Promise.all(seasons.map(async (S) => {
+    if (!AWH_CACHE[S]) { try { AWH_CACHE[S] = (await api("/api/awards?season=" + S)).awards; } catch (e) { AWH_CACHE[S] = null; } }
+    return [S, AWH_CACHE[S]];
+  }));
+  if (!$("#aw-prev-b")) return;
+  const line = ([S, a]) => {
+    const x = a && a[AWH] && a[AWH][0]; if (!x) return "";
+    const who = AWH === "coach" ? coachLink(x.cid, x.name) : playerLink(x);
+    const extra = AWH === "boot" ? `${x.goals} goals` : AWH === "coach" ? esc(x.club || x.nation || "") : esc(x.club || "");
+    return `<div class="row"><span class="l"><span class="rk b">S${S}</span><span>${who}</span></span><span class="dim small">${extra}</span></div>`;
+  };
+  // most successful: award wins per name across every season loaded
+  const cnt = {};
+  rows.forEach(([S, a]) => { const x = a && a[AWH] && a[AWH][0]; if (x) { const k = x.name; (cnt[k] = cnt[k] || { x, n: 0 }).n++; } });
+  const top = Object.values(cnt).sort((p, q) => q.n - p.n).filter((e) => e.n > 1).slice(0, 3);
+  const most = top.length ? `<div class="eyebrow gold" style="margin:6px 0 2px">Most wins</div>${top.map((e) => `<div class="row"><span>${AWH === "coach" ? coachLink(e.x.cid, e.x.name) : playerLink(e.x)}</span><b class="gold">${e.n}</b></div>`).join("")}<div class="eyebrow" style="margin:10px 0 2px">By season</div>` : "";
+  box.className = ""; box.innerHTML = most + (rows.map(line).join("") || `<div class="dim small">No winners yet.</div>`);
 }
 function awResults(d) {
   const a = d.awards, b = a.ballon, w = b[0], bt = a.boot[0], yg = a.young[0], co = a.coach[0];
@@ -1216,8 +1438,8 @@ function awResults(d) {
   const nComps = Object.keys(a.comps || {}).length;
   return `
     <div class="hd"><div><h1>Awards</h1><div class="sub">Season ${S} (${esc(d.season_label)}) · ${a.voters} voters</div></div>${awSelect(d)}</div>
-    <section id="aw-hof" class="card hofcta" style="margin-top:4px"><h3>World Hall of Fame <small>induction day</small></h3><div class="dim small">The world votes on the players and coaches whose time has come.</div>
-      <div class="hofcta-b"><a class="btn pri" href="#/hofday/${S}/watch">Watch the vote</a><a class="btn" href="#/hofday/${S}">Results</a></div></section>
+    <section id="aw-hof" class="card hofcta" style="margin-top:4px"><h3>Hall of Fame <small>on the ballot</small></h3><div class="dim small">The ceremonies are played on Hall of Fame day, with the world.</div>
+      <div class="hofcta-b"><a class="btn pri" href="#/hofday/${S}">Hall of Fame day</a><a class="btn" href="#/hof" data-hgo="W||bal">Check the candidates</a></div></section>
     <nav class="chips sticky" aria-label="Jump to an award"><button class="on" data-go="aw-ballon">Ballon d'Or</button><button data-go="aw-boot">Golden Boot</button><button data-go="aw-young">Young player</button><button data-go="aw-coach">Coach</button><button data-go="aw-team">Team of the Year</button><button data-go="aw-cups">Cups</button></nav>
     <section id="aw-ballon" class="card hero" style="margin-top:4px">
       <div class="eyebrow gold">Ballon d'Or</div>
@@ -1239,6 +1461,11 @@ function awResults(d) {
       ${["FWD", "MID", "DEF", "GK"].map((pos) => `<div class="row"><span class="l"><span class="p ${pos}">${pos}</span><span>${line(pos).map((p) => playerLink(p, surname(p.name))).join(" · ")}</span></span></div>`).join("")}
       <a class="more" href="#/ceremony/${S}/team"><span>See it on the pitch</span><span>&rsaquo;</span></a>
     </section>
+    <section id="aw-prev" class="card"><h3>Previous winners <small>every season</small></h3>
+      <nav class="chips" aria-label="Award">${AWH_KINDS.map(([k, t]) => `<button data-awh="${k}" class="${k === AWH ? "on" : ""}">${t}</button>`).join("")}</nav>
+      <div id="aw-prev-b" class="dim small" style="padding:8px 0">Loading...</div></section>
+    <section id="aw-more" class="card"><h3>More history</h3>
+      ${[["World Cup winners", "#/trophies/winners/wc"], ["Club World Cup winners", "#/trophies/winners/cwc"], ["Most successful clubs", "#/trophies/clubs"], ["League records", "#/records"]].map(([t, h]) => `<a class="more" href="${h}"><span>${t}</span><span>&rsaquo;</span></a>`).join("")}</section>
     <section id="aw-cups" class="card"><h3>Cup awards <small>MVPs feed the Ballon d'Or</small></h3>
       ${cupsShow.map((c) => `<details class="acc"><summary><span>${esc(c.name)}</span><span class="dim">${c.winner ? esc(c.winner) : ""}</span></summary><div class="b">${awCompBlock(c)}</div></details>`).join("")}
       <a class="more" href="#/ceremony/${S}/team"><span>All ${nComps} competitions</span><span>&rsaquo;</span></a>
@@ -1303,28 +1530,44 @@ function awWatch(d) {
   };
   draw();
 }
+let PRES = { f: "all", lg: "" };
+const trophySw = (on) => `<div class="pr-sw"><button data-trsw="winners" class="${on === "winners" ? "on" : ""}">Winners</button><button data-trsw="clubs" class="${on === "clubs" ? "on" : ""}">Clubs</button></div>`;
+const wireTrophySw = () => document.querySelectorAll("[data-trsw]").forEach((b) => (b.onclick = () => { location.hash = b.dataset.trsw === "winners" ? "#/trophies" : "#/trophies/clubs"; }));
+async function viewPrestige() {
+  const h = await api("/api/hof_clubs");
+  const followed = (c) => !!(FAVS && FAVS.includes("L:" + c.league));
+  const leagues = [...new Set(h.clubs.map((c) => c.league))].sort();
+  if (PRES.f === "lg" && !leagues.includes(PRES.lg)) PRES.lg = (h.clubs[0] && h.clubs[0].league) || leagues[0] || "";
+  let rows = h.clubs.map((c, i) => ({ c, i }));
+  if (PRES.f === "fav") rows = rows.filter((r) => followed(r.c));
+  if (PRES.f === "lg") rows = rows.filter((r) => r.c.league === PRES.lg);
+  const row = ({ c, i }) => `<a class="prow" href="#/club/${enc(c.name)}"><span class="pr-rk${i < 3 ? " top" : ""}">${i + 1}</span>${crest(c.name, 28)}<span class="pr-m"><b>${esc(c.name)}</b><span class="dim small">${esc(c.league)} &middot; last S${c.last}</span><span class="dim small pr-h">${c.league_titles} league &middot; ${c.continental} continental${c.cwc ? " &middot; " + c.cwc + " CWC" : ""} &middot; ${c.awards + c.toty} awards &middot; ${c.runner_ups} runner-up${c.honours ? " &middot; " + esc(c.honours) : ""}</span></span><span class="pr-s">${c.score}</span><span class="pr-st${followed(c) ? " on" : ""}">${followed(c) ? "&#9733;" : "&#9734;"}</span></a>`;
+  $("#view").innerHTML = `<div class="v2"><div class="dim small" style="margin-bottom:2px">Ranked by prestige</div><h1>Trophies</h1>
+    ${trophySw("clubs")}
+    <div class="chips"><button data-prf="all" class="${PRES.f === "all" ? "on" : ""}">All clubs</button><button data-prf="fav" class="${PRES.f === "fav" ? "on" : ""}">&#9733; Favorites</button><button data-prf="lg" class="${PRES.f === "lg" ? "on" : ""}">By league</button></div>
+    ${PRES.f === "lg" ? `<div class="chips">${leagues.map((l) => `<button data-prl="${esc(l)}" class="${PRES.lg === l ? "on" : ""}">${esc(l)}</button>`).join("")}</div>` : ""}
+    <div class="card rlist">${rows.length ? rows.map(row).join("") : `<div class="empty">${h.clubs.length ? "No clubs match this filter." : "Nothing yet. Sim a season first."}</div>`}</div>
+    <div class="dim small" style="margin-top:8px">How the score works: ${esc(h.points)}. ${h.total} clubs have scored so far.</div>
+</div>`;
+  document.querySelectorAll("[data-prf]").forEach((b) => (b.onclick = () => { PRES.f = b.dataset.prf; viewPrestige(); }));
+  document.querySelectorAll("[data-prl]").forEach((b) => (b.onclick = () => { PRES.lg = b.dataset.prl; viewPrestige(); }));
+  wireTrophySw();
+}
 async function viewTrophies(key, tab) {
   tab = tab || "winners";
-  const tabs = `<div class="tabs hof-tabs">${[["winners", "Winners"], ["players", "Players"], ["coaches", "Coaches"], ["clubs", "Clubs"]].map(([k, t]) => `<button data-tab="${k}" class="${tab === k ? "on" : ""}">${t}</button>`).join("")}</div>`;
+  const tabs = "";
   const go = (t) => (location.hash = t === "winners" ? "#/trophies" : "#/trophies/" + t);
-  if (tab === "clubs") {
-    const h = await api("/api/hof_clubs");
-    $("#view").innerHTML = `<h1>All-time ranking</h1><div class="sub">Greatest clubs of all time, ranked on trophies the way players are ranked on honours.</div>${tabs}
-      <div class="scroll"><table class="hof"><thead><tr><th>#</th><th class="l">Club</th><th>Score</th><th class="l hide-m">League</th><th>Titles</th><th>Cont.</th><th class="hide-m">CWC</th><th title="Individual awards won by their players and coaches, plus Team of the Year places">Awards</th><th class="hide-m">Runner-up</th><th class="hide-m">Last</th><th class="l hide-m">Major honours</th></tr></thead><tbody>
-      ${h.clubs.map((c, i) => `<tr><td>${i + 1}</td><td class="l"><b>${clubLink(c.name)}</b><div class="meta show-m">${esc(c.league)} &middot; last S${c.last}</div></td><td class="pts">${c.score}</td><td class="l meta hide-m">${esc(c.league)}</td><td>${c.league_titles}</td><td>${c.continental}</td><td class="hide-m">${c.cwc}</td><td>${c.awards + c.toty}</td><td class="hide-m">${c.runner_ups}</td><td class="hide-m">S${c.last}</td><td class="l meta wrap hide-m">${esc(c.honours)}</td></tr>`).join("") || '<tr><td colspan="11" class="empty">No trophies yet. Sim a season first.</td></tr>'}</tbody></table></div>
-      <div class="meta" style="margin-top:8px">How the score works: ${esc(h.points)}. ${h.total} clubs have scored so far.</div>`;
-    document.querySelectorAll("[data-tab]").forEach((b) => b.onclick = () => go(b.dataset.tab));
-    return;
-  }
-  if (tab === "players" || tab === "coaches") {
+  const rk = (i) => `<span class="rk ${i === 0 ? "g" : i === 1 ? "s" : i === 2 ? "b" : ""}">${i + 1}</span>`;
+  const rrow = (i, main, sub, hon, score) => `<div class="rrow">${rk(i)}<div class="rm"><div class="rn">${main}</div><div class="dim small">${sub}</div>${hon ? `<div class="dim small rh">${hon}</div>` : ""}</div><div class="rs"><b>${score}</b><span class="dim small">score</span></div></div>`;
+  const wrap = (sub, rows, foot) => { $("#view").innerHTML = `<div class="v2"><h1>All-time ranking</h1><div class="sub">${sub}</div>${tabs.replace('class="tabs hof-tabs"', 'class="tabs2 hof-tabs"')}<div class="card rlist">${rows || '<div class="empty">Nothing yet. Sim a season first.</div>'}</div>${foot || ""}</div>`; document.querySelectorAll("[data-tab]").forEach((b) => b.onclick = () => go(b.dataset.tab)); };
+  if (tab === "clubs") return viewPrestige();
+  if (tab === "players" || tab === "coaches") { location.replace("#/hof"); return; }
+  if (false) {
     const h = await api("/api/halloffame");
-    $("#view").innerHTML = `<h1>All-time ranking</h1><div class="sub">Greatest players and coaches of all time, scored on awards, titles and peak rating.</div>${tabs}` + (tab === "players"
-      ? `<div class="scroll"><table class="hof"><thead><tr><th>#</th><th class="l">Player</th><th class="l hide-m">Nation</th><th class="l hide-m">Pos</th><th>Peak</th><th class="hide-m">Goals</th><th class="hide-m">Seasons</th><th class="l hide-m">Honours</th><th>Score</th></tr></thead><tbody>
-      ${h.players.map((p, i) => { const hon = Object.entries(p.honours).map(([k, v]) => `${v}&times; ${esc(k)}`).join(" &middot; "); return `<tr><td>${i + 1}</td><td class="l"><b>${p.uid ? playerLink(p) : esc(p.name)}</b> ${p.retired ? '<span class="tag">retired</span>' : `<span class="meta">${p.club ? esc(p.club) : "free agent"}</span>`}<div class="meta show-m"><span class="pos-${esc(p.pos)}">${esc(p.pos)}</span> &middot; ${esc(p.nat)} &middot; ${p.goals} goals &middot; ${p.seasons} seasons</div>${hon ? `<div class="meta show-m">${hon}</div>` : ""}</td><td class="l hide-m">${natLink(p.nat)}</td><td class="l hide-m pos-${esc(p.pos)}">${esc(p.pos)}</td><td>${ovr(p.peak)}</td><td class="hide-m">${p.goals}</td><td class="hide-m">${p.seasons}</td>
-      <td class="l meta wrap hide-m">${hon}</td><td class="pts">${p.score}</td></tr>`; }).join("") || '<tr><td colspan="9" class="empty">Nobody yet.</td></tr>'}</tbody></table></div>`
-      : `<div class="scroll"><table class="hof"><thead><tr><th>#</th><th class="l">Coach</th><th class="l hide-m">Nation</th><th class="hide-m">Seasons</th><th>Titles</th><th>Cups</th><th class="hide-m">CWC</th><th>Awards</th><th class="hide-m">Win %</th><th>Score</th></tr></thead><tbody>
-      ${h.coaches.map((c, i) => `<tr><td>${i + 1}</td><td class="l"><b>${esc(c.name)}</b> ${c.retired ? '<span class="tag">retired</span>' : ""}<div class="meta show-m">${esc(c.nat)} &middot; ${c.seasons} seasons &middot; ${c.win}% wins</div></td><td class="l hide-m">${esc(c.nat)}</td><td class="hide-m">${c.seasons}</td><td>${c.titles}</td><td>${c.cups}</td><td class="hide-m">${c.cwc}</td><td>${c.awards}</td><td class="hide-m">${c.win}</td><td class="pts">${c.score}</td></tr>`).join("") || '<tr><td colspan="10" class="empty">Nobody yet.</td></tr>'}</tbody></table></div>`);
-    document.querySelectorAll("[data-tab]").forEach((b) => b.onclick = () => go(b.dataset.tab));
+    if (tab === "players") wrap("Greatest players and coaches of all time, scored on awards, titles and peak rating.",
+      h.players.map((p, i) => { const hon = Object.entries(p.honours).map(([k, v]) => `${v}&times; ${esc(k)}`).join(" &middot; "); return rrow(i, `<b>${p.uid ? playerLink(p) : esc(p.name)}</b> ${ovr(p.peak)}`, `<span class="pos-${esc(p.pos)}">${esc(p.pos)}</span> &middot; ${esc(p.nat)} &middot; ${p.goals} goals &middot; ${p.seasons} seasons &middot; ${p.retired ? "retired" : p.club ? esc(p.club) : "free agent"}`, hon, p.score); }).join(""));
+    else wrap("Greatest players and coaches of all time, scored on awards, titles and peak rating.",
+      h.coaches.map((c, i) => rrow(i, `${flag(c.nat, 20)} <b>${esc(c.name)}</b>`, `${esc(c.nat)} &middot; ${c.seasons} seasons &middot; ${c.win}% wins${c.retired ? " &middot; retired" : ""}`, `${c.titles} titles &middot; ${c.cups} cups${c.cwc ? " &middot; " + c.cwc + " CWC" : ""} &middot; ${c.awards} awards`, c.score)).join(""));
     return;
   }
   const d = await api("/api/trophies" + (key ? "?key=" + enc(key) : "?key=award:ballon"));
@@ -1336,17 +1579,43 @@ async function viewTrophies(key, tab) {
     ? `<tr><td class="l meta">S${r.season}<div>${r.date || ""}</div></td><td class="l" colspan="2">${r.team.map((p) => `<span class="pos-${esc(p.pos)}">${esc(p.name)}</span> <span class="meta">(${esc(p.club)})</span>`).join(" &middot; ")}</td></tr>`
     : `<tr><td class="l meta nw">S${r.season}<div>${r.date ? esc(String(r.date).slice(-4)) : ""}</div></td><td class="l"><b>${aw() ? esc(r.winner) : L(r.winner)}</b>${r.club ? `<div class="meta">${clubOrNat(r.club)}</div>` : ""}
       ${r.runner_up ? `<div class="meta">${aw() ? "2nd " + esc(r.runner_up) : "beat " + L(r.runner_up)}</div>` : ""}${r.coach ? `<div class="meta">coach ${esc(r.coach)}</div>` : ""}</td><td class="nw">${esc(r.text || "")}</td></tr>`;
-  $("#view").innerHTML = `<h1>${sel ? withEmb(sel.emblem, 48, esc(sel.title), sel.title) : "Trophies"}</h1><div class="sub">Every winner so far. Pick any competition from the list.</div>${tabs}
+  const wrow = (r) => sel.key === "award:team"
+    ? `<div class="row" style="align-items:flex-start"><span class="rk">S${r.season}</span><span style="flex:1;margin-left:10px">${r.team.map((p) => `<span class="pos-${esc(p.pos)}">${esc(p.name)}</span> <span class="dim small">(${esc(p.club)})</span>`).join(" &middot; ")}</span></div>`
+    : `<div class="row"><span class="l"><span class="dim small" style="width:34px;font-weight:800">S${r.season}</span><span><b>${aw() ? esc(r.winner) : L(r.winner)}</b><div class="dim small">${r.club ? clubOrNat(r.club) : ""}${r.runner_up ? (r.club ? " &middot; " : "") + (aw() ? "2nd " + esc(r.runner_up) : "beat " + L(r.runner_up)) : ""}${r.coach ? " &middot; coach " + esc(r.coach) : ""}</div></span></span><span class="dim small" style="text-align:right">${esc(r.text || "")}</span></div>`;
+  $("#view").innerHTML = `<div class="v2"><h1>${sel ? withEmb(sel.emblem, 48, esc(sel.title), sel.title) : "Trophies"}</h1><div class="sub">Every winner so far. Pick any competition from the list.</div>${trophySw("winners")}
     <p><select id="tro-sel" style="min-width:min(300px,100%);max-width:100%">${Object.entries(groups).map(([g, os]) => `<optgroup label="${esc(g)}">${os.map((o) => `<option value="${esc(o.key)}" ${sel && sel.key === o.key ? "selected" : ""}>${esc(o.title)}</option>`).join("")}</optgroup>`).join("")}</select></p>
-    ${sel && sel.rows.length ? `<div class="cols"><div><div class="scroll"><table class="hof"><thead><tr><th class="l">Season</th><th class="l">Winner</th><th>${aw() ? "Votes / stat" : "Final"}</th></tr></thead><tbody>${sel.rows.map(rowHTML).join("")}</tbody></table></div></div>
-      <div><div class="card"><h3>Most successful</h3>${sel.board.map((b, i) => `<div class="row"><span>${i + 1}. ${sel.key.startsWith("award:") ? esc(b.name) : L(b.name)}</span><span class="meta"><b style="color:var(--accent2)">${b.count}</b> &middot; S${b.seasons.join(", S")}</span></div>`).join("")}</div></div></div>` : '<div class="empty">No winners yet. Sim a season first.</div>'}`;
+    ${sel && sel.rows.length ? `<div class="card board"><h3>Most successful</h3>${sel.board.slice(0, 5).map((b, i) => `<div class="row"><span class="l"><span class="rk ${i === 0 ? "g" : i === 1 ? "s" : i === 2 ? "b" : ""}">${i + 1}</span><span>${sel.key.startsWith("award:") ? esc(b.name) : L(b.name)}</span></span><span class="dim small"><b class="gold">${b.count}</b> &middot; S${b.seasons.join(", S")}</span></div>`).join("")}</div>
+      <div class="sep">Every winner</div><div class="card">${sel.rows.map((r) => wrow(r)).join("")}</div>` : '<div class="empty">No winners yet. Sim a season first.</div>'}</div>`;
   $("#tro-sel").onchange = (e) => (location.hash = "#/trophies/winners/" + enc(e.target.value));
-  document.querySelectorAll("[data-tab]").forEach((b) => b.onclick = () => go(b.dataset.tab));
+  wireTrophySw();
 }
 const clubOrNat = (n) => (n ? esc(n) : "");
+const NWV = { kind: "all", season: "all" };
 async function viewNews() {
   const d = await api("/api/news");
-  $("#view").innerHTML = `<h1>News</h1>${d.items.length ? d.items.map((n) => `<div class="review-line"><span><span class="tag">S${n.season}${n.date ? " &middot; " + n.date.text : ""}</span> <span class="tag">${esc(n.kind)}</span> ${esc(n.text)}</span></div>`).join("") : '<div class="empty">Nothing yet. Sim some weeks.</div>'}`;
+  const kinds = [...new Set(d.items.map((n) => n.kind))], seasons = [...new Set(d.items.map((n) => n.season))];
+  const label = (k) => ({ hof: "Hall of Fame" }[k] || k.charAt(0).toUpperCase() + k.slice(1));
+  if (NWV.kind !== "all" && !kinds.includes(NWV.kind)) NWV.kind = "all";
+  if (NWV.season !== "all" && !seasons.includes(+NWV.season)) NWV.season = "all";
+  const rows = d.items.filter((n) => (NWV.kind === "all" || n.kind === NWV.kind) && (NWV.season === "all" || n.season === +NWV.season));
+  let CL = []; try { CL = ((await api("/api/settings")).clubs || []).slice().sort((x, y) => y.length - x.length); } catch (e) {}
+  const KG = { star: "&#9733;", transfer: "&#8646;", coach: "C", cup: "&#9917;", collapse: "&#8595;", award: "&#9733;", worldcup: "&#9917;", rivalry: "&#9876;", upset: "!", title: "&#9733;", hof: "&#9733;" };
+  const TAGC = { coach: "gold", upset: "gold", rivalry: "red", cup: "blue", collapse: "red", title: "green", hof: "gold", worldcup: "blue" };
+  const markOf = (n) => { const c = CL.find((x) => n.text.includes(x)); return c ? crest(c, 34) : `<span class="ng">${KG[n.kind] || "&#8226;"}</span>`; };
+  const item = (n) => `<div class="ncard"><span class="nm">${markOf(n)}</span><span class="nt"><b>${esc(n.text)}</b><span class="dim small">Season ${n.season}${n.date ? " &middot; " + n.date.text : ""}</span></span><span class="ntag ${TAGC[n.kind] || ""}">${esc(label(n.kind))}</span></div>`;
+  // Hall of Fame items fold into one card per season so they do not bury everything else
+  const out = []; let i = 0;
+  while (i < rows.length) {
+    const n = rows[i];
+    if (n.kind === "hof") { const g = []; while (i < rows.length && rows[i].kind === "hof" && rows[i].season === n.season) g.push(rows[i++]); out.push(`<details class="acc2 newsfold"><summary><b>Hall of Fame &middot; season ${n.season}</b><span class="dim small">${g.length} item${g.length === 1 ? "" : "s"}</span></summary>${g.map(item).join("")}</details>`); }
+    else { out.push(item(n)); i++; }
+  }
+  $("#view").innerHTML = `<div class="v2"><div class="dim small" style="margin-bottom:2px">${rows.length} ${rows.length === 1 ? "story" : "stories"}</div><h1>News</h1>
+    <nav class="chips" aria-label="Kind"><button data-nk="all" class="${NWV.kind === "all" ? "on" : ""}">All</button>${kinds.map((k) => `<button data-nk="${esc(k)}" class="${NWV.kind === k ? "on" : ""}">${esc(label(k))}</button>`).join("")}</nav>
+    <p><select class="sel" id="nv-s" aria-label="Season"><option value="all">All seasons</option>${seasons.map((x) => `<option value="${x}" ${NWV.season !== "all" && +NWV.season === x ? "selected" : ""}>Season ${x}</option>`).join("")}</select></p>
+    ${out.length ? out.join("") : '<div class="empty">Nothing matches.</div>'}</div>`;
+  document.querySelectorAll("[data-nk]").forEach((b) => (b.onclick = () => { NWV.kind = b.dataset.nk; viewNews(); }));
+  $("#nv-s").onchange = (e) => { NWV.season = e.target.value; viewNews(); };
 }
 function multiLine(seasons, series, w, h) {
   const names = Object.keys(series); if (seasons.length < 2 || !names.length) return '<div class="meta">The chart appears after two completed seasons.</div>';
@@ -1388,11 +1657,11 @@ async function viewMoney() {
 }
 async function viewRecords() {
   const d = await api("/api/records");
-  $("#view").innerHTML = `<h1>Records and Hall of Fame</h1>
-    <div class="cols3"><div><h2>Best retired coaches</h2>${d.coaches.length ? d.coaches.map((c) => `<div class="row"><span>${esc(c.name)} <span class="meta">${esc(c.nat)}</span></span><span class="meta">${c.titles} titles, ${c.cups} cups, ${c.cwc} CWC, ${c.win}%</span></div>`).join("") : '<div class="meta">None retired yet.</div>'}</div>
-    <div><h2>World Cup winners</h2>${d.wc.length ? d.wc.map((r) => `<div class="row"><span>S${r.season} ${natLink(r.winner)}</span><span class="meta">beat ${esc(r.runner_up)}, host ${esc(r.host)}</span></div>`).join("") : '<div class="meta">None yet.</div>'}
-    <h2>Club World Cup winners</h2>${d.cwc.length ? d.cwc.map((r) => `<div class="row"><span>S${r.season} ${clubLink(r.winner)}</span><span class="meta">beat ${esc(r.runner_up)}</span></div>`).join("") : '<div class="meta">None yet.</div>'}</div>
-    <div><h2>League records</h2>${d.records.map((r) => `<div class="row"><span>${leagueLink(r.league)}</span><span class="meta">${r.pts} pts (${esc(r.pts_club)})</span></div>`).join("") || '<div class="meta">None yet.</div>'}</div></div>`;
+  $("#view").innerHTML = `<h1>Records</h1>
+    <a class="more" href="#/hof"><span>Coaches and players: Hall of Fame, ranked, with snubs</span><span>&rsaquo;</span></a>
+    <div class="cols3 recs"><div class="card"><h2>World Cup winners</h2>${d.wc.length ? d.wc.map((r) => `<div class="row"><span>S${r.season} ${natLink(r.winner)}</span><span class="meta">beat ${esc(r.runner_up)}, host ${esc(r.host)}</span></div>`).join("") : '<div class="meta">None yet.</div>'}
+    </div><div class="card"><h2>Club World Cup winners</h2>${d.cwc.length ? d.cwc.map((r) => `<div class="row"><span>S${r.season} ${clubLink(r.winner)}</span><span class="meta">beat ${esc(r.runner_up)}</span></div>`).join("") : '<div class="meta">None yet.</div>'}</div>
+    <div class="card"><h2>League records</h2>${d.records.map((r) => `<div class="row"><span>${leagueLink(r.league)}</span><span class="meta">${r.pts} pts (${esc(r.pts_club)})</span></div>`).join("") || '<div class="meta">None yet.</div>'}</div></div>`;
 }
 
 
@@ -1479,7 +1748,7 @@ async function viewRivals() {
 async function clubRivals(name) {
   const d = await api("/api/rivalries?club=" + enc(name)).catch(() => null);
   if (!d || !d.rows.length) return;
-  $("#view").insertAdjacentHTML("beforeend", `<h2>Rivals</h2><div class="card">${d.rows.slice(0, 6).map((r) => { const o = r.a === name ? r.b : r.a, w = r.a === name ? r.wins : [r.wins[1], r.wins[0]];
+  ($("#ct-ov") || $("#view")).insertAdjacentHTML("beforeend", `<h2>Rivals</h2><div class="card">${d.rows.slice(0, 6).map((r) => { const o = r.a === name ? r.b : r.a, w = r.a === name ? r.wins : [r.wins[1], r.wins[0]];
     return `<div class="row"><span>${clubLink(o)} <a class="meta" href="#/matchup/-/${enc(name)}/${enc(o)}">${esc(r.name)}</a></span><span class="meta">${r.kind}${r.meet ? ` &middot; ${w[0]}-${r.draws}-${w[1]}` : ""}</span></div>`; }).join("")}</div>`);
 }
 
@@ -1514,7 +1783,14 @@ async function loadStats(el, id, season) {
 }
 
 // ---------------------------------------------------------------- competition-end overview (optional animation)
-const animOn = () => { try { return localStorage.getItem("ss_anim") === "1"; } catch (e) { return false; } };
+const denseOn = () => { try { return localStorage.getItem("ssb_dense") === "1"; } catch (e) { return false; } };
+const applyDense = () => document.body.classList.toggle("dense", denseOn());
+// the season review of a finished league or cup, whether or not the winner animation is on (data-lrev = competition id)
+document.addEventListener("click", async (e) => {
+  const b = e.target.closest && e.target.closest("[data-lrev]"); if (!b) return;
+  try { const st = await busy("Loading...", () => api("/api/compstats?id=" + enc(b.dataset.lrev))); if (st) await showCompEnd(st, false); } catch (err) { toast(err.message); }
+});
+const animOn = () => { try { return localStorage.getItem("ssb_anim") === "1"; } catch (e) { return false; } };
 async function playFinished(list) {
   if (!list || !list.length || !animOn()) return;
   list = list.filter((x) => isFollowed(x.id));             // winner popups are for your favorites (and the summer tournaments)
@@ -1570,16 +1846,15 @@ function showCompEnd(s, more) {
     if (co) facts.push(`Coach of the competition: <b>${coachLink(co.cid, co.name)}</b> <span class="meta">${tm(co.team)}</span>`);
     const lg = s.kind === "league" ? (s.name || "") : "";
     const draw = (hof) => {
-      const hofBlock = hof ? `<div class="ce-hof"><span class="hb W" style="width:36px;height:36px;--hc:#f5c542">${hofStar(24)}</span><div><b>Hall of Fame day</b><div class="meta">${hof.nLeague} league inductee${hof.nLeague === 1 ? "" : "s"} &middot; ${hof.nClubs} club inductee${hof.nClubs === 1 ? "" : "s"}</div></div></div>` : "";
-      openModal(`<div class="ce"><div class="ce-emb">${emblem(s.emblem, window.innerWidth < 700 ? 72 : 96)}</div><div class="ce-t">${esc(s.name)} <span class="meta">${esc(s.season_label || "")}</span></div>
+      const hofBlock = hof ? `<div class="ce-hof"><span class="hb W" style="width:36px;height:36px;--hc:#f5c542">${hofStar(24)}</span><div><b>Hall of Fame</b><div class="meta">The candidates are on the ballot. The ceremony is played on Hall of Fame day, with the world.</div></div></div>` : "";
+      openModal(`<div class="ce"><div class="ce-emb">${compEmb(s.name, s.emblem, window.innerWidth < 700 ? 72 : 96)}</div><div class="ce-t">${esc(s.name)} <span class="meta">${esc(s.season_label || "")}</span></div>
         <div class="ce-w">${s.winner ? tm(s.winner) : "-"}</div><div class="ce-sub">${s.kind === "league" ? "Champions" : "Winners"}</div>${starMoment(s)}
         <div class="ce-facts">${facts.map((f, i) => `<div class="ce-f" style="animation-delay:${1.3 + i * 0.45}s">${f}</div>`).join("")}</div>${hofBlock}
-        <div class="ce-btns">${hof ? '<button class="gold" id="ce-hw">Watch the ceremony</button> <button id="ce-hr">Hall of Fame results</button> ' : ""}<button class="pri" id="ce-next">${more ? "Next" : "Close"}</button>${more ? ' <button id="ce-skip">Skip all</button>' : ""}</div></div>`);
+        <div class="ce-btns">${hof ? '<button class="gold" id="ce-hc">Check the candidates</button> ' : ""}<button class="${hof ? "" : "pri"}" id="ce-next">${more ? "Next" : "Close"}</button>${more ? ' <button id="ce-skip">Skip all</button>' : ""}</div></div>`);
       const done = (skip) => { closeModal(); res(skip); };
       $("#ce-next").onclick = () => done(false);
       if ($("#ce-skip")) $("#ce-skip").onclick = () => done(true);
-      if ($("#ce-hw")) $("#ce-hw").onclick = () => { location.hash = "#/hofleague/" + enc(lg) + "/" + hof.season + "/watch"; done(true); };
-      if ($("#ce-hr")) $("#ce-hr").onclick = () => { location.hash = "#/hofleague/" + enc(lg) + "/" + hof.season; done(true); };
+      if ($("#ce-hc")) $("#ce-hc").onclick = () => { done(true); HOF.tab = "bal"; const h = "#/hof/L/" + enc(lg); if (location.hash === h) route(); else location.hash = h; };
     };
     draw(null);
     if (lg) hofLeagueBlock(lg).then((h) => {
@@ -1595,7 +1870,7 @@ async function viewPlayers() {
   const qs = () => Object.entries({ ...PF, limit: 100 }).filter(([k, v]) => v !== "" && v != null).map(([k, v]) => k + "=" + enc(v)).join("&");
   const d = await api("/api/players?" + qs());
   const opt = (list, cur, label) => `<option value="">${label}</option>` + list.map((x) => `<option ${x === cur ? "selected" : ""}>${esc(x)}</option>`).join("");
-  $("#view").innerHTML = `<h1>Players</h1><div class="sub">${d.total.toLocaleString()} players. Search by name, filter, and click a name for the player page. G/A/CS are this season so far (league).</div>
+  $("#view").innerHTML = `<div class="v2">${plTabs("players")}</div><h1>Players</h1><div class="sub">${d.total.toLocaleString()} players. Search by name, filter, and click a name for the player page. G/A/CS are this season so far (league).</div>
     <p class="filters"><input id="pf-q" placeholder="Search name..." value="${esc(PF.q)}"> <select id="pf-pos">${opt(["GK", "DEF", "MID", "FWD"], PF.pos, "Any position")}</select>
     <select id="pf-nat">${opt(d.nations, PF.nat, "Any nation")}</select><select id="pf-league"><option value="">Any league</option>${leagueOpts(d.leagues, PF.league)}</select>
     <select id="pf-sort">${[["ovr", "Sort: OVR"], ["pot", "Potential"], ["age", "Youngest"], ["value", "Value"], ["wage", "Wage"], ["goals", "Goals"], ["assists", "Assists"], ["name", "Name"]].map(([k, t]) => `<option value="${k}" ${PF.sort === k ? "selected" : ""}>${t}</option>`).join("")}</select>
@@ -1640,12 +1915,10 @@ async function viewPlayer(uid) {
   p.honours.forEach((h) => { (grp[h.title] = grp[h.title] || []).push(h.season); });
   const hon = Object.entries(grp).sort((a, b) => b[1].length - a[1].length);
   const tot = p.totals;
-  $("#view").innerHTML = `<div class="crumbs"><a href="#/players">Players</a> / ${esc(p.name)}</div>
-    <h1>${flag(p.nat, 34)} ${esc(p.name)} ${p.retired ? '<span class="tag">retired</span>' : ""}</h1>
-    <div class="sub">${esc(p.pos)} &middot; age ${p.age} &middot; ${natLink(p.nat)} &middot; ${p.club ? clubLink(p.club) : "free agent"}${p.contract && p.club ? " &middot; contract " + p.contract + " yr" : ""}</div>
-    <div class="cols3"><div class="stat"><div class="k">OVR</div><div class="v">${ovr(p.ovr)}</div></div><div class="stat"><div class="k">Potential / peak</div><div class="v">${p.pot} / ${p.peak}</div></div>
-      <div class="stat"><div class="k">Value</div><div class="v">${money(p.value)}</div></div><div class="stat"><div class="k">Wage per year</div><div class="v">${money(p.wage)}</div></div>
-      <div class="stat"><div class="k">Career goals</div><div class="v">${tot.goals}</div></div><div class="stat"><div class="k">Career assists</div><div class="v">${tot.assists}</div></div></div>
+  const tile = (v, k) => `<div><b>${v}</b><span>${k}</span></div>`;
+  $("#view").innerHTML = `<div class="v2">${heroBlock(p.club || p.nat, p.club ? crest(p.club, 220) : natBadge(p.nat, 200), `<span class="sbox">${flag(p.nat, 56)}</span>`, `${esc(p.name)} ${p.retired ? '<span class="tag">retired</span>' : ""}`, `<div class="sub">${esc(p.pos)} &middot; age ${p.age} &middot; ${natLink(p.nat)} &middot; ${p.club ? clubLink(p.club) : "free agent"}${p.contract && p.club ? " &middot; contract " + p.contract + " yr" : ""}</div>`)}
+    <div class="stat3" style="margin-top:12px">${tile(ovr(p.ovr), "OVR")}${tile(p.pot + " / " + p.peak, "POTENTIAL / PEAK")}${tile(money(p.value), "VALUE")}</div>
+    <div class="stat3" style="margin-top:8px">${tile(money(p.wage), "WAGE / YEAR")}${tile(tot.goals, "CAREER GOALS")}${tile(tot.assists, "CAREER ASSISTS")}</div></div>
     ${STATUS && STATUS.god ? `<p><button id="g-edit-p" class="gold">God mode: edit player</button></p>` : ""}
     <div class="cols" style="margin-top:14px"><div>
       <div class="card"><h3>Rating by season</h3>${lineChart(p.career.map((c) => [c.season, c.ovr]), 520, 170)}</div>
@@ -1659,19 +1932,27 @@ async function viewPlayer(uid) {
 // ---------------------------------------------------------------- settings
 async function settingsDialog() {
   const s = await api("/api/settings");
-  openModal(`<h2>Settings</h2>
-    <label class="check"><input type="checkbox" id="st-anim" ${animOn() ? "checked" : ""}> Show a winner animation and overview when a league or cup finishes</label>
-    <label class="check"><input type="checkbox" id="st-god" ${s.god ? "checked" : ""}> God mode (commissioner editor: edit players, clubs, nations and money)</label>
-    <p class="meta">Money is shown in euros (1 engine unit = ${s.money_x} million).</p>
-    ${logoPanel()}
-    <p><button class="pri" id="st-ok">Done</button> <button id="st-log">Commissioner edit log</button></p>`);
+  let nEdits = 0; try { nEdits = (await api("/api/edits")).edits.length; } catch (e) { /* no world yet */ }
+  const sw = (id, on) => `<label class="sw"><input type="checkbox" id="${id}" ${on ? "checked" : ""}><i></i></label>`;
+  openSheet(`<div class="sh-grab"></div><div class="sh-hd"><h2>Settings</h2><button class="sh-x" id="st-ok" aria-label="Close">&times;</button></div>
+    <div class="sh-card">
+      <button class="sh-row" id="st-save"><b>Save and load</b><span class="sh-ch">&rsaquo;</span></button>
+      <button class="sh-row" id="st-logos"><b>Logo pack</b><span class="sh-val">Import <span class="sh-ch">&rsaquo;</span></span></button>
+      <button class="sh-row" id="st-log"><b>Commissioner edit log</b><span class="sh-val">${nEdits} edit${nEdits === 1 ? "" : "s"} <span class="sh-ch">&rsaquo;</span></span></button>
+    </div>
+    <div class="sh-card"><div class="gold-lbl">Game</div>
+      <div class="sh-row"><div><b>Winner animation</b><div class="sh-sub">Overview when a league or cup finishes</div></div>${sw("st-anim", animOn())}</div>
+      <div class="sh-row"><div><b>Full density</b><div class="sh-sub">Tighter rows so more fits on screen</div></div>${sw("st-dense", denseOn())}</div>
+      <div class="sh-row"><div><b>God mode</b><div class="sh-sub">Edit players, clubs, nations and money</div></div>${sw("st-god", s.god)}</div>
+    </div>
+    <div class="sh-note">Money is in euros (1 engine unit = ${s.money_x} million).</div>`);
+  $("#st-save").onclick = saveDialog;
   $("#st-log").onclick = editLogDialog;
-  wireLogoPanel();
-  $("#st-ok").onclick = async () => {
-    try { localStorage.setItem("ss_anim", $("#st-anim").checked ? "1" : "0"); } catch (e) {}
-    await api("/api/settings_set", { god: $("#st-god").checked });
-    closeModal(); await refreshStatus(); await route();
-  };
+  $("#st-logos").onclick = () => { openModal(`${logoPanel()}<p><button class="pri" id="lg-back">Back</button></p>`); wireLogoPanel(); $("#lg-back").onclick = settingsDialog; };
+  $("#st-anim").onchange = (e) => { try { localStorage.setItem("ssb_anim", e.target.checked ? "1" : "0"); } catch (err) {} };
+  $("#st-dense").onchange = (e) => { try { localStorage.setItem("ssb_dense", e.target.checked ? "1" : "0"); } catch (err) {} applyDense(); };
+  $("#st-god").onchange = async (e) => { try { await api("/api/settings_set", { god: e.target.checked }); await refreshStatus(); } catch (err) { toast(err.message); } };
+  $("#st-ok").onclick = async () => { closeModal(); await refreshStatus(); await route(); };
 }
 
 
@@ -1750,14 +2031,17 @@ async function routeInner(r, a, b) {
   {
     if (!r || r === "start") return viewStart();
     if (r === "world") return await viewWorld();
+    if (r === "leagues") return await viewLeagues();
+    if (r === "more") return viewMore();
+    if (r === "history") return viewHistory();
     if (r === "continent") return await viewContinent(a);
     if (r === "league") return await viewLeague(a, b ? +b : null);
     if (r === "club") { await viewClub(a); return await clubRivals(a); }
     if (r === "matchup") return await viewMatchup(a, b, (location.hash.split("/")[4] || ""));
-    if (r === "rivals") return await viewRivals();
+    if (r === "rivals") { await viewRivals(); injectLgTabs("rivals"); return; }
     if (r === "comp") return await viewComp(a);
     if (r === "c") return await viewCompPage(a, b || "history");
-    if (r === "nations") return await viewNations(a);
+    if (r === "nations") { await viewNations(a); injectLgTabs("nations"); return; }
     if (r === "nation") return await viewNation(a);
     if (r === "news") return await viewNews();
     if (r === "players") return await viewPlayers();
@@ -1769,9 +2053,10 @@ async function routeInner(r, a, b) {
     if (r === "academies") return await viewAcademies(a, b);
     if (r === "hofcard") return await viewHofCard(a);
     if (r === "coach") return await viewCoach(a);
-    if (r === "hofday") return await viewHofDay(a ? +a : null, b);
-    if (r === "hofnation") { const q = location.hash.replace(/^#\/?/, "").split("/").map(decodeURIComponent); return await viewHofNation(a, b ? +b : null, q[3]); }
-    if (r === "hofleague") { const q = location.hash.replace(/^#\/?/, "").split("/").map(decodeURIComponent); return await viewHofLeague(a, b ? +b : null, q[3], q[4]); }
+    if (r === "hofday") { const q = location.hash.replace(/^#\/?/, "").split("/").map(decodeURIComponent); return await viewHofDay(a ? +a : null, b, q[3]); }
+    if (r === "hofnation") { location.replace("#/hofday/" + (b || "")); return; }
+    if (r === "hofleague") { location.replace("#/hofday/" + (b || "")); return; }
+    if (r === "prestige") { location.replace("#/trophies/clubs"); return; }
     if (r === "trophies") return a === "winners" ? await viewTrophies(b, "winners") : await viewTrophies(null, a || "winners");
     if (r === "money") return await viewMoney();
     if (r === "ledger") { MV.view = "money"; location.replace("#/moves/" + (a && a !== "all" ? a : "") + "/players"); return; }
@@ -1780,7 +2065,7 @@ async function routeInner(r, a, b) {
     location.hash = "#/world";
   }
 }
-window.addEventListener("hashchange", route);
+window.addEventListener("hashchange", () => { if (SBOPEN) { SBOPEN = false; try { renderSimBar(); } catch (e) {} } route(); });
 $("#brand").onclick = () => (location.hash = STATUS && STATUS.has_world ? "#/world" : "#/");
 (async () => {
   await SIM.init();

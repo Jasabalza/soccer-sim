@@ -184,7 +184,23 @@ $mods["hof"] = (function () {
   }
   function coachHired(w, co, club) { closeStint(w, co); openStint(w, co, "club", club); }
   function coachLeft(w, co) { closeStint(w, co, "club"); }
-  function natCoachSet(w, co, nation) { closeStint(w, co, "nat"); if (nation) openStint(w, co, "nat", nation); }
+  // a coach who retired from club work and then led a national team earns country halls for it: when such a spell ends, his record is brought up to date
+  function refreshCoachCard(w, co) {
+    const H = ensure(w); let card = null;
+    for (const id of Object.keys(H.cards)) { const c = H.cards[id]; if (c.k === "c" && c.co === co) { card = c; break; } }
+    if (!card) return makeCoachCard(w, co, w.season, 0);
+    const sc = cscores(w, co), first = w.season + CFG.wait;
+    for (const [n, s] of Object.entries(sc.C)) { const key = "C:" + n; if (gateOf("cc", s) && !card.st[key]) put(H, card, key, newState(first)); }
+    return card;
+  }
+  function natCoachSet(w, co, nation) {
+    closeStint(w, co, "nat");
+    if (nation) {
+      // the same nation hiring him again straight away is one spell, not two
+      const L = co.stints, last = L && L[L.length - 1];
+      if (last && last.k === "nat" && last.t === nation && last.u !== null && last.u !== undefined && last.u === w.season - 1) { last.u = null; for (const k of ["s", "ti", "cu", "cwc", "w", "d", "l", "wc", "ct", "nl"]) delete last[k]; }
+      else openStint(w, co, "nat", nation);
+    } else if (co.ret_s != null) { try { refreshCoachCard(w, co); } catch (e) { } } }
   // ---- chasers: a borderline player with the trait plays on, hoping the late seasons tip the vote -------------------------
   const isChaser = (p) => rnd("chase|" + p.name + "|" + p.nat + "|" + (p.career.length ? p.career[0][0] : 0)) < CFG.chaser;
   function borderline(w, p) {
@@ -454,6 +470,6 @@ $mods["hof"] = (function () {
   }
   // a fresh World starts founded: nothing to found
   function init(w) { const H = ensure(w); H.founded = true; return H; }
-  return { CFG, HP, ensure, init, pscores, cscores, makePlayerCard, makeCoachCard, fixKeys, onRetire, onCoachRetire, coachHired, coachLeft, natCoachSet, closeStint, openStint,
+  return { CFG, HP, scoreOf, ensure, init, pscores, cscores, makePlayerCard, makeCoachCard, fixKeys, onRetire, onCoachRetire, coachHired, coachLeft, natCoachSet, closeStint, openStint,
     acadTick, acadInit, acadView, acadRanking, mgrPromoted, mgrGrade, mgrOdds, drawGrade, stretch, isChaser, borderline, runScope, dataOf, cKey, runLeagueDay, runYearDay, rollover, foundOnce, prune, scoreOf, pctFor, rnd, nrm, leagueOf, stintsOf, stintNums, rkey, scopeName, scopeKind, quality, natRecordPoor };
 })();
