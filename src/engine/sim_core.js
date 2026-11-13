@@ -1772,10 +1772,10 @@ class World {
         p.pref = null;
       }
     }
+    self._make_youth(rec, gap);
     self.poach();
     self.xleague_market();
     $mods.bids.run(self, rec);
-    self._make_youth(rec, gap);
     self.recompute_clubs();
     for (const $f89 of $iter($M.values(self.squads()))) {
       members = $f89;

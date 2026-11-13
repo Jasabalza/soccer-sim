@@ -1,5 +1,17 @@
 # Changelog
 
+## v16.2.0: the new look, Graduates before Moves
+- **A new look across the game.** One ESPN-inspired theme on every page, with a bottom tab bar on phones (Leagues, History and More sheets), a shared hero on club, league and nation pages (team-coloured, faded logo watermark), fixture cards with Preview links, and a chip row for your favourite leagues.
+- **Scores has a Leagues | Competitions switch.** The Competitions side lists cups, continental and national-team competitions with sim-a-week and sim-to-the-end cards for competitions and nations.
+- **Favourites are remembered.** Followed competitions, nations and clubs live in the save and are mirrored in the browser, so a save without them gets them back and the picker is not shown on every load. New API: `/api/favclubs`, `/api/hofseen`.
+- **Fixtures:** a later matchweek can be looked at (read only) with `/api/fixtures?week=`.
+- **World Cup host banner:** a generated rotating host banner for World Cup pages and cards.
+- **Logo packs (version 2).** Clubs, nations, leagues and competitions in one JSON pack; importing merges into the logos you already have. Format in `docs/LOGOS.md`.
+- **Graduates before Moves (engine change).** Academy graduates are made before the transfer market runs (`season_end`: `_make_youth` now precedes `poach`, `xleague_market` and `bids`), so clubs can sign and bid on them. The off-season is now awards -> hall -> graduates -> moves -> next season (`/api/flow` accepts graduates from awards and transfers from graduates). **Results for a given seed differ from v16.1.4 from the first off-season on**; the golden files were re-recorded on purpose.
+- **"Rest of season" stops at summer** when only the summer tournaments are left, so they can be played or skipped on purpose.
+- **Hall of Fame:** a coach who retired from club work and then led a national team has his card brought up to date when the spell ends; the same nation re-hiring him straight away counts as one spell.
+- **Saves:** v16.1.4 saves open in v16.2. A save made in v16.2 will not open correctly in v16.1.4 (new fields, new off-season order).
+
 ## v16.1.4: country ceremony, every hall shown, the loader bug
 - **Fixed (big): loading a save scrambled the Hall of Fame results.** The loader's old rivalry-key repair matched any dictionary of 21+ "x|y" keys, which included the Hall of Fame day results (`res`, keys like `C:Mexico|26`) and the "day already ran" record (`ran`). Every load flipped the keys that sort after their year to `26|C:Mexico`, so old Hall of Fame days, ballots and ceremony pages came back empty, and finished league days could run again. That is very likely the vanishing Mexico inductees. The repair now only touches real rivalry records, and a Hall of Fame key repair (`fixKeys`) runs on load and every rollover so saves already hit by it come back (the inductee lists themselves were never lost; the day results are restored; a league day that was run a second time in a damaged save cannot be undone).
 - **A ceremony for the countries you follow.** Each followed country gets its own Hall of Fame day: the federation honours the world's inductees first, then its own vote, each name with the counting vote and the verdict, then the class and the veto notes. Buttons: "Ceremony" on each favourite on the World Hall of Fame day (results and watch). Route `#/hofnation/<country>/<season>[/watch]`, API `/api/hofnation`. The league ceremony and this one share one engine (`hofCeremony`).

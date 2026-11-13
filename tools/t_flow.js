@@ -1,4 +1,4 @@
-// v15.1 season-loop check: phases season -> summer -> done -> awards -> transfers -> season, through the real API.
+// v15.1 season-loop check: phases season -> summer -> done -> awards -> graduates -> transfers -> season, through the real API.
 // usage: node tools/t_flow.js [seed]     ends with "FLOW OK" or "FLOW FAIL"
 const fs = require("fs"), vm = require("vm"), D = __dirname + "/../data/";
 globalThis.__DATA = {}; for (const k of ["leagues", "nations", "clubs_geo", "rivalries", "rivalries_nat"]) __DATA[k] = fs.readFileSync(D + k + ".json", "utf8");
@@ -35,18 +35,18 @@ const seed = process.argv[2] || "3";
   if (aw.code !== 200) fail.push("awards for the rolled season not available");
   let bad = await raw("/api/flow", { step: "awards" });
   if (bad.code !== 200 && bad.code !== 409) fail.push("odd status on repeat step " + bad.code);
-  let f = await call("/api/flow", { step: "transfers" });
-  if (f.header.phase !== "transfers") fail.push("transfers step not reached: " + f.header.phase);
+  let f = await call("/api/flow", { step: "graduates" });
+  if (f.header.phase !== "graduates") fail.push("graduates step not reached: " + f.header.phase);
   const lg = await raw("/api/ledger?season=" + season);
   if (lg.code !== 200) fail.push("ledger for the rolled season failed");
-  f = await call("/api/flow", { step: "graduates" });
-  if (f.header.phase !== "graduates") fail.push("graduates step not reached: " + f.header.phase);
   for (const sc of ["grads", "all"]) {
     const pr = await call("/api/prospects?scope=" + sc);
     if (!pr.rows.length) fail.push("no prospects for scope " + sc);
     else if (pr.rows.some((r, i) => i && r.pot > pr.rows[i - 1].pot)) fail.push("prospects not sorted by potential (" + sc + ")");
     else console.log("prospects " + sc + ": " + pr.total + " | best " + pr.rows[0].name + " " + pr.rows[0].ovr + "/" + pr.rows[0].pot);
   }
+  f = await call("/api/flow", { step: "transfers" });
+  if (f.header.phase !== "transfers") fail.push("transfers step not reached: " + f.header.phase);
   const pl = await call("/api/prospects?scope=all&league=" + encodeURIComponent((await call("/api/prospects?scope=all")).leagues[0]));
   if (pl.rows.some((r) => r.league !== pl.league)) fail.push("league filter leaks");
   f = await call("/api/flow", { step: "done" });

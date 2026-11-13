@@ -18,6 +18,9 @@ function wcBanner(host, year, size) {
   return `<span class="lbox wcb" style="width:${w}px;height:${h}px" title="World Cup ${esc(host)} ${y}">${wcLogo(host, y, { style: "poster", w })}</span>`;
 }
 function compEmb(name, spec, size, year, host) {
+  if (name === "World Cup" && (!host || !year)) {      // no edition given: the next one, host by the fixed rotation
+    try { host = host || hostFor(Object.keys(WC_HOSTS || {}).length); year = year || editionYear({ current: true }); } catch (e) { /* keep the plain emblem */ }
+  }
   const real = logoBox("comps", name, size, year) || logoBox("leagues", name, size);
   if (real) return real;
   if (name === "World Cup" && host && year) return wcBanner(host, year, size);      // no imported World Cup logo: the generated banner for this edition

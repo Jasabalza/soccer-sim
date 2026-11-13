@@ -329,18 +329,20 @@ $mods["rivals"] = (function () {
   function transfer_heat(w, a, b, amt) { const r = rec(st(w), a, b); r.heat += amt; r.tf++; }
 
   // this matchweek's games: played ones with the score, the rest open to pick
-  function fixtures(w, name) {
+  function fixtures(w, name, wk) {
     const cid = "L:" + name;
     if (!w.comps.has(cid)) fail("unknown league", 404);
     const c = w.comps.get_(cid);
     if (c.ptr >= c.rounds.length) return { league: name, comp: cid, week: null, weeks: c.rounds.length, rows: [] };
     const order = c.standings(), played = new Map((c.partial || []).map((r) => [r[0] + "|" + r[1], r]));
-    const rows = c.rounds[c.ptr].map(([h, a]) => {
-      const r = played.get(h + "|" + a), lab = label(w, h, a);
+    // a later matchweek can be looked at (read only): the current one is the first that is not finished
+    const idx = Number.isFinite(+wk) && +wk - 1 > c.ptr && +wk - 1 < c.rounds.length ? +wk - 1 : c.ptr;
+    const rows = c.rounds[idx].map(([h, a]) => {
+      const r = idx === c.ptr ? played.get(h + "|" + a) : null, lab = label(w, h, a);
       return { h, a, done: !!r, hg: r ? r[2] : null, ag: r ? r[3] : null, ho: w.clubs.get_(h).get_("ovr"), ao: w.clubs.get_(a).get_("ovr"),
         hpos: order.indexOf(h) + 1, apos: order.indexOf(a) + 1, rivalry: lab ? { name: lab.name, kind: lab.kind, intensity: lab.intensity } : null };
     });
-    return { league: name, comp: cid, week: c.ptr + 1, weeks: c.rounds.length, rows, left: rows.filter((x) => !x.done).length };
+    return { league: name, comp: cid, week: idx + 1, cur: c.ptr + 1, weeks: c.rounds.length, rows, left: rows.filter((x) => !x.done).length };
   }
 
   // the Rivalries screen: one ranked list, narrowed by type (clubs / nations), scope, status and a search, ordered by the chosen sort
@@ -376,7 +378,7 @@ $mods["rivals"] = (function () {
   }
   function api(w, path, q) {
     if (path === "/api/rivals_page") return page(w, q);
-    if (path === "/api/fixtures") return fixtures(w, q.name);
+    if (path === "/api/fixtures") return fixtures(w, q.name, q.week);
     if (path === "/api/rivalries") return { rows: list(w, q.club || null) };
     if (path === "/api/matchup") {
       const cc = q.comp && w.comps.has(q.comp) ? w.comps.get_(q.comp) : null;

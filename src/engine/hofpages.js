@@ -138,7 +138,7 @@ $mods["hofpages"] = (function () {
       if (s.status === "in") members.push({ c, s });
     }
     members.sort((a, b) => b.s.yr - a.s.yr || (a.c.name < b.c.name ? -1 : 1));
-    const classes = []; for (const m of members) { let cl = classes[classes.length - 1]; if (!cl || cl.y !== m.s.yr) { cl = { y: m.s.yr, label: label(w, m.s.yr), rows: [] }; classes.push(cl); } cl.rows.push(row(w, m.c, { yr: m.s.yr, pct: Math.round(m.s.pct * 100) / 100, n: m.s.n, via: m.s.via, badge: { tier, scope: name || null } })); }
+    const classes = []; for (const m of members) { let cl = classes[classes.length - 1]; if (!cl || cl.y !== m.s.yr) { cl = { y: m.s.yr, label: label(w, m.s.yr), rows: [] }; classes.push(cl); } cl.rows.push(row(w, m.c, { yr: m.s.yr, pct: Math.round(m.s.pct * 100) / 100, n: m.s.n, via: m.s.via, score: Math.round(H.scoreOf(w, m.c, key) * 10) / 10, badge: { tier, scope: name || null } })); }
     // latest vote's ballot
     let by = null; for (let y = w.season; y > w.season - 4; y--) if (h.res[rk + "|" + y]) { by = y; break; }
     const last = by ? h.res[rk + "|" + by] : null;
